@@ -60,6 +60,7 @@ class MeasurementWidget(_ConfigurationWidget):
 
         self.le_names = [
             'undulator_name',
+            'cassette_name',
             'block_name',
         ]
 
@@ -396,6 +397,9 @@ class MeasurementWidget(_ConfigurationWidget):
             self.measurement_data.undulator_name = (
                 self.global_config.undulator_name
             )
+            self.measurement_data.cassette_name = (
+                self.global_config.cassette_name
+            )
             self.measurement_data.block_name = (
                 self.global_config.block_name
             )
@@ -470,11 +474,13 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.pbt_move_motor.clicked.connect(self.move_motor)
         self.ui.pbt_stop_motor.clicked.connect(self.stop_motor)
         self.ui.tbt_read_hall.clicked.connect(self.read_hall)
+        self.ui.le_hall_sensor_voltage.editingFinished.connect(self.update_hall_led)
         self.ui.tbt_store_position_1.clicked.connect(self.store_position_1)
         self.ui.tbt_store_position_2.clicked.connect(self.store_position_2)
         self.ui.pbt_save_measurement.clicked.connect(self.prepare_measurement)
         self.ui.tbt_update_und_list.clicked.connect(self.update_undulator_list)
-        self.ui.cmb_undulator_list.currentTextChanged.connect(self.update_block_list)
+        self.ui.cmb_undulator_list.currentTextChanged.connect(self.update_cassette_list)
+        self.ui.cmb_cassette_list.currentTextChanged.connect(self.update_block_list)
         self.ui.cmb_block_list.currentTextChanged.connect(self.update_widget_gb_stored_data)
 
     @property
@@ -604,14 +610,28 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.le_hall_sensor_voltage.setText(reading)
 
             # check if hall sensor reading is as expected
-            is_ok = float(reading) > self.advanced_options.hall_threshold
-            self.ui.la_hall_led.setEnabled(is_ok)
+            self.update_hall_led()
+#            is_ok = float(reading) > self.advanced_options.hall_threshold
+#            self.ui.la_hall_led.setEnabled(is_ok)
 
         except Exception:
             msg = 'Failed to read hall sensor.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
+
+    def update_hall_led(self):
+        try:
+            # check if hall sensor reading is as expected
+            is_ok = (float(self.ui.le_hall_sensor_voltage.text())
+                     > self.advanced_options.hall_threshold)
+            self.ui.la_hall_led.setEnabled(is_ok)
+        except Exception:
+            msg = 'Failed to evaluate hall reading.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+        return True
 
     def save_measurement_data(self):
         try:
@@ -641,6 +661,8 @@ class MeasurementWidget(_ConfigurationWidget):
         # get names from selected undulator and block
         undulator = self.ui.cmb_undulator_list.currentText()
         und_idx = self.ui.cmb_undulator_list.currentIndex()
+        cassette = self.ui.cmb_cassette_list.currentText()
+        cassette_idx = self.ui.cmb_cassette_list.currentIndex()
         block = self.ui.cmb_block_list.currentText()
         block_idx = self.ui.cmb_block_list.currentIndex()
         # if a undulator is selected
@@ -654,14 +676,15 @@ class MeasurementWidget(_ConfigurationWidget):
             # clear block count display
             self.ui.lcd_block_count.display('')
         # if a unique block is selected, display data stored for it
-        if und_idx != -1 and block_idx != -1:
+        if und_idx != -1 and cassette_idx != -1 and block_idx != -1:
             # search block data
             block_data = self.access_measurement_data.db_search_collection(
-                fields=['undulator_name', 'block_name', 'display_position_1',
-                        'display_position_2', 'hall_sensor_voltage',
+                fields=['undulator_name', 'cassette_name', 'block_name',
+                        'display_position_1', 'display_position_2',
+                        'hall_sensor_voltage',
                         'linear_encoder_position'
                 ],
-                filters=[undulator, block, '', '', '', ''
+                filters=[undulator, cassette, block, '', '', '', ''
                 ]
             )
             block_data = block_data[0]
@@ -707,9 +730,42 @@ class MeasurementWidget(_ConfigurationWidget):
         # select corresponding index
         self.ui.cmb_undulator_list.setCurrentIndex(und_idx)
 
+        # update cassette list in stored data group box
+        self.update_cassette_list()
+
+        return True
+
+    def update_cassette_list(self):
+        """ Update the cassette list group box on interface """
+        # get current undulator list selection
+        und_idx = self.ui.cmb_undulator_list.currentIndex()
+        undulator = self.ui.cmb_undulator_list.currentText()
+        # store current combo box position and clear it
+        curr_text = self.ui.cmb_cassette_list.currentText()
+        self.ui.cmb_cassette_list.clear()
+        self.ui.cmb_cassette_list.setCurrentIndex(-1)
+        # if no undulator is selected, return
+        if und_idx == -1:
+            return True
+        # get list of cassettes and order it
+        row_list = self.access_measurement_data.db_search_field('undulator_name',
+            undulator)
+        c_list = [i['cassette_name'] for i in row_list]
+        # remove empty names if any
+        c_list = [e for e in c_list if e != '']
+        # remove duplicates if any
+        c_list = list(_collections.OrderedDict.fromkeys(c_list))
+        # apply natural sort order
+        c_list = _natsort.natsorted(
+            c_list, alg=_natsort.ns.IGNORECASE
+        )
+        # add cassettes to combo box
+        self.ui.cmb_cassette_list.addItems(c_list)
+        # update combo box index
+        cassette_idx = self.ui.cmb_cassette_list.findText(curr_text)
+        self.ui.cmb_cassette_list.setCurrentIndex(cassette_idx)
         # update block list in stored data group box
         self.update_block_list()
-
         return True
 
     def update_block_list(self):
@@ -717,16 +773,21 @@ class MeasurementWidget(_ConfigurationWidget):
         # get current undulator list selection
         und_idx = self.ui.cmb_undulator_list.currentIndex()
         undulator = self.ui.cmb_undulator_list.currentText()
+        # get current cassette list selection
+        cassette_idx = self.ui.cmb_cassette_list.currentIndex()
+        cassette = self.ui.cmb_cassette_list.currentText()
         # store current combo box position and clear it
         curr_text = self.ui.cmb_block_list.currentText()
         self.ui.cmb_block_list.clear()
         self.ui.cmb_block_list.setCurrentIndex(-1)
-        # if no undulator is selected, return
-        if und_idx == -1:
+        # if no undulator or cassette is selected, return
+        if und_idx == -1 or cassette_idx == -1:
             return True
         # get list of blocks and order it
-        row_list = self.access_measurement_data.db_search_field('undulator_name',
-            undulator)
+        row_list = self.access_measurement_data.db_search_collection(
+            fields=['undulator_name', 'cassette_name', 'block_name'],
+            filters=[undulator, cassette, '']
+        )
         b_list = [i['block_name'] for i in row_list]
         b_list = _natsort.natsorted(
             b_list, alg=_natsort.ns.IGNORECASE
@@ -744,17 +805,18 @@ class MeasurementWidget(_ConfigurationWidget):
 
         # get list of duplicate entries
         undulator = self.global_config.undulator_name
+        cassette = self.global_config.cassette_name
         block = self.global_config.block_name
         elem_list = self.access_measurement_data.db_search_collection(
-            fields=['undulator_name', 'block_name'
+            fields=['undulator_name', 'cassette_name', 'block_name'
             ],
-            filters=[undulator, block
+            filters=[undulator, cassette, block
             ]
         )
 
         # do not accept duplicate entries
         if len(elem_list) != 0:
-            msg = 'Block and undulator name pair already saved in DB.'
+            msg = 'Block already saved in DB for this undulator and cassette.'
             _QMessageBox.information(
                 self, 'Measurement', msg, _QMessageBox.Ok)
             return False

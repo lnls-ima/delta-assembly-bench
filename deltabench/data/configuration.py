@@ -74,6 +74,7 @@ class MeasurementConfig(_database.DatabaseAndFileDocument):
         ('undulator_name', {'dtype': str, 'not_null': True}),
         ('date', {'dtype': str, 'not_null': True}),
         ('hour', {'dtype': str, 'not_null': True}),
+        ('cassette_name', {'dtype': str, 'not_null': True}),
         ('block_name', {'dtype': str, 'not_null': True}),
         ('comments', {'dtype': str}),
     ])

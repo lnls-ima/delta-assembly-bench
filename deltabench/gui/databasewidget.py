@@ -133,8 +133,8 @@ class DatabaseWidget(_QWidget):
 
             try:
                 attrs = [
-                    'date', 'hour', 'undulator_name', 'block_name',
-                    'hall_sensor_voltage', 'display_position_1',
+                    'date', 'hour', 'undulator_name', 'cassette_name',
+                    'block_name', 'hall_sensor_voltage', 'display_position_1',
                     'display_position_2', 'linear_encoder_position',
                     'comments',
                     ]

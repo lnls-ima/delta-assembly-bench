@@ -19,6 +19,7 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         ('date', {'dtype': str, 'not_null': True}),
         ('hour', {'dtype': str, 'not_null': True}),
         ('block_name', {'dtype': str, 'not_null': True}),
+        ('cassette_name', {'dtype': str, 'not_null': True}),
         ('comments', {'dtype': str}),
         ('advanced_options_id', {'dtype': int}),
         ('configuration_id', {'dtype': int}),
@@ -33,8 +34,12 @@ class MeasurementData(_database.DatabaseAndFileDocument):
         """Return the default filename."""
         filename = super().default_filename
         
-        if self.block_name is not None and len(self.block_name) != 0:
-            filename = filename.replace(self.label, self.block_name)
+        if ((self.block_name is not None and len(self.block_name) != 0)
+             and (self.cassette_name is not None and len(self.cassette_name) != 0)
+             and (self.undulator_name is not None and len(self.undulator_name) != 0)):
+            filename = filename.replace(self.label, self.undulator_name
+                                                    +'_'+self.block_name
+                                                    +'_'+self.cassette_name)
         
         return filename
 
