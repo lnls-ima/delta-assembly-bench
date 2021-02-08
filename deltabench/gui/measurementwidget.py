@@ -3,6 +3,7 @@
 """Manual Measurement widget for the control application."""
 
 import sys as _sys
+import os
 import numpy as _np
 import time as _time
 import math
@@ -33,6 +34,7 @@ from deltabench.devices import (
 from imautils.db import database as _database
 import collections as _collections
 import natsort as _natsort
+from PyQt5.QtGui import QPixmap        
 
 class MeasurementWidget(_ConfigurationWidget):
     """Measurement widget class for the control application."""
@@ -47,10 +49,28 @@ class MeasurementWidget(_ConfigurationWidget):
         self.timer = _QTimer()
         self.timer.timeout.connect(self.periodic_display_update)
 
-        # create object to use database functions
-        self.access_measurement_data = _database.DatabaseCollection(
+        # create objects to use database functions
+#        self.access_measurement_data = _database.DatabaseCollection(
+#            database_name=self.database_name,
+#            collection_name=_measurement.MeasurementData.collection_name,
+#            mongo=self.mongo,
+#            server=self.server
+#        )
+        self.access_block_data = _database.DatabaseCollection(
             database_name=self.database_name,
-            collection_name=_measurement.MeasurementData.collection_name,
+            collection_name=_measurement.BlockData.collection_name,
+            mongo=self.mongo,
+            server=self.server
+        )
+        self.access_hall_data = _database.DatabaseCollection(
+            database_name=self.database_name,
+            collection_name=_measurement.HallWaveformData.collection_name,
+            mongo=self.mongo,
+            server=self.server
+        )
+        self.access_scan_data = _database.DatabaseCollection(
+            database_name=self.database_name,
+            collection_name=_configuration.ScanConfig.collection_name,
             mongo=self.mongo,
             server=self.server
         )
@@ -59,13 +79,9 @@ class MeasurementWidget(_ConfigurationWidget):
         ]
 
         self.le_names = [
-            'undulator_name',
-            'cassette_name',
-            'block_name',
         ]
 
         self.te_names = [
-            'comments',
         ]
 
         self.sbd_names = [
@@ -85,10 +101,30 @@ class MeasurementWidget(_ConfigurationWidget):
         self.encoder_measurement_index = -1
 
         self.hall_threshold = None
-        self.measurement_data = _measurement.MeasurementData()
+#        self.measurement_data = _measurement.MeasurementData()
 
         # start to read display periodically
         self.timer.start(self._update_display_interval*1000)
+
+        # create dictionary for magnet directiion images
+        self.direction_images = {}
+        self.direction_images['up'] = QPixmap(
+            os.path.join('deltabench','resources', 'img',
+                         'arrow-up-bold-outline.png')
+        )
+        self.direction_images['down'] = QPixmap(
+            os.path.join('deltabench','resources', 'img',
+                         'arrow-down-bold-outline.png')
+        )
+        self.direction_images['left'] = QPixmap(
+            os.path.join('deltabench','resources', 'img',
+                         'arrow-left-bold-outline.png')
+        )
+        self.direction_images['right'] = QPixmap(
+            os.path.join('deltabench','resources', 'img',
+                         'arrow-right-bold-outline.png')
+        )
+        self.direction_images['none'] = QPixmap()
 
     @property
     def advanced_options(self):
@@ -118,21 +154,25 @@ class MeasurementWidget(_ConfigurationWidget):
                 # interval to wait after command
                 wait = 0.15
 
-                _display.inst.write(b'\x1bA0200\r')
-                _time.sleep(wait)
-                readings = _display.inst.read_all().decode('utf-8')
-                readings = readings.upper().split(' R\r\n')
-
-                aux1 = readings[0][readings[0].find('X=') + 2:]
-                aux1 = aux1.replace(' ', '')
-    
-                aux2 = readings[1][readings[1].find('Y=') + 2:]
-                aux2 = aux2.replace(' ', '')
-    
-                aux3 = readings[2][readings[2].find('Z=') + 2:]
-                aux3 = aux3.replace(' ', '')
-    
-                readings = [float(aux1), float(aux2), float(aux3)]
+                readings = _display.read_display(
+                     display_model=self.advanced_options.display_model,
+                     wait=wait
+                )
+#                _display.inst.write(b'\x1bA0200\r')
+#                _time.sleep(wait)
+#                readings = _display.inst.read_all().decode('utf-8')
+#                readings = readings.upper().split(' R\r\n')
+#
+#                aux1 = readings[0][readings[0].find('X=') + 2:]
+#                aux1 = aux1.replace(' ', '')
+#    
+#                aux2 = readings[1][readings[1].find('Y=') + 2:]
+#                aux2 = aux2.replace(' ', '')
+#    
+#                aux3 = readings[2][readings[2].find('Z=') + 2:]
+#                aux3 = aux3.replace(' ', '')
+#    
+#                readings = [float(aux1), float(aux2), float(aux3)]
     
                 # update ui
                 self.ui.lcd_curr_position_1.display(readings[0])
@@ -356,9 +396,9 @@ class MeasurementWidget(_ConfigurationWidget):
 
         return True
 
-    def clear(self):
-        """Clear."""
-        self.measurement_data.clear()
+ #   def clear(self):
+ #       """Clear."""
+ #       self.measurement_data.clear()
 
     def configure_driver(self, steps):
         try:
@@ -381,63 +421,6 @@ class MeasurementWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             return False
 
-    def configure_measurement(self):
-        self.clear()
-
-        try:
-
-            if not self.update_configuration():
-                return False
-
-            if not self.save_db():
-                return False
-
-            self.global_config = self.config.copy()
-
-            self.measurement_data.undulator_name = (
-                self.global_config.undulator_name
-            )
-            self.measurement_data.cassette_name = (
-                self.global_config.cassette_name
-            )
-            self.measurement_data.block_name = (
-                self.global_config.block_name
-            )
-            self.measurement_data.comments = (
-                self.global_config.comments
-            )
-            self.measurement_data.advanced_options_id = (
-                self.advanced_options.idn
-            )
-            self.measurement_data.configuration_id = (
-                self.global_config.idn
-            )
-            self.measurement_data.hall_sensor_voltage = (
-                float(self.ui.le_hall_sensor_voltage.text())
-            )
-            self.measurement_data.display_position_1 = (
-                float(self.ui.le_display_position_1.text())
-            )
-            self.measurement_data.display_position_2 = (
-                float(self.ui.le_display_position_2.text())
-            )
-            self.measurement_data.linear_encoder_position = (
-                float(self.ui.lcd_linear_encoder_position.value())
-            )
-
-            if not self.advanced_options.valid_data():
-                msg = 'Invalid advanced options.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-                return False
-
-            return True
-
-        except Exception:
-            msg = 'Measurement configuration failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
-            return False
-
     def store_position_1(self):
         """ Move probe 1 current position to store label """
         # check if heidenhain display is connected
@@ -446,7 +429,7 @@ class MeasurementWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return False
         # transfer current reading
-        self.ui.le_display_position_1.setText(
+        self.ui.le_x_position.setText(
             str(self.ui.lcd_curr_position_1.value())
         )
         return True
@@ -459,7 +442,7 @@ class MeasurementWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return False
         # transfer current reading
-        self.ui.le_display_position_2.setText(
+        self.ui.le_z_position.setText(
             str(self.ui.lcd_curr_position_2.value())
         )
         return True
@@ -474,11 +457,10 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.pbt_move_motor.clicked.connect(self.move_motor)
         self.ui.pbt_stop_motor.clicked.connect(self.stop_motor)
         self.ui.tbt_read_hall.clicked.connect(self.read_hall)
-        self.ui.le_hall_sensor_voltage.editingFinished.connect(self.update_hall_led)
         self.ui.tbt_store_position_1.clicked.connect(self.store_position_1)
         self.ui.tbt_store_position_2.clicked.connect(self.store_position_2)
-        self.ui.pbt_save_measurement.clicked.connect(self.prepare_measurement)
-        self.ui.tbt_update_und_list.clicked.connect(self.update_undulator_list)
+        self.ui.tbt_update_measurement_list.clicked.connect(self.update_measurement_list)
+        self.ui.cmb_measurement_list.currentTextChanged.connect(self.update_undulator_list)
         self.ui.cmb_undulator_list.currentTextChanged.connect(self.update_cassette_list)
         self.ui.cmb_cassette_list.currentTextChanged.connect(self.update_block_list)
         self.ui.cmb_block_list.currentTextChanged.connect(self.update_widget_gb_stored_data)
@@ -609,134 +591,192 @@ class MeasurementWidget(_ConfigurationWidget):
 
             self.ui.le_hall_sensor_voltage.setText(reading)
 
-            # check if hall sensor reading is as expected
-            self.update_hall_led()
-#            is_ok = float(reading) > self.advanced_options.hall_threshold
-#            self.ui.la_hall_led.setEnabled(is_ok)
-
         except Exception:
             msg = 'Failed to read hall sensor.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 
-    def update_hall_led(self):
-        try:
-            # check if hall sensor reading is as expected
-            is_ok = (float(self.ui.le_hall_sensor_voltage.text())
-                     > self.advanced_options.hall_threshold)
-            self.ui.la_hall_led.setEnabled(is_ok)
-        except Exception:
-            msg = 'Failed to evaluate hall reading.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
-            return False
-        return True
-
-    def save_measurement_data(self):
-        try:
-            if self.database_name is None:
-                msg = 'Invalid database filename.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
-                return False
-
-            self.measurement_data.db_update_database(
-                self.database_name,
-                mongo=self.mongo, server=self.server)
-            self.measurement_data.db_save()
-
-            # update undulator list on interface
-            self.update_undulator_list()
-
-            return True
-
-        except Exception:
-            _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to save measurement to database.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
+#    def save_measurement_data(self):
+#        try:
+#            if self.database_name is None:
+#                msg = 'Invalid database filename.'
+#                _QMessageBox.critical(
+#                    self, 'Failure', msg, _QMessageBox.Ok)
+#                return False
+#
+#            self.measurement_data.db_update_database(
+#                self.database_name,
+#                mongo=self.mongo, server=self.server)
+#            self.measurement_data.db_save()
+#
+#            # update undulator list on interface
+#            self.update_measurement_list()
+#
+#            return True
+#
+#        except Exception:
+#            _traceback.print_exc(file=_sys.stdout)
+#            msg = 'Failed to save measurement to database.'
+#            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+#            return False
 
     def update_widget_gb_stored_data(self):
-        # get names from selected undulator and block
+        # get names from selected filter values
+        measurement = self.ui.cmb_measurement_list.currentText()
+        meas_idx = self.ui.cmb_measurement_list.currentIndex()
         undulator = self.ui.cmb_undulator_list.currentText()
         und_idx = self.ui.cmb_undulator_list.currentIndex()
         cassette = self.ui.cmb_cassette_list.currentText()
         cassette_idx = self.ui.cmb_cassette_list.currentIndex()
-        block = self.ui.cmb_block_list.currentText()
+        block_str = self.ui.cmb_block_list.currentText()
+        block = -1
+        if block_str != '':
+            block = int(block_str)
         block_idx = self.ui.cmb_block_list.currentIndex()
-        # if a undulator is selected
-        if und_idx != -1:
-            # display number of registered blocks for undulator
-            entries = self.access_measurement_data.db_search_field(
-                'undulator_name', undulator)
+        # if a measurement, undulator and cassette is selected
+        # find associated scan id
+        scan_id = -1
+        if meas_idx != -1 and und_idx != -1 and cassette_idx != -1:
+            # search scan id
+            scan_data = self.access_scan_data.db_search_collection(
+                fields=['measurement_name', 'undulator_name',
+                        'cassette_name', 'id'
+                ],
+                filters=[measurement, undulator, cassette, '',
+                ]
+            )
+            scan_id = scan_data[0]['id']
+        # display number of registered blocks for cassette
+        if scan_id != -1:
+            entries = self.access_block_data.db_search_field(
+                'scan_id', scan_id)
             block_count = len(entries)
             self.ui.lcd_block_count.display(block_count)
         else:
             # clear block count display
             self.ui.lcd_block_count.display('')
         # if a unique block is selected, display data stored for it
-        if und_idx != -1 and cassette_idx != -1 and block_idx != -1:
+        if scan_id != -1 and block_idx != -1:
             # search block data
-            block_data = self.access_measurement_data.db_search_collection(
-                fields=['undulator_name', 'cassette_name', 'block_name',
-                        'display_position_1', 'display_position_2',
-                        'hall_sensor_voltage',
-                        'linear_encoder_position'
+            block_data = self.access_block_data.db_search_collection(
+                fields=['scan_id', 'block_number', 'x_position',
+                        'x_position_error', 'z_position',
+                        'z_position_error', 'encoder_position',
+                        'block_direction'
                 ],
-                filters=[undulator, cassette, block, '', '', '', ''
+                filters=[scan_id, block, '', '', '', '', '', ''
                 ]
             )
             block_data = block_data[0]
             # update displays
-            self.ui.lcd_curr_position_1_stored.display(block_data['display_position_1'])
-            self.ui.lcd_curr_position_2_stored.display(block_data['display_position_2'])
-            self.ui.lcd_hall_reading_stored.display(block_data['hall_sensor_voltage'])
-            self.ui.lcd_encoder_stored.display(block_data['linear_encoder_position'])
-            # update LEDs
-            is_ok = (
-                    block_data['hall_sensor_voltage']
-                    > self.advanced_options.hall_threshold
-            )
-            self.ui.la_hall_led_stored.setEnabled(is_ok)
+            self.ui.lcd_stored_x_position.display(block_data['x_position'])
+            self.ui.lcd_stored_x_position_error.display(block_data['x_position_error'])
+            self.ui.lcd_stored_z_position.display(block_data['z_position'])
+            self.ui.lcd_stored_z_position_error.display(block_data['z_position_error'])
+#            self.ui.lcd_hall_reading_stored.display(block_data['hall_sensor_voltage'])
+            self.ui.lcd_stored_encoder_position.display(block_data['encoder_position'])
+            # update block direction image
+            block_direction = block_data['block_direction']
+            if block_direction == 1:
+                self.ui.la_magnet_direction.setPixmap(
+                    self.direction_images['up']
+                )
+            elif block_direction == 2:
+                self.ui.la_magnet_direction.setPixmap(
+                    self.direction_images['right']
+                )
+            elif block_direction == 3:
+                self.ui.la_magnet_direction.setPixmap(
+                    self.direction_images['down']
+                )
+            elif block_direction == 4:
+                self.ui.la_magnet_direction.setPixmap(
+                    self.direction_images['left']
+                )
+            else:
+                self.ui.la_magnet_direction.setPixmap(
+                    self.direction_images['none']
+                )
         else:
             # clear displays
-            self.ui.lcd_curr_position_1_stored.display('')
-            self.ui.lcd_curr_position_2_stored.display('')
-            self.ui.lcd_hall_reading_stored.display('')
-            self.ui.lcd_encoder_stored.display('')
+            self.ui.lcd_stored_x_position.display('')
+            self.ui.lcd_stored_x_position_error.display('')
+            self.ui.lcd_stored_z_position.display('')
+            self.ui.lcd_stored_z_position_error.display('')
+#            self.ui.lcd_hall_reading_stored.display('')
+            self.ui.lcd_stored_encoder_position.display('')
+            self.ui.la_magnet_direction.setPixmap(
+                self.direction_images['none']
+            )
+        return True
+
+    def update_measurement_list(self):
+        """ Update the measurement list group box on interface """
+        # store selected measurement name
+        selected_measurement = self.ui.cmb_measurement_list.currentText()
+        # clear measurement list
+        self.ui.cmb_measurement_list.clear()
+        # get list of measurements in db
+        meas_list = self.access_scan_data.db_get_values('measurement_name')
+        # remove empty names if any
+        meas_list = [e for e in meas_list if e != '']
+        # remove duplicates if any
+        meas_list = list(_collections.OrderedDict.fromkeys(meas_list))
+        # apply natural sort order
+        meas_list = _natsort.natsorted(
+            meas_list, alg=_natsort.ns.IGNORECASE
+        )
+        # update measurement list on interface
+        self.ui.cmb_measurement_list.addItems(meas_list)
+        # find index of previously selected measurement
+        meas_idx = self.ui.cmb_measurement_list.findText(selected_measurement)
+        # select corresponding index
+        self.ui.cmb_measurement_list.setCurrentIndex(meas_idx)
+
+        # update undulator list in stored data group box
+        self.update_undulator_list()
+
         return True
 
     def update_undulator_list(self):
         """ Update the undulator list group box on interface """
-        # store selected undulator name
-        selected_undulator = self.ui.cmb_undulator_list.currentText()
-        # clear undulator list
+        # get current measurement list selection
+        meas_idx = self.ui.cmb_measurement_list.currentIndex()
+        measurement = self.ui.cmb_measurement_list.currentText()
+        # store current combo box position and clear it
+        curr_text = self.ui.cmb_undulator_list.currentText()
         self.ui.cmb_undulator_list.clear()
-        # get list of undulators in db
-        und_list = self.access_measurement_data.db_get_values('undulator_name')
+        self.ui.cmb_undulator_list.setCurrentIndex(-1)
+        # if no measurement is selected, return
+        if meas_idx == -1:
+            return True
+        # get list of undulators and order it
+        row_list = self.access_scan_data.db_search_field('measurement_name',
+            measurement)
+        u_list = [i['undulator_name'] for i in row_list]
         # remove empty names if any
-        und_list = [e for e in und_list if e != '']
+        u_list = [e for e in u_list if e != '']
         # remove duplicates if any
-        und_list = list(_collections.OrderedDict.fromkeys(und_list))
+        u_list = list(_collections.OrderedDict.fromkeys(u_list))
         # apply natural sort order
-        und_list = _natsort.natsorted(
-            und_list, alg=_natsort.ns.IGNORECASE
+        u_list = _natsort.natsorted(
+            u_list, alg=_natsort.ns.IGNORECASE
         )
-        # update undulator list on interface
-        self.ui.cmb_undulator_list.addItems(und_list)
-        # find index of previously selected undulator
-        und_idx = self.ui.cmb_undulator_list.findText(selected_undulator)
-        # select corresponding index
-        self.ui.cmb_undulator_list.setCurrentIndex(und_idx)
-
+        # add undulators to combo box
+        self.ui.cmb_undulator_list.addItems(u_list)
+        # update combo box index
+        undulator_idx = self.ui.cmb_undulator_list.findText(curr_text)
+        self.ui.cmb_undulator_list.setCurrentIndex(undulator_idx)
         # update cassette list in stored data group box
         self.update_cassette_list()
-
         return True
 
     def update_cassette_list(self):
         """ Update the cassette list group box on interface """
+        # get current measurement list selection
+        meas_idx = self.ui.cmb_measurement_list.currentIndex()
+        measurement = self.ui.cmb_measurement_list.currentText()
         # get current undulator list selection
         und_idx = self.ui.cmb_undulator_list.currentIndex()
         undulator = self.ui.cmb_undulator_list.currentText()
@@ -744,12 +784,17 @@ class MeasurementWidget(_ConfigurationWidget):
         curr_text = self.ui.cmb_cassette_list.currentText()
         self.ui.cmb_cassette_list.clear()
         self.ui.cmb_cassette_list.setCurrentIndex(-1)
-        # if no undulator is selected, return
-        if und_idx == -1:
+        # if no measurement or undulator is selected, return
+        if meas_idx == -1 or und_idx == -1:
             return True
         # get list of cassettes and order it
-        row_list = self.access_measurement_data.db_search_field('undulator_name',
-            undulator)
+        row_list = self.access_scan_data.db_search_collection(
+            fields=['measurement_name', 'undulator_name',
+                    'cassette_name',
+            ],
+            filters=[measurement, undulator, '',
+            ]
+        )
         c_list = [i['cassette_name'] for i in row_list]
         # remove empty names if any
         c_list = [e for e in c_list if e != '']
@@ -770,6 +815,9 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def update_block_list(self):
         """ Update the block list group box on interface """
+        # get current measurement list selection
+        meas_idx = self.ui.cmb_measurement_list.currentIndex()
+        measurement = self.ui.cmb_measurement_list.currentText()
         # get current undulator list selection
         und_idx = self.ui.cmb_undulator_list.currentIndex()
         undulator = self.ui.cmb_undulator_list.currentText()
@@ -780,15 +828,23 @@ class MeasurementWidget(_ConfigurationWidget):
         curr_text = self.ui.cmb_block_list.currentText()
         self.ui.cmb_block_list.clear()
         self.ui.cmb_block_list.setCurrentIndex(-1)
-        # if no undulator or cassette is selected, return
-        if und_idx == -1 or cassette_idx == -1:
+        # if no measurement, undulator or cassette is selected, return
+        if meas_idx == -1 or und_idx == -1 or cassette_idx == -1:
             return True
-        # get list of blocks and order it
-        row_list = self.access_measurement_data.db_search_collection(
-            fields=['undulator_name', 'cassette_name', 'block_name'],
-            filters=[undulator, cassette, '']
+        # get scan id associated to cassette, undulator and measurement
+        scan_id_list = self.access_scan_data.db_search_collection(
+            fields=['measurement_name', 'undulator_name',
+                    'cassette_name', 'id'
+            ],
+            filters=[measurement, undulator, cassette, '']
         )
-        b_list = [i['block_name'] for i in row_list]
+        scan_id = scan_id_list[0]['id']
+        # get list of blocks and order it
+        row_list = self.access_block_data.db_search_collection(
+            fields=['scan_id', 'block_number'],
+            filters=[scan_id, '']
+        )
+        b_list = [str(i['block_number']) for i in row_list]
         b_list = _natsort.natsorted(
             b_list, alg=_natsort.ns.IGNORECASE
         )
@@ -799,44 +855,12 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.cmb_block_list.setCurrentIndex(block_idx)
         return True
 
-    def prepare_measurement(self):
-        if not self.configure_measurement():
-            return False
-
-        # get list of duplicate entries
-        undulator = self.global_config.undulator_name
-        cassette = self.global_config.cassette_name
-        block = self.global_config.block_name
-        elem_list = self.access_measurement_data.db_search_collection(
-            fields=['undulator_name', 'cassette_name', 'block_name'
-            ],
-            filters=[undulator, cassette, block
-            ]
-        )
-
-        # do not accept duplicate entries
-        if len(elem_list) != 0:
-            msg = 'Block already saved in DB for this undulator and cassette.'
-            _QMessageBox.information(
-                self, 'Measurement', msg, _QMessageBox.Ok)
-            return False
-
-        _QApplication.processEvents()
-
-        if not self.save_measurement_data():
-            return False
-
-        msg = 'Measurement stored.'
-        _QMessageBox.information(
-            self, 'Measurement', msg, _QMessageBox.Ok)
-        return True
-
-    def update_configuration(self):
-        """Update configuration parameters."""
-        try:
-            return super().update_configuration(clear=False)
-
-        except Exception:
-            _traceback.print_exc(file=_sys.stdout)
-            self.config.clear()
-            return False
+#    def update_configuration(self):
+#        """Update configuration parameters."""
+#        try:
+#            return super().update_configuration(clear=False)
+#
+#        except Exception:
+#            _traceback.print_exc(file=_sys.stdout)
+#            self.config.clear()
+#            return False

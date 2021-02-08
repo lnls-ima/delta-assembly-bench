@@ -1,0 +1,1167 @@
+# -*- coding: utf-8 -*-
+
+"""Scan Measurement widget for the control application."""
+
+import sys as _sys
+import numpy as _np
+import time as _time
+import math
+import warnings as _warnings
+import traceback as _traceback
+from qtpy.QtWidgets import (
+    QWidget as _QWidget,
+    QMessageBox as _QMessageBox,
+    QApplication as _QApplication,
+    )
+from qtpy.QtCore import (
+    Qt as _Qt,
+    QTimer as _QTimer
+)
+import qtpy.uic as _uic
+
+from deltabench.gui import utils as _utils
+from deltabench.gui.auxiliarywidgets import (
+    ConfigurationWidget as _ConfigurationWidget
+    )
+import deltabench.data.configuration as _configuration
+import deltabench.data.measurement as _measurement
+from deltabench.devices import (
+    driver as _driver,
+    multimeter as _multimeter,
+    display as _display,
+)
+from imautils.db import database as _database
+import collections as _collections
+import natsort as _natsort
+
+class ScanWidget(_ConfigurationWidget):
+    """Scan widget class for the control application."""
+
+    def __init__(self, parent=None):
+        """Set up the ui."""
+        uifile = _utils.get_ui_file(self)
+        config = _configuration.ScanConfig()
+        super().__init__(uifile, config, parent=parent)
+
+        # create objects to use database functions
+#        self.access_measurement_data = _database.DatabaseCollection(
+#            database_name=self.database_name,
+#            collection_name=_measurement.MeasurementData.collection_name,
+#            mongo=self.mongo,
+#            server=self.server
+#        )
+        self.access_block_data = _database.DatabaseCollection(
+            database_name=self.database_name,
+            collection_name=_measurement.BlockData.collection_name,
+            mongo=self.mongo,
+            server=self.server
+        )
+        self.access_hall_data = _database.DatabaseCollection(
+            database_name=self.database_name,
+            collection_name=_measurement.HallWaveformData.collection_name,
+            mongo=self.mongo,
+            server=self.server
+        )
+        self.access_scan_data = _database.DatabaseCollection(
+            database_name=self.database_name,
+            collection_name=_configuration.ScanConfig.collection_name,
+            mongo=self.mongo,
+            server=self.server
+        )
+
+        self.sb_names = [
+            'hall_samples_per_block',
+        ]
+
+        self.le_names = [
+            'measurement_name',
+            'undulator_name',
+            'cassette_name',
+        ]
+
+        self.te_names = [
+        ]
+
+        self.sbd_names = [
+            'start_reference_position',
+            'scan_step_size',
+        ]
+
+        self.cmb_names = [
+        ]
+
+        self.chb_names = [
+        ]
+
+        self.connect_signal_slots()
+        self.load_last_db_entry()
+
+        self.stop_sent = False
+
+        # lists of plots
+        self.graph_probe_x_plots = []
+        self.graph_probe_z_plots = []
+        self.graph_hall_plots = []
+
+        # temporary lists of data
+        self.hall_sample_list = []
+        self.hall_sample_index_list = []
+        self.encoder_sample_list_for_hall = []
+        self.probe_x_sample_list = []
+        self.probe_x_sample_error_list = []
+        self.probe_z_sample_list = []
+        self.probe_z_sample_error_list = []
+        self.block_number_list = []
+        self.encoder_sample_list_for_probes = []
+        self.block_direction_list = []
+
+#        self.measurement_data = _measurement.MeasurementData()
+        self.block_data = _measurement.BlockData()
+        self.hall_data = _measurement.HallWaveformData()
+
+    @property
+    def advanced_options(self):
+        """Return global advanced options."""
+        dialog = _QApplication.instance().advanced_options_dialog
+        return dialog.config
+
+    @property
+    def global_config(self):
+        """Return the global scan configuration."""
+        return _QApplication.instance().scan_config
+
+    @global_config.setter
+    def global_config(self, value):
+        _QApplication.instance().scan_config = value
+
+    def start_scan(self):
+        """ Start scan along undulator magnets. Motion is done in small
+            steps and data is acquired at each temporary stop.
+
+            Return value: True if success, False otherwise. """
+        # clear stop flag
+        self.stop_sent = False
+
+        # success status
+        status = False
+
+        # check motor connection
+        if not _driver.connected:
+            msg = 'Driver not connected.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return status
+
+        # check encoder connection
+        if not _display.connected:
+            msg = 'Display not connected.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return status
+
+        # check multimeter connection
+        if not _multimeter.connected:
+            msg = 'Multimeter not connected.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return status
+
+        # clear previous data and update scan config
+        if not self.configure_scan():
+            return False
+
+        # interval to wait after motion command
+        wait = _utils.WAIT_MOTION
+        # interval to wait after pneumatic motion start
+        wait_penumatic = _utils.WAIT_PNEUMATIC
+
+        # disable start scan button
+        self.ui.pbt_start_scan.setEnabled(False)
+        # process gui events
+        _QApplication.processEvents()
+
+        # get display info
+        display_model = self.advanced_options.display_model
+
+        # get motor info
+        driver_address = self.advanced_options.motor_driver_address
+        motor_resolution = (
+            self.advanced_options.motor_resolution
+        )
+        rotation_direction = (
+            self.advanced_options.motor_rotation_direction
+        )
+        velocity = self.advanced_options.motor_velocity
+        acceleration = self.advanced_options.motor_acceleration
+        linear_conversion = self.advanced_options.linear_conversion_factor
+        tolerance = self.advanced_options.position_tolerance
+        move_timeout = self.advanced_options.move_timeout
+
+        # read configuration parameters
+        first_block_position = self.ui.sbd_start_reference_position.value()
+        start_block_idx = self.ui.sb_scan_start_block.value()
+        block_step = self.ui.sbd_scan_step_size.value()
+        hall_step_count = self.ui.sb_hall_samples_per_block.value()
+        block_center = hall_step_count / 2
+        hall_step = float(block_step / hall_step_count)
+        block_count = self.ui.sb_scan_nr_blocks.value()
+        block_list = range(start_block_idx, start_block_idx
+                                            + block_count + 1)
+
+        # do homing
+        if not _driver.homing(move_timeout):
+            msg = 'Homing failed - scan aborted.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            # enable start scan button
+            self.ui.pbt_start_scan.setEnabled(True)
+            return status
+
+        # start position
+        scan_beginning = first_block_position
+
+        for block_idx in block_list:
+            # update block interval being measured
+            target_interval = scan_beginning + (block_idx - 1)*block_step
+
+            # stop to get each hall sample and measure position
+            # with probes when at the block center
+            for pos in range(0, hall_step_count):
+                if self.stop_sent:
+                    status = False
+                    break
+                # move
+                target_position = target_interval + pos*hall_step
+                status_tuple = move_and_retry(target_position, tolerance,
+                                      driver_address, rotation_direction,
+                                      motor_resolution, velocity,
+                                      acceleration, linear_conversion,
+                                      move_timeout)
+                status = status_tuple[0]
+                last_enc_pos = status_tuple[1]
+                if status is False:
+                    break
+                # read hall sensor
+                hall_volt = _multimeter.read()
+                # store hall and encoder measurements
+                self.hall_sample_list.append(hall_volt)
+                hall_cnt = 1 + pos + hall_step_count * (block_idx - 1)
+                self.hall_sample_index_list.append(hall_cnt)
+                self.encoder_sample_list_for_hall.append(last_enc_pos)
+                # when all hall samples were taken for a block
+                # calculate direction of block
+                if pos == hall_step_count - 1:
+                    self.calculate_block_direction(
+                        self.hall_sample_list[
+                            (hall_cnt - hall_step_count):hall_cnt
+                        ]
+                    )
+                # measure position at block center
+                if pos == block_center:
+                    # trigger pneumatic actuator
+
+                    # < Still to be written >
+
+                    # wait pneumatic motion to finish
+                    _time.sleep(wait_pneumatic)
+                    # read position probes
+                    readings = _display.read_display(display_model)
+                    # store probe measurements
+                    self.probe_x_sample_list.append(readings[0])
+                    self.probe_z_sample_list.append(readings[1])
+                    self.encoder_sample_list_for_probes.append(last_enc_pos)
+                    # deactivate pneumatic actuator
+
+                    # < Still to be written >
+
+                    # wait pneumatic motion to finish
+                    _time.sleep(wait_pneumatic)
+                
+            if status is False:
+                break
+
+        # measure last hall sample, at the end of last magnet
+        # and update graphs
+#        if status is True and not self.stop_sent:
+#            target_position = scan_beginning + block_count * block_step
+#            status_tuple = move_and_retry(target_position, tolerance,
+#                                      driver_address, rotation_direction,
+#                                      motor_resolution, velocity,
+#                                      acceleration, linear_conversion,
+#                                      move_timeout)
+#            status = status_tuple[0]
+#            last_enc_pos = status_tuple[1]
+#            # do last measurement
+#            if status is not False:
+#                # read hall sensor
+#                hall_volt = _multimeter.read()
+#                # store hall and encoder measurements
+#                self.hall_sample_list.append(hall_volt)
+#                self.encoder_sample_list_for_hall.append(last_enc_pos)
+
+        if status is True:
+            # store block number list
+            self.block_number_list = block_list
+
+            # calculate error for each sample
+            x_ref = 0
+            y_ref = 0
+            for x_sample in self.probe_x_sample_list:
+                self.probe_x_sample_error_list.append(x_sample - x_ref)
+            for y_sample in probe_y_sample_list:
+                self.probe_y_sample_error_list.append(y_sample - y_ref)
+
+            self.update_graphs(
+                self.block_number_list,
+                self.probe_x_sample_list,
+                self.probe_x_sample_error_list,
+                self.probe_z_sample_list,
+                self.probe_z_sample_error_list,
+                self.hall_sample_index_list,
+                self.hall_sample_list
+            )
+
+        # re-enable start scan button
+        self.ui.pbt_start_scan.setEnabled(False)
+
+        if status is False:
+            msg = 'Scan failed.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+
+        return status
+
+    def stop_scan(self):
+        """ Stop scan measurement immediately  """
+        # set flag for move_motor function to see
+        self.stop_sent = True
+
+        # check connection
+        if not _driver.connected:
+            msg = 'Driver not connected - failed to stop motor.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+        # stop motor
+        try:
+            driver_address = self.advanced_options.motor_driver_address
+            _driver.stop_motor(driver_address)
+        except Exception:
+            msg = 'Failed to stop motor.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+
+        return True
+
+    def calculate_block_direction(self, hall_readings):
+        """ Calculate magnet direction based on hall readings.
+
+            Input: list of hall sensor readings for a given magnet.
+            Return value: list of integers, same size as input,
+                          with the following meanings.
+                0: Magnet direction unknow
+                1: Magnet pointing UP
+                2: Magnet pointing to the RIGHT
+                3: Magnet pointing DOWN
+                4: Magnet pointing to the LEFT """
+        magnet_direction = 0
+
+        list_size = len(hall_readings)
+        if list_size < 3:
+            # return 'unknow direction'
+            return magnet_direction
+
+        # calculate vector of first 'differences'
+        diff_1 = []
+        for i in range(1, list_size):
+            diff_1.append(hall_readings[i] - hall_readings[i-1])
+        # calculate vector of second 'differences'
+        diff_2 = []
+        for i in range(1, len(diff_1)):
+            diff_2.append(diff_1[i] - diff_1[i-1])
+
+        pos_diff_1_cnt = sum(1 for i in diff_1 if i > 0)
+        pos_diff_2_cnt = sum(1 for i in diff_2 if i > 0)
+        neg_diff_1_cnt = sum(1 for i in diff_1 if i < 0)
+        neg_diff_2_cnt = sum(1 for i in diff_2 if i < 0)
+
+        # if field waveform is at first quadrant
+        if (pos_diff_1_cnt > neg_diff_1_cnt
+            and pos_diff_2_cnt < neg_diff_2_cnt):
+            magnet_direction = 1
+        # if field waveform is at second quadrant
+        elif (pos_diff_1_cnt < neg_diff_1_cnt
+            and pos_diff_2_cnt < neg_diff_2_cnt):
+            magnet_direction = 2
+        # if field waveform is at third quadrant
+        elif (pos_diff_1_cnt < neg_diff_1_cnt
+            and pos_diff_2_cnt > neg_diff_2_cnt):
+            magnet_direction = 3
+        # if field waveform is at forth quadrant
+        elif (pos_diff_1_cnt > neg_diff_1_cnt
+            and pos_diff_2_cnt > neg_diff_2_cnt):
+            magnet_direction = 4
+
+        return magnet_direction
+
+    def clear_probe_x_graph(self):
+        """ Clear data from ui probe x graph """
+        self.ui.pw_x_probe.plotItem.curves.clear()
+        if self.ui.pw_x_probe.getPlotItem().legend is not None:
+            self.ui.pw_x_probe.getPlotItem().legend.items = []
+        self.ui.pw_x_probe.clear()
+
+        self.graph_probe_x_plots = []
+        return True
+
+    def clear_probe_z_graph(self):
+        """ Clear data from ui probe z graph """
+        self.ui.pw_z_probe.plotItem.curves.clear()
+        if self.ui.pw_z_probe.getPlotItem().legend is not None:
+            self.ui.pw_z_probe.getPlotItem().legend.items = []
+        self.ui.pw_z_probe.clear()
+
+        self.graph_probe_z_plots = []
+        return True
+
+    def clear_hall_graph(self):
+        """ Clear data from ui hall graph """
+        self.ui.pw_hall.plotItem.curves.clear()
+        if self.ui.pw_hall.getPlotItem().legend is not None:
+            self.ui.pw_hall.getPlotItem().legend.items = []
+        self.ui.pw_hall.clear()
+
+        self.graph_hall_plots = []
+        return True
+
+    def clear_graphs(self):
+        """ Clear data from ui graphs """
+        # clear data
+        self.clear_probe_x_graph()
+        self.clear_probe_z_graph()
+        self.clear_hall_graph()
+
+        return True
+
+    def clear(self):
+        """Clear."""
+        self.clear_graphs()
+        # clear lists of measurement data
+        self.hall_sample_list = []
+        self.hall_sample_index_list = []
+        self.encoder_sample_list_for_hall = []
+        self.probe_x_sample_list = []
+        self.probe_x_sample_error_list = []
+        self.probe_z_sample_list = []
+        self.probe_z_sample_error_list = []
+        self.block_number_list = []
+        self.block_direction_list = []
+        self.encoder_sample_list_for_probes = []
+        # clear database table
+        self.block_data.clear()
+        self.hall_data.clear()
+
+    def configure_scan(self):
+        self.clear()
+
+        try:
+            if not self.update_configuration():
+                return False
+            if not self.save_db():
+                return False
+
+            self.global_config = self.config.copy()
+            if not self.advanced_options.valid_data():
+                msg = 'Invalid advanced options.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            return True
+
+        except Exception:
+            msg = 'Scan configuration failed.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def update_graphs(self, x_axis_probes_xz, y_axis_probe_x,
+                      y_axis_probe_x_error, y_axis_probe_z,
+                      y_axis_probe_z_error, x_axis_hall, y_axis_hall):
+        """ Update plots with the data provided. If y axis data, besides
+            error data, is empty, keep the associated plot as is """
+        try:
+            nr_plots = 1
+            update_probe_x = False
+            update_probe_z = False
+            update_hall = False
+            colors = (
+                (0, 0, 255), (255, 0, 0), (0, 0, 0), (0, 255, 0),
+                (204, 0, 204), (153, 153, 0), (204, 102, 0),
+                (76, 0, 153)
+            )
+            # find out what should be updated
+            if len(y_axis_probe_x) > 0:
+                update_probe_x = True
+            if len(y_axis_probe_z) > 0:
+                update_probe_z = True
+            if len(y_axis_hall) > 0:
+                update_hall = True
+            # if nothing to do, return
+            if (not update_probe_x and not update_probe_z
+               and not update_hall):
+                return True
+            # check if should plot error
+            if self.ui.chb_show_error.isChecked():
+                nr_plots = nr_plots + 1
+            # clear graphs to update
+            if update_probe_x:
+                self.clear_probe_x_graph()
+            if update_probe_z:
+                self.clear_probe_z_graph()
+            if update_hall:
+                self.clear_hall_graph()
+            # update graph lines and data
+            if update_probe_x:
+                name = ['x', 'error']
+                for i in range(0, nr_plots):
+                    self.graph_probe_x_plots.append(
+                        self.ui.pw_x_probe.plotItem.plot(
+                            _np.array([]),
+                            _np.array([]),
+                            pen=colors[i],
+                            symbol='o',
+                            symbolPen=colors[i],
+                            symbolSize=4,
+                            symbolBrush=colors[i],
+                            name=name[i]))
+                self.graph_probe_x_plots[0].setData(
+                    x_axis_probes_xz, y_axis_probe_x
+                )
+                if nr_plots > 1:
+                    self.graph_probe_x_plots[1].setData(
+                        x_axis_probes_xz, y_axis_probe_x_error
+                )
+                self.ui.pw_x_probe.setLabel('bottom', 'Block index')
+                self.ui.pw_x_probe.setLabel('left', 'Probe x [mm]')
+                self.ui.pw_x_probe.showGrid(x=True, y=True)
+            if update_probe_z:
+                name = ['z', 'error']
+                for i in range(0, nr_plots):
+                    self.graph_probe_z_plots.append(
+                        self.ui.pw_z_probe.plotItem.plot(
+                            _np.array([]),
+                            _np.array([]),
+                            pen=colors[i],
+                            symbol='o',
+                            symbolPen=colors[i],
+                            symbolSize=4,
+                            symbolBrush=colors[i],
+                            name=name[i]))
+                self.graph_probe_z_plots[0].setData(
+                    x_axis_probes_xz, y_axis_probe_z
+                )
+                if nr_plots > 1:
+                    self.graph_probe_z_plots[1].setData(
+                        x_axis_probes_xz, y_axis_probe_z_error
+                )
+                self.ui.pw_z_probe.setLabel('bottom', 'Block index')
+                self.ui.pw_z_probe.setLabel('left', 'Probe z [mm]')
+                self.ui.pw_z_probe.showGrid(x=True, y=True)
+            if update_hall:
+                self.graph_hall_plots.append(
+                    self.ui.pw_hall.plotItem.plot(
+                        _np.array([]),
+                        _np.array([]),
+                        pen=colors[0],
+                        symbol='o',
+                        symbolPen=colors[0],
+                        symbolSize=4,
+                        symbolBrush=colors[0],
+                        name='hall'))
+                self.graph_hall_plots[0].setData(
+                    x_axis_hall, y_axis_hall
+                )
+                self.ui.pw_hall.setLabel('bottom', 'Encoder [mm]')
+                self.ui.pw_hall.setLabel('left', 'Hall [volts]')
+                self.ui.pw_hall.showGrid(x=True, y=True)
+        except Exception:
+            msg = 'Failed to update graphs.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+        return True
+
+    def move_and_retry(self, target_position, tolerance, driver_address,
+                       rotation_direction, motor_resolution, velocity,
+                       acceleration, linear_conversion, timeout=10.0):
+        """ Move motor until target position and retry if necessary
+            while timeout is not exceeded.
+
+            Return value: (true_if_success, last_encoder_position) """
+        # check motor connection
+        if not _driver.connected:
+            msg = 'Driver not connected.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return (False, 0.0)
+        # check encoder connection
+        if not _driver.connected:
+            msg = 'Encoder not connected.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return (False, 0.0)
+
+        # get display info
+        display_model = self.advanced_options.display_model
+
+        # interval to wait after move
+        wait = _utils.WAIT_MOTION
+
+        # motion mode is 'preset' (not continuous)
+        mode = 0
+
+        # var for encoder position
+        encoder_position = 0.0
+
+        # register motion start
+        t_start = _time.time()
+
+        try:
+            while True:
+                if self.stop_sent:
+                    return (False, 0.0)
+                # read encoder
+                readings = _display.read_display(display_model)
+                encoder_position = readings[2]
+                # update difference
+                diff = target_position - encoder_position
+                steps = math.floor(
+                        diff / (linear_conversion / motor_resolution)
+                )
+                if rotation_direction == '-':
+                    steps = -steps
+                # check if difference is relevant
+                if (abs(diff) <= abs(tolerance)
+                   or (_time.time() - t_start) > timeout):
+                    break
+                # try to reach position
+                if steps != 0 and not self.stop_sent:
+                    # configure motor
+                    if not _driver.config_motor(
+                           driver_address,
+                           mode,
+                           rotation_direction,
+                           motor_resolution,
+                           velocity,
+                           acceleration,
+                           steps):
+                        msg = 'Failed to send configuration to motor.'
+                        _QMessageBox.critical(
+                            self, 'Failure', msg, _QMessageBox.Ok)
+                        return (False, 0.0)
+                    else:
+                        # start motor motion if commanded to
+                        _driver.move_motor(driver_address)
+                        # wait for command reception
+                        _time.sleep(wait)
+                        # process gui events
+                        _QApplication.processEvents()
+                # wait motion to finish
+                while (not _driver.ready(driver_address)
+                       and not self.stop_sent
+                       and (_time.time() - t_start) < timeout):
+                    _time.sleep(wait)
+                    _QApplication.processEvents()
+
+            # check if move was successful
+            if not abs(diff) <= abs(tolerance):
+                msg = 'Move timeout in '+str(move_timeout)+' seconds.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                # stop move
+                _driver.stop_motor()
+                return (False, 0.0)
+
+        except Exception:
+            msg = 'Failed to move motor.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return (False, 0.0)
+
+        return (True, encoder_position)
+
+    def clear_block_data(self):
+        """Clear block measurement data."""
+        self.block_data.clear()
+
+    def clear_hall_data(self):
+        """Clear hall sensor waveform data."""
+        self.hall_data.clear()
+
+    def configure_driver(self, steps):
+        try:
+            _driver.stop_motor(
+                self.advanced_options.motor_driver_address)
+            _time.sleep(0.1)
+
+            return _driver.config_motor(
+                self.advanced_options.motor_driver_address,
+                0,
+                self.advanced_options.motor_rotation_direction,
+                self.advanced_options.motor_resolution,
+                self.advanced_options.motor_velocity,
+                self.advanced_options.motor_acceleration,
+                steps)
+
+        except Exception:
+            msg = 'Failed to configure driver.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+#    def configure_block_measurement(self):
+#        self.clear_block_data()
+#
+#        try:
+#
+#            if not self.update_configuration():
+#                return False
+#
+#            if not self.save_db():
+#                return False
+#
+#            self.global_config = self.config.copy()
+#
+#            self.measurement_data.undulator_name = (
+#                self.global_config.undulator_name
+#            )
+#            self.measurement_data.cassette_name = (
+#                self.global_config.cassette_name
+#            )
+#            self.measurement_data.block_number = (
+#                self.global_config.block_number
+#            )
+#            self.measurement_data.comments = (
+#                self.global_config.comments
+#            )
+#            self.measurement_data.advanced_options_id = (
+#                self.advanced_options.idn
+#            )
+#            self.measurement_data.configuration_id = (
+#                self.global_config.idn
+#            )
+#            self.measurement_data.hall_sensor_voltage = (
+#                float(self.ui.le_hall_sensor_voltage.text())
+#            )
+#            self.measurement_data.x_position = (
+#                float(self.ui.le_x_position.text())
+#            )
+#            self.measurement_data.z_position = (
+#                float(self.ui.le_z_position.text())
+#            )
+#            self.measurement_data.linear_encoder_position = (
+#                float(self.ui.lcd_linear_encoder_position.value())
+#            )
+#
+#            if not self.advanced_options.valid_data():
+#                msg = 'Invalid advanced options.'
+#                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+#                return False
+#
+#            return True
+#
+#        except Exception:
+#            msg = 'Measurement configuration failed.'
+#            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+#            _traceback.print_exc(file=_sys.stdout)
+#            return False
+
+    def connect_signal_slots(self):
+        """Create signal/slot connections."""
+        super().connect_signal_slots()
+        self.ui.pbt_start_scan.clicked.connect(self.start_scan)
+        self.ui.pbt_stop_scan.clicked.connect(self.stop_scan)
+        self.ui.pbt_load_data_db.clicked.connect(self.load_data_from_db)
+        self.ui.pbt_save_data_db.clicked.connect(self.save_data_to_db)
+        self.ui.sb_hall_samples_per_block.valueChanged.connect(self.hall_samples_even_only)
+        self.ui.pbt_clear_all.clicked.connect(self.clear)
+        self.ui.pbt_test_graph.clicked.connect(self.test_graph)
+
+    def test_graph(self):
+
+        self.clear()
+
+        self.global_config = self.config.copy()
+
+        # update data lists
+        self.hall_sample_list = [
+            3, 6, 7, 6, 3, 0, -3, -6,
+            -7, -6, -3, 0, 3, 6, 7, 6,
+            3, 0, -3, -6, -7, -6, -3, 0,
+            3, 6, 7, 6, 3, 0, -3, -6
+        ]
+        self.hall_sample_index_list = [
+            1, 2, 3, 4, 5, 6, 7, 8,
+            9, 10, 11, 12, 13, 14, 15, 16,
+            17, 18, 19, 20, 21, 22, 23, 24,
+            25, 26, 27, 28, 29, 30, 31, 32
+        ]
+        self.encoder_sample_list_for_hall = [
+            0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8,
+            0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6,
+            1.7, 1.81, 1.9, 2.001, 2.1, 2.2, 2.32, 2.4,
+            2.5, 2.64, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2
+        ]
+        self.probe_x_sample_list = [10, 20, 35, 44, 55, 60, 77, 80]
+        self.probe_x_sample_error_list = [0.6, 0.5, 0.7, 0.2, 0.1, 0.1, 0.3, 0.4]
+        self.probe_z_sample_list = [5, 6, 7, 6.5, 7.2, 6.0, 5.5, 5.4]
+        self.probe_z_sample_error_list = [0.1, 0.2, 0.1, 0.35, 0.15, 0.1, 0.12, 0.9]
+        self.block_number_list = [1, 2, 3, 4, 5, 6, 7, 8]
+        self.encoder_sample_list_for_probes = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        self.block_direction_list = [1, 2, 3, 4, 3, 2, 1, 2]
+
+        self.update_graphs(self.block_number_list,
+                      self.probe_x_sample_list,
+                      self.probe_x_sample_error_list,
+                      self.probe_z_sample_list,
+                      self.probe_z_sample_error_list,
+                      self.encoder_sample_list_for_hall,
+                      self.hall_sample_list)
+        return True
+
+    @property
+    def advanced_options(self):
+        """Return global advanced options."""
+        dialog = _QApplication.instance().advanced_options_dialog
+        return dialog.config
+
+    def load_data_from_db(self):
+        # clear current stored data
+        self.clear()
+
+        # arrays to hold data
+        block_numbers = []
+        encoder_data_probe = []
+        probe_x_data = []
+        probe_x_error_data = []
+        probe_z_data = []
+        probe_z_error_data = []
+        encoder_data_hall = []
+        hall_data = []
+        hall_data_index = []
+
+        # get element info to filter
+        measurement = self.ui.le_measurement_name.text()
+        undulator = self.ui.le_undulator_name.text()
+        cassette = self.ui.le_cassette_name.text()
+
+        print('measurement='+measurement)
+        print('undulator='+undulator)
+        print('cassette='+cassette)
+
+        # get scan id from DB
+        scan_list = self.access_scan_data.db_search_collection(
+            fields=['measurement_name', 'undulator_name', 'cassette_name', 'id'
+            ],
+            filters=[measurement, undulator, cassette, ''
+            ]
+        )
+        if len(scan_list) == 0:
+            msg = 'Scan data not found.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+        scan_data = scan_list[0]
+        scan_id = scan_data['id']
+
+        # read hall data from DB
+        elem_list = self.access_hall_data.db_search_collection(
+            fields=['scan_id', 'block_number', 'reading_index',
+                    'hall_sensor_voltage', 'encoder_position'
+            ],
+            filters=[scan_id, '', '', '', ''
+            ]
+        )
+        if len(elem_list) > 0:
+            # sort by sample index
+            elem_list = sorted(elem_list, key=lambda k: k['reading_index'])
+            for elem in elem_list:
+                # append to data to show
+                encoder_data_hall.append(elem['encoder_position'])
+                hall_data.append(elem['hall_sensor_voltage'])
+                hall_data_index.append(elem['reading_index'])
+            # plot hall data
+            self.update_graphs([],
+                               [],
+                               [],
+                               [],
+                               [],
+                               hall_data_index,
+                               hall_data)
+        # read position probe data from DB
+        elem_list = self.access_block_data.db_search_collection(
+            fields=['scan_id', 'block_number', 'x_position',
+                    'x_position_error', 'z_position', 'z_position_error',
+                    'encoder_position'
+            ],
+            filters=[scan_id, '', '', '', '', '', ''
+            ]
+        )
+        if len(elem_list) > 0:
+            # sort by sample index
+            elem_list = sorted(elem_list, key=lambda k: k['block_number'])
+            for elem in elem_list:
+                # append to data to show
+                block_numbers.append(elem['block_number'])
+                encoder_data_probe.append(elem['encoder_position'])
+                probe_x_data.append(elem['x_position'])
+                probe_x_error_data.append(elem['x_position_error'])
+                probe_z_data.append(elem['z_position'])
+                probe_z_error_data.append(elem['z_position_error'])
+            # plot position probe data
+            self.update_graphs(block_numbers,
+                               probe_x_data,
+                               probe_x_error_data,
+                               probe_z_data,
+                               probe_z_error_data,
+                               [],
+                               [])
+        return True
+
+    def save_data_to_db(self):
+        try:
+            if self.database_name is None:
+                msg = 'Invalid database filename.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            hall_samples_per_block = self.global_config.hall_samples_per_block
+
+            # save all new hall data entries
+            j = 0
+            for i in range(0, len(self.hall_sample_list)):
+                self.hall_data.scan_id = self.global_config.idn
+                self.hall_data.block_number = self.block_number_list[j]
+                self.hall_data.reading_index = self.hall_sample_index_list[i]
+                self.hall_data.hall_sensor_voltage = self.hall_sample_list[i]
+                self.hall_data.encoder_position = self.encoder_sample_list_for_hall[i]
+                if (i % hall_samples_per_block == 0 and i != 0):
+                    j = j + 1
+                self.hall_data.db_update_database(
+                    self.database_name, mongo=self.mongo,
+                    server=self.server
+                )
+                self.hall_data.db_save()
+
+            # save all new block data entries
+            for i in range(0, len(self.block_number_list)):
+                self.block_data.scan_id = self.global_config.idn
+                self.block_data.block_number = self.block_number_list[i]
+                self.block_data.block_direction = self.block_direction_list[i]
+                self.block_data.x_position = self.probe_x_sample_list[i]
+                self.block_data.x_position_error = self.probe_x_sample_error_list[i]
+                self.block_data.z_position = self.probe_z_sample_list[i]
+                self.block_data.z_position_error = self.probe_z_sample_error_list[i]
+                self.block_data.encoder_position = self.encoder_sample_list_for_probes[i]
+                self.block_data.db_update_database(
+                    self.database_name, mongo=self.mongo,
+                    server=self.server
+                )
+                self.block_data.db_save()
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to save data to DB.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+
+        return True
+
+    def hall_samples_even_only(self):
+        """ Allow only even hall sample counts """
+        value = self.ui.sb_hall_samples_per_block.value()
+        if value % 2 != 0:
+            self.ui.sb_hall_samples_per_block.setValue(value + 1)
+        return True
+
+    def homing(self):
+        """ Move motor to limit switch at the beginning of range.
+            If the motor direction is reversed, than the positive
+            limit switch is used as home switch. """
+        # clear stop flag
+        self.stop_sent = False
+
+        # check motor connection
+        if not _driver.connected:
+            msg = 'Driver not connected.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+        # disable move and homing buttons
+        self.ui.pbt_move_motor.setEnabled(False)
+        self.ui.pbt_homing.setEnabled(False)
+
+        try:
+            # interval to wait after move
+            wait_motion = _utils.WAIT_MOTION
+            # interval to wait before command is received
+            wait_cmd = _utils.WAIT_DRIVER
+
+            # motor info
+            driver_address = self.advanced_options.motor_driver_address
+            resolution = self.advanced_options.motor_resolution
+            rotation_direction = self.advanced_options.motor_rotation_direction
+            velocity = self.advanced_options.motor_velocity
+            acceleration = self.advanced_options.motor_acceleration
+            move_timeout = self.advanced_options.move_timeout
+
+            # mode = preset (not continuous)
+            mode = 0
+            steps = int(int(resolution)*2)
+
+            # register move start
+            t_start = _time.time()
+
+            # move start flag
+            move_started = False
+
+            # move towards the negative or positive limit switch
+            if not self.stop_sent:
+                if rotation_direction == '+':
+                    if not _driver.move_to_negative_limit(
+                            driver_address,
+                            velocity,
+                            acceleration,
+                            wait_cmd):
+                        msg = 'Failed to send command.'
+                        _QMessageBox.critical(
+                            self, 'Failure', msg, _QMessageBox.Ok)
+                    else:
+                        move_started = True
+                else:
+                    if not _driver.move_to_positive_limit(
+                            driver_address,
+                            velocity,
+                            acceleration,
+                            wait_cmd):
+                        msg = 'Failed to send command.'
+                        _QMessageBox.critical(
+                            self, 'Failure', msg, _QMessageBox.Ok)
+                    else:
+                        move_started = True
+
+            # wait motor stop
+            if move_started:
+                _time.sleep(wait_motion)
+                t_curr = _time.time()
+                while (not _driver.ready(driver_address)
+                       and not self.stop_sent
+                       and not (t_curr - t_start) > move_timeout):
+                    t_curr = _time.time()
+                    _time.sleep(wait_motion)
+                    _QApplication.processEvents()
+
+                if (t_curr - t_start) > move_timeout:
+                    self.stop_motor()
+                    msg = 'Homing timeout - stopping motor.'
+                    _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Homing failed.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+
+        # re-enable move and homing buttons
+        self.ui.pbt_move_motor.setEnabled(True)
+        self.ui.pbt_homing.setEnabled(True)
+
+        return
+
+    def load(self):
+        """Load configuration to set parameters."""
+        try:
+#            rbt_example_var = 'rbt_' + self.config.example_var
+#            rbt = getattr(self.ui, rbt_example_var)
+#            rbt.setChecked(True)
+            super().load()
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+
+    def read_hall(self):
+        try:
+            if not _multimeter.connected:
+                msg = 'Multimeter not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            # interval to wait after command
+            wait = _utils.WAIT_MULTIMETER
+
+            # configure multimeter and read measurement
+            _multimeter.inst.write(b':MEAS:VOLT:DC? DEF,DEF\r\n')
+            _time.sleep(wait)
+            reading = _multimeter.inst.readline().decode('utf-8')
+            reading = reading.replace('\r\n','')
+
+            self.ui.le_hall_sensor_voltage.setText(reading)
+
+        except Exception:
+            msg = 'Failed to read hall sensor.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+#    def prepare_measurement(self):
+#        if not self.configure_block_measurement():
+#            return False
+#
+#        # get list of duplicate entries
+#        undulator = self.global_config.undulator_name
+#        cassette = self.global_config.cassette_name
+#        block = self.global_config.block_number
+#        elem_list = self.access_measurement_data.db_search_collection(
+#            fields=['undulator_name', 'cassette_name', 'block_number'
+#            ],
+#            filters=[undulator, cassette, block
+#            ]
+#        )
+#
+#        # do not accept duplicate entries
+#        if len(elem_list) != 0:
+#            msg = 'Block already saved in DB for this undulator and cassette.'
+#            _QMessageBox.information(
+#                self, 'Measurement', msg, _QMessageBox.Ok)
+#            return False
+#
+#        _QApplication.processEvents()
+#
+#        if not self.save_block_data():
+#            return False
+#
+#        msg = 'Block measurement stored.'
+#        _QMessageBox.information(
+#            self, 'Measurement', msg, _QMessageBox.Ok)
+#        return True
+
+    def save_block_data(self):
+        try:
+            if self.database_name is None:
+                msg = 'Invalid database filename.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            self.block_data.db_update_database(
+                self.database_name,
+                mongo=self.mongo, server=self.server)
+            self.block_data.db_save()
+
+            return True
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to save measurement to database.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def update_configuration(self):
+        """Update configuration parameters."""
+        try:
+            self.config.advanced_options_id = self.advanced_options.idn
+            return super().update_configuration(clear=False)
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            self.config.clear()
+            return False

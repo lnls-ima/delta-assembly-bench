@@ -23,6 +23,10 @@ __credits__     = [
     ('tab.png', 'Tab Icon (from https://materialdesignicons.com/)'),
     ('compass-outline.png', 'Compass Outline Icon (from https://materialdesignicons.com/)'),
     ('chevron-triple-right.png', 'Chevron Triple Right Icon (from https://materialdesignicons.com/)'),
+    ('arrow-up-bold-outline.png', 'Arrow Up Bold Outline Icon (from https://materialdesignicons.com/)'),
+    ('arrow-down-bold-outline.png', 'Arrow Down Bold Outline Icon (from https://materialdesignicons.com/)'),
+    ('arrow-left-bold-outline.png', 'Arrow Left Bold Outline Icon (from https://materialdesignicons.com/)'),
+    ('arrow-right-bold-outline.png', 'Arrow Right Bold Outline Icon (from https://materialdesignicons.com/)'),
     ]
 
 

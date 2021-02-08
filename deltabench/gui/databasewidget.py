@@ -32,7 +32,10 @@ import deltabench.data as _data
 _ConnectionConfig = _data.configuration.ConnectionConfig
 _AdvancedOptions = _data.configuration.AdvancedOptions
 _MeasurementConfig = _data.configuration.MeasurementConfig
+_ScanConfig = _data.configuration.ScanConfig
 _MeasurementData = _data.measurement.MeasurementData
+_BlockData = _data.measurement.BlockData
+_HallWaveformData = _data.measurement.HallWaveformData
 
 
 class DatabaseWidget(_QWidget):
@@ -40,8 +43,11 @@ class DatabaseWidget(_QWidget):
 
     _connection_table_name = _ConnectionConfig.collection_name
     _advanced_options_table_name = _AdvancedOptions.collection_name
-    _configuration_table_name = _MeasurementConfig.collection_name
+    _meas_configuration_table_name = _MeasurementConfig.collection_name
+    _scan_configuration_table_name = _ScanConfig.collection_name
     _measurement_table_name = _MeasurementData.collection_name
+    _block_table_name = _BlockData.collection_name
+    _hall_table_name = _HallWaveformData.collection_name
 
     _hidden_columns = []
 
@@ -56,8 +62,11 @@ class DatabaseWidget(_QWidget):
         self._table_object_dict = {
             self._connection_table_name: _ConnectionConfig,
             self._advanced_options_table_name: _AdvancedOptions,
-            self._configuration_table_name: _MeasurementConfig,
+            self._meas_configuration_table_name: _MeasurementConfig,
+            self._scan_configuration_table_name: _ScanConfig,
             self._measurement_table_name: _MeasurementData,
+            self._block_table_name: _BlockData,
+            self._hall_table_name: _HallWaveformData,
             }
 
         self._table_page_dict = {}
@@ -133,10 +142,10 @@ class DatabaseWidget(_QWidget):
 
             try:
                 attrs = [
-                    'date', 'hour', 'undulator_name', 'cassette_name',
-                    'block_name', 'hall_sensor_voltage', 'display_position_1',
-                    'display_position_2', 'linear_encoder_position',
-                    'comments',
+                    'date', 'hour', 'measurement_name', 'undulator_name',
+                    'cassette_name', 'block_number', 'x_position',
+                    'x_position_error', 'z_position', 'z_position_error',
+                    'encoder_position'
                     ]
                 df = _pd.DataFrame(columns=attrs)
                 for i in range(nr_idns):

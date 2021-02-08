@@ -33,6 +33,10 @@ ADVANCED_OPTIONS_ENABLED = True
 MONGO = False
 SERVER = 'localhost'
 UPDATE_DISPLAY_INTERVAL = 0.5  # [s]
+WAIT_MOTION = 0.2
+WAIT_PNEUMATIC = 1.0
+WAIT_DRIVER = 0.1
+WAIT_MULTIMETER = 0.15
 
 BASEPATH = _os.path.dirname(
     _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
