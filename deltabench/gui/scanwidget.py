@@ -8,6 +8,7 @@ import time as _time
 import math
 import warnings as _warnings
 import traceback as _traceback
+import pyqtgraph as _pyqtgraph
 from qtpy.QtWidgets import (
     QWidget as _QWidget,
     QMessageBox as _QMessageBox,
@@ -43,13 +44,6 @@ class ScanWidget(_ConfigurationWidget):
         config = _configuration.ScanConfig()
         super().__init__(uifile, config, parent=parent)
 
-        # create objects to use database functions
-#        self.access_measurement_data = _database.DatabaseCollection(
-#            database_name=self.database_name,
-#            collection_name=_measurement.MeasurementData.collection_name,
-#            mongo=self.mongo,
-#            server=self.server
-#        )
         self.access_block_data = _database.DatabaseCollection(
             database_name=self.database_name,
             collection_name=_measurement.BlockData.collection_name,
@@ -99,25 +93,60 @@ class ScanWidget(_ConfigurationWidget):
         self.stop_sent = False
 
         # lists of plots
-        self.graph_probe_x_plots = []
-        self.graph_probe_z_plots = []
+        self.graph_x_probe_plots = []
+        self.graph_z_probe_plots = []
         self.graph_hall_plots = []
 
-        # temporary lists of data
+        # lists of data for plots
+        self.x_axis_x_probe = []
+        self.y_axis_x_probe = []
+        self.y_axis_x_probe_error = []
+        self.x_axis_z_probe = []
+        self.y_axis_z_probe = []
+        self.y_axis_z_probe_error = []
+        self.x_axis_hall = []
+        self.y_axis_hall = []
+
+        # lists of data to save
         self.hall_sample_list = []
         self.hall_sample_index_list = []
         self.encoder_sample_list_for_hall = []
-        self.probe_x_sample_list = []
-        self.probe_x_sample_error_list = []
-        self.probe_z_sample_list = []
-        self.probe_z_sample_error_list = []
+        self.x_probe_sample_list = []
+        self.x_probe_sample_error_list = []
+        self.z_probe_sample_list = []
+        self.z_probe_sample_error_list = []
         self.block_number_list = []
         self.encoder_sample_list_for_probes = []
         self.block_direction_list = []
 
-#        self.measurement_data = _measurement.MeasurementData()
+        # object to store DB entries before saving
         self.block_data = _measurement.BlockData()
         self.hall_data = _measurement.HallWaveformData()
+
+        # create legend objects
+        self.legend_x_probe = _pyqtgraph.LegendItem(offset=(70, 30))
+        self.legend_x_probe.setParentItem(
+            self.ui.pw_x_probe.graphicsItem()
+        )
+        self.legend_x_probe.setAutoFillBackground(1)
+
+        self.legend_z_probe = _pyqtgraph.LegendItem(offset=(70, 30))
+        self.legend_z_probe.setParentItem(
+            self.ui.pw_z_probe.graphicsItem()
+        )
+        self.legend_z_probe.setAutoFillBackground(1)
+
+        self.legend_hall = _pyqtgraph.LegendItem(offset=(70, 30))
+        self.legend_hall.setParentItem(
+            self.ui.pw_hall.graphicsItem()
+        )
+        self.legend_hall.setAutoFillBackground(1)
+
+        self.colors = (
+            (0, 0, 255), (255, 0, 0), (0, 0, 0), (0, 255, 0),
+            (204, 0, 204), (153, 153, 0), (204, 102, 0),
+            (76, 0, 153)
+        )
 
     @property
     def advanced_options(self):
@@ -263,8 +292,8 @@ class ScanWidget(_ConfigurationWidget):
                     # read position probes
                     readings = _display.read_display(display_model)
                     # store probe measurements
-                    self.probe_x_sample_list.append(readings[0])
-                    self.probe_z_sample_list.append(readings[1])
+                    self.x_probe_sample_list.append(readings[0])
+                    self.z_probe_sample_list.append(readings[1])
                     self.encoder_sample_list_for_probes.append(last_enc_pos)
                     # deactivate pneumatic actuator
 
@@ -302,17 +331,24 @@ class ScanWidget(_ConfigurationWidget):
             # calculate error for each sample
             x_ref = 0
             y_ref = 0
-            for x_sample in self.probe_x_sample_list:
-                self.probe_x_sample_error_list.append(x_sample - x_ref)
+            for x_sample in self.x_probe_sample_list:
+                self.x_probe_sample_error_list.append(x_sample - x_ref)
             for y_sample in probe_y_sample_list:
                 self.probe_y_sample_error_list.append(y_sample - y_ref)
 
-            self.update_graphs(
+            self.update_graph_x_probe(
                 self.block_number_list,
-                self.probe_x_sample_list,
-                self.probe_x_sample_error_list,
-                self.probe_z_sample_list,
-                self.probe_z_sample_error_list,
+                self.x_probe_sample_list,
+                self.x_probe_sample_error_list
+            )
+
+            self.update_graph_z_probe(
+                self.block_number_list,
+                self.z_probe_sample_list,
+                self.z_probe_sample_error_list
+            )
+
+            self.update_graph_hall(
                 self.hall_sample_index_list,
                 self.hall_sample_list
             )
@@ -399,43 +435,72 @@ class ScanWidget(_ConfigurationWidget):
 
         return magnet_direction
 
-    def clear_probe_x_graph(self):
+    def clear_x_probe_graph_only(self):
         """ Clear data from ui probe x graph """
         self.ui.pw_x_probe.plotItem.curves.clear()
-        if self.ui.pw_x_probe.getPlotItem().legend is not None:
-            self.ui.pw_x_probe.getPlotItem().legend.items = []
+        self.legend_x_probe.clear()
         self.ui.pw_x_probe.clear()
 
-        self.graph_probe_x_plots = []
+        # list of plots
+        self.graph_x_probe_plots = []
         return True
 
-    def clear_probe_z_graph(self):
+    def clear_x_probe_graph_and_data(self):
+        """ Clear data from ui probe x graph and global data """
+        self.clear_x_probe_graph_only()
+
+        # lists of data for plots
+        self.x_axis_x_probe = []
+        self.y_axis_x_probe = []
+        self.y_axis_x_probe_error = []
+        return True
+
+    def clear_z_probe_graph_only(self):
         """ Clear data from ui probe z graph """
         self.ui.pw_z_probe.plotItem.curves.clear()
-        if self.ui.pw_z_probe.getPlotItem().legend is not None:
-            self.ui.pw_z_probe.getPlotItem().legend.items = []
+        self.legend_z_probe.clear()
         self.ui.pw_z_probe.clear()
 
-        self.graph_probe_z_plots = []
+        # list of plots
+        self.graph_z_probe_plots = []
         return True
 
-    def clear_hall_graph(self):
+    def clear_z_probe_graph_and_data(self):
+        """ Clear data from ui probe z graph and global data """
+        self.clear_z_probe_graph_only()
+
+        # lists of data for plots
+        self.x_axis_z_probe = []
+        self.y_axis_z_probe = []
+        self.y_axis_z_probe_error = []
+        return True
+
+
+    def clear_hall_graph_only(self):
         """ Clear data from ui hall graph """
         self.ui.pw_hall.plotItem.curves.clear()
-        if self.ui.pw_hall.getPlotItem().legend is not None:
-            self.ui.pw_hall.getPlotItem().legend.items = []
+        self.legend_hall.clear()
         self.ui.pw_hall.clear()
 
+        # list of plots
         self.graph_hall_plots = []
         return True
 
-    def clear_graphs(self):
-        """ Clear data from ui graphs """
-        # clear data
-        self.clear_probe_x_graph()
-        self.clear_probe_z_graph()
-        self.clear_hall_graph()
+    def clear_hall_graph_and_data(self):
+        """ Clear data from ui hall graph and global data """
+        self.clear_hall_graph_only()
 
+        # lists of data for plots
+        self.x_axis_hall = []
+        self.y_axis_hall = []
+        return True
+
+    def clear_graphs(self):
+        """ Clear data from ui graphs and their global data """
+        # clear data
+        self.clear_x_probe_graph_and_data()
+        self.clear_z_probe_graph_and_data()
+        self.clear_hall_graph_and_data()
         return True
 
     def clear(self):
@@ -445,10 +510,10 @@ class ScanWidget(_ConfigurationWidget):
         self.hall_sample_list = []
         self.hall_sample_index_list = []
         self.encoder_sample_list_for_hall = []
-        self.probe_x_sample_list = []
-        self.probe_x_sample_error_list = []
-        self.probe_z_sample_list = []
-        self.probe_z_sample_error_list = []
+        self.x_probe_sample_list = []
+        self.x_probe_sample_error_list = []
+        self.z_probe_sample_list = []
+        self.z_probe_sample_error_list = []
         self.block_number_list = []
         self.block_direction_list = []
         self.encoder_sample_list_for_probes = []
@@ -478,108 +543,171 @@ class ScanWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             return False
 
-    def update_graphs(self, x_axis_probes_xz, y_axis_probe_x,
-                      y_axis_probe_x_error, y_axis_probe_z,
-                      y_axis_probe_z_error, x_axis_hall, y_axis_hall):
+    def update_graphs_lines_visibility(self):
+        """ Update graphs without changing data """
+        self.update_graph_x_probe([],[],[])
+        self.update_graph_z_probe([],[],[])
+        self.update_graph_hall([],[])
+        return True
+
+    def update_graph_x_probe(self, x_axis_x_probe, y_axis_x_probe,
+                              y_axis_x_probe_error):
         """ Update plots with the data provided. If y axis data, besides
             error data, is empty, keep the associated plot as is """
         try:
-            nr_plots = 1
-            update_probe_x = False
-            update_probe_z = False
-            update_hall = False
-            colors = (
-                (0, 0, 255), (255, 0, 0), (0, 0, 0), (0, 255, 0),
-                (204, 0, 204), (153, 153, 0), (204, 102, 0),
-                (76, 0, 153)
-            )
-            # find out what should be updated
-            if len(y_axis_probe_x) > 0:
-                update_probe_x = True
-            if len(y_axis_probe_z) > 0:
-                update_probe_z = True
-            if len(y_axis_hall) > 0:
-                update_hall = True
-            # if nothing to do, return
-            if (not update_probe_x and not update_probe_z
-               and not update_hall):
-                return True
+            # update global plot data
+            if len(y_axis_x_probe) > 0:
+                # clear graph and data
+                self.clear_x_probe_graph_and_data()
+                self.x_axis_x_probe = x_axis_x_probe
+                self.y_axis_x_probe = y_axis_x_probe
+                self.y_axis_x_probe_error = y_axis_x_probe_error
+            else:
+                self.clear_x_probe_graph_only()
+            # check if should plot data
+            if self.ui.chb_show_samples.isChecked():
+                self.graph_x_probe_plots.append(
+                    self.ui.pw_x_probe.plotItem.plot(
+                        _np.array([]),
+                        _np.array([]),
+                        pen=self.colors[0],
+                        symbol='o',
+                        symbolPen=self.colors[0],
+                        symbolSize=4,
+                        symbolBrush=self.colors[0],
+                        name='x')
+                )
+                self.graph_x_probe_plots[-1].setData(
+                    self.x_axis_x_probe, self.y_axis_x_probe
+                )
+                self.legend_x_probe.addItem(
+                    self.graph_x_probe_plots[-1], 'x'
+                )
             # check if should plot error
             if self.ui.chb_show_error.isChecked():
-                nr_plots = nr_plots + 1
-            # clear graphs to update
-            if update_probe_x:
-                self.clear_probe_x_graph()
-            if update_probe_z:
-                self.clear_probe_z_graph()
-            if update_hall:
-                self.clear_hall_graph()
-            # update graph lines and data
-            if update_probe_x:
-                name = ['x', 'error']
-                for i in range(0, nr_plots):
-                    self.graph_probe_x_plots.append(
-                        self.ui.pw_x_probe.plotItem.plot(
-                            _np.array([]),
-                            _np.array([]),
-                            pen=colors[i],
-                            symbol='o',
-                            symbolPen=colors[i],
-                            symbolSize=4,
-                            symbolBrush=colors[i],
-                            name=name[i]))
-                self.graph_probe_x_plots[0].setData(
-                    x_axis_probes_xz, y_axis_probe_x
+                self.graph_x_probe_plots.append(
+                    self.ui.pw_x_probe.plotItem.plot(
+                        _np.array([]),
+                        _np.array([]),
+                        pen=self.colors[1],
+                        symbol='o',
+                        symbolPen=self.colors[1],
+                        symbolSize=4,
+                        symbolBrush=self.colors[1],
+                        name='error')
                 )
-                if nr_plots > 1:
-                    self.graph_probe_x_plots[1].setData(
-                        x_axis_probes_xz, y_axis_probe_x_error
+                self.graph_x_probe_plots[-1].setData(
+                    self.x_axis_x_probe, self.y_axis_x_probe_error
                 )
-                self.ui.pw_x_probe.setLabel('bottom', 'Block index')
-                self.ui.pw_x_probe.setLabel('left', 'Probe x [mm]')
-                self.ui.pw_x_probe.showGrid(x=True, y=True)
-            if update_probe_z:
-                name = ['z', 'error']
-                for i in range(0, nr_plots):
-                    self.graph_probe_z_plots.append(
-                        self.ui.pw_z_probe.plotItem.plot(
-                            _np.array([]),
-                            _np.array([]),
-                            pen=colors[i],
-                            symbol='o',
-                            symbolPen=colors[i],
-                            symbolSize=4,
-                            symbolBrush=colors[i],
-                            name=name[i]))
-                self.graph_probe_z_plots[0].setData(
-                    x_axis_probes_xz, y_axis_probe_z
+                self.legend_x_probe.addItem(
+                    self.graph_x_probe_plots[-1], 'error'
                 )
-                if nr_plots > 1:
-                    self.graph_probe_z_plots[1].setData(
-                        x_axis_probes_xz, y_axis_probe_z_error
+            self.ui.pw_x_probe.setLabel('bottom', 'Block index')
+            self.ui.pw_x_probe.setLabel('left', 'Probe x [mm]')
+            self.ui.pw_x_probe.showGrid(x=True, y=True)
+        except Exception:
+            msg = 'Failed to update x probe graph.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+        return True
+
+    def update_graph_z_probe(self, x_axis_z_probe, y_axis_z_probe,
+                              y_axis_z_probe_error):
+        """ Update plots with the data provided. If y axis data, besides
+            error data, is empty, keep the associated plot as is """
+        try:
+            # update global plot data
+            if len(y_axis_z_probe) > 0:
+                # clear graph and data
+                self.clear_z_probe_graph_and_data()
+                self.x_axis_z_probe = x_axis_z_probe
+                self.y_axis_z_probe = y_axis_z_probe
+                self.y_axis_z_probe_error = y_axis_z_probe_error
+            else:
+                self.clear_z_probe_graph_only()
+            # check if should plot data
+            if self.ui.chb_show_samples.isChecked():
+                self.graph_z_probe_plots.append(
+                    self.ui.pw_z_probe.plotItem.plot(
+                        _np.array([]),
+                        _np.array([]),
+                        pen=self.colors[0],
+                        symbol='o',
+                        symbolPen=self.colors[0],
+                        symbolSize=4,
+                        symbolBrush=self.colors[0],
+                        name='z')
                 )
-                self.ui.pw_z_probe.setLabel('bottom', 'Block index')
-                self.ui.pw_z_probe.setLabel('left', 'Probe z [mm]')
-                self.ui.pw_z_probe.showGrid(x=True, y=True)
-            if update_hall:
+                self.graph_z_probe_plots[-1].setData(
+                    self.x_axis_z_probe, self.y_axis_z_probe
+                )
+                self.legend_z_probe.addItem(
+                    self.graph_z_probe_plots[-1], 'z'
+                )
+            # check if should plot error
+            if self.ui.chb_show_error.isChecked():
+                self.graph_z_probe_plots.append(
+                    self.ui.pw_z_probe.plotItem.plot(
+                        _np.array([]),
+                        _np.array([]),
+                        pen=self.colors[1],
+                        symbol='o',
+                        symbolPen=self.colors[1],
+                        symbolSize=4,
+                        symbolBrush=self.colors[1],
+                        name='error')
+                )
+                self.graph_z_probe_plots[-1].setData(
+                    self.x_axis_z_probe, self.y_axis_z_probe_error
+                )
+                self.legend_z_probe.addItem(
+                    self.graph_z_probe_plots[-1], 'error'
+                )
+            self.ui.pw_z_probe.setLabel('bottom', 'Block index')
+            self.ui.pw_z_probe.setLabel('left', 'Probe z [mm]')
+            self.ui.pw_z_probe.showGrid(x=True, y=True)
+        except Exception:
+            msg = 'Failed to update z probe graph.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _traceback.print_exc(file=_sys.stdout)
+        return True
+
+    def update_graph_hall(self, x_axis_hall, y_axis_hall):
+        """ Update plots with the data provided. If y axis data
+            is empty, keep the associated plot as is """
+        try:
+            # update global plot data
+            if len(y_axis_hall) > 0:
+                # clear graph and data
+                self.clear_hall_graph_and_data()
+                self.x_axis_hall = x_axis_hall
+                self.y_axis_hall = y_axis_hall
+            else:
+                self.clear_hall_graph_only()
+            # check if should plot data
+            if self.ui.chb_show_samples.isChecked():
                 self.graph_hall_plots.append(
                     self.ui.pw_hall.plotItem.plot(
                         _np.array([]),
                         _np.array([]),
-                        pen=colors[0],
+                        pen=self.colors[0],
                         symbol='o',
-                        symbolPen=colors[0],
+                        symbolPen=self.colors[0],
                         symbolSize=4,
-                        symbolBrush=colors[0],
-                        name='hall'))
-                self.graph_hall_plots[0].setData(
-                    x_axis_hall, y_axis_hall
+                        symbolBrush=self.colors[0],
+                        name='hall')
                 )
-                self.ui.pw_hall.setLabel('bottom', 'Encoder [mm]')
-                self.ui.pw_hall.setLabel('left', 'Hall [volts]')
-                self.ui.pw_hall.showGrid(x=True, y=True)
+                self.graph_hall_plots[-1].setData(
+                    self.x_axis_hall, self.y_axis_hall
+                )
+                self.legend_hall.addItem(
+                    self.graph_hall_plots[-1], 'hall'
+                )
+            self.ui.pw_hall.setLabel('bottom', 'Encoder Position')
+            self.ui.pw_hall.setLabel('left', 'Hall reading [V]')
+            self.ui.pw_hall.showGrid(x=True, y=True)
         except Exception:
-            msg = 'Failed to update graphs.'
+            msg = 'Failed to update hall graph.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
         return True
@@ -710,63 +838,6 @@ class ScanWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             return False
 
-#    def configure_block_measurement(self):
-#        self.clear_block_data()
-#
-#        try:
-#
-#            if not self.update_configuration():
-#                return False
-#
-#            if not self.save_db():
-#                return False
-#
-#            self.global_config = self.config.copy()
-#
-#            self.measurement_data.undulator_name = (
-#                self.global_config.undulator_name
-#            )
-#            self.measurement_data.cassette_name = (
-#                self.global_config.cassette_name
-#            )
-#            self.measurement_data.block_number = (
-#                self.global_config.block_number
-#            )
-#            self.measurement_data.comments = (
-#                self.global_config.comments
-#            )
-#            self.measurement_data.advanced_options_id = (
-#                self.advanced_options.idn
-#            )
-#            self.measurement_data.configuration_id = (
-#                self.global_config.idn
-#            )
-#            self.measurement_data.hall_sensor_voltage = (
-#                float(self.ui.le_hall_sensor_voltage.text())
-#            )
-#            self.measurement_data.x_position = (
-#                float(self.ui.le_x_position.text())
-#            )
-#            self.measurement_data.z_position = (
-#                float(self.ui.le_z_position.text())
-#            )
-#            self.measurement_data.linear_encoder_position = (
-#                float(self.ui.lcd_linear_encoder_position.value())
-#            )
-#
-#            if not self.advanced_options.valid_data():
-#                msg = 'Invalid advanced options.'
-#                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-#                return False
-#
-#            return True
-#
-#        except Exception:
-#            msg = 'Measurement configuration failed.'
-#            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-#            _traceback.print_exc(file=_sys.stdout)
-#            return False
-
     def connect_signal_slots(self):
         """Create signal/slot connections."""
         super().connect_signal_slots()
@@ -776,6 +847,8 @@ class ScanWidget(_ConfigurationWidget):
         self.ui.pbt_save_data_db.clicked.connect(self.save_data_to_db)
         self.ui.sb_hall_samples_per_block.valueChanged.connect(self.hall_samples_even_only)
         self.ui.pbt_clear_all.clicked.connect(self.clear)
+        self.ui.chb_show_error.stateChanged.connect(self.update_graphs_lines_visibility)
+        self.ui.chb_show_samples.stateChanged.connect(self.update_graphs_lines_visibility)
         self.ui.pbt_test_graph.clicked.connect(self.test_graph)
 
     def test_graph(self):
@@ -803,21 +876,28 @@ class ScanWidget(_ConfigurationWidget):
             1.7, 1.81, 1.9, 2.001, 2.1, 2.2, 2.32, 2.4,
             2.5, 2.64, 2.7, 2.8, 2.9, 3.0, 3.1, 3.2
         ]
-        self.probe_x_sample_list = [10, 20, 35, 44, 55, 60, 77, 80]
-        self.probe_x_sample_error_list = [0.6, 0.5, 0.7, 0.2, 0.1, 0.1, 0.3, 0.4]
-        self.probe_z_sample_list = [5, 6, 7, 6.5, 7.2, 6.0, 5.5, 5.4]
-        self.probe_z_sample_error_list = [0.1, 0.2, 0.1, 0.35, 0.15, 0.1, 0.12, 0.9]
+        self.x_probe_sample_list = [10, 20, 35, 44, 55, 60, 77, 80]
+        self.x_probe_sample_error_list = [0.6, 0.5, 0.7, 0.2, 0.1, 0.1, 0.3, 0.4]
+        self.z_probe_sample_list = [5, 6, 7, 6.5, 7.2, 6.0, 5.5, 5.4]
+        self.z_probe_sample_error_list = [0.1, 0.2, 0.1, 0.35, 0.15, 0.1, 0.12, 0.9]
         self.block_number_list = [1, 2, 3, 4, 5, 6, 7, 8]
         self.encoder_sample_list_for_probes = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
         self.block_direction_list = [1, 2, 3, 4, 3, 2, 1, 2]
 
-        self.update_graphs(self.block_number_list,
-                      self.probe_x_sample_list,
-                      self.probe_x_sample_error_list,
-                      self.probe_z_sample_list,
-                      self.probe_z_sample_error_list,
+        self.update_graph_x_probe(
+                      self.block_number_list,
+                      self.x_probe_sample_list,
+                      self.x_probe_sample_error_list
+        )
+        self.update_graph_z_probe(
+                      self.block_number_list,
+                      self.z_probe_sample_list,
+                      self.z_probe_sample_error_list
+        )
+        self.update_graph_hall(
                       self.encoder_sample_list_for_hall,
-                      self.hall_sample_list)
+                      self.hall_sample_list
+        )
         return True
 
     @property
@@ -833,10 +913,10 @@ class ScanWidget(_ConfigurationWidget):
         # arrays to hold data
         block_numbers = []
         encoder_data_probe = []
-        probe_x_data = []
-        probe_x_error_data = []
-        probe_z_data = []
-        probe_z_error_data = []
+        x_probe_data = []
+        x_probe_error_data = []
+        z_probe_data = []
+        z_probe_error_data = []
         encoder_data_hall = []
         hall_data = []
         hall_data_index = []
@@ -845,10 +925,6 @@ class ScanWidget(_ConfigurationWidget):
         measurement = self.ui.le_measurement_name.text()
         undulator = self.ui.le_undulator_name.text()
         cassette = self.ui.le_cassette_name.text()
-
-        print('measurement='+measurement)
-        print('undulator='+undulator)
-        print('cassette='+cassette)
 
         # get scan id from DB
         scan_list = self.access_scan_data.db_search_collection(
@@ -881,13 +957,10 @@ class ScanWidget(_ConfigurationWidget):
                 hall_data.append(elem['hall_sensor_voltage'])
                 hall_data_index.append(elem['reading_index'])
             # plot hall data
-            self.update_graphs([],
-                               [],
-                               [],
-                               [],
-                               [],
+            self.update_graph_hall(
                                hall_data_index,
-                               hall_data)
+                               hall_data
+            )
         # read position probe data from DB
         elem_list = self.access_block_data.db_search_collection(
             fields=['scan_id', 'block_number', 'x_position',
@@ -904,18 +977,21 @@ class ScanWidget(_ConfigurationWidget):
                 # append to data to show
                 block_numbers.append(elem['block_number'])
                 encoder_data_probe.append(elem['encoder_position'])
-                probe_x_data.append(elem['x_position'])
-                probe_x_error_data.append(elem['x_position_error'])
-                probe_z_data.append(elem['z_position'])
-                probe_z_error_data.append(elem['z_position_error'])
+                x_probe_data.append(elem['x_position'])
+                x_probe_error_data.append(elem['x_position_error'])
+                z_probe_data.append(elem['z_position'])
+                z_probe_error_data.append(elem['z_position_error'])
             # plot position probe data
-            self.update_graphs(block_numbers,
-                               probe_x_data,
-                               probe_x_error_data,
-                               probe_z_data,
-                               probe_z_error_data,
-                               [],
-                               [])
+            self.update_graph_x_probe(
+                               block_numbers,
+                               x_probe_data,
+                               x_probe_error_data
+            )
+            self.update_graph_z_probe(
+                               block_numbers,
+                               z_probe_data,
+                               z_probe_error_data
+            )
         return True
 
     def save_data_to_db(self):
@@ -949,10 +1025,10 @@ class ScanWidget(_ConfigurationWidget):
                 self.block_data.scan_id = self.global_config.idn
                 self.block_data.block_number = self.block_number_list[i]
                 self.block_data.block_direction = self.block_direction_list[i]
-                self.block_data.x_position = self.probe_x_sample_list[i]
-                self.block_data.x_position_error = self.probe_x_sample_error_list[i]
-                self.block_data.z_position = self.probe_z_sample_list[i]
-                self.block_data.z_position_error = self.probe_z_sample_error_list[i]
+                self.block_data.x_position = self.x_probe_sample_list[i]
+                self.block_data.x_position_error = self.x_probe_sample_error_list[i]
+                self.block_data.z_position = self.z_probe_sample_list[i]
+                self.block_data.z_position_error = self.z_probe_sample_error_list[i]
                 self.block_data.encoder_position = self.encoder_sample_list_for_probes[i]
                 self.block_data.db_update_database(
                     self.database_name, mongo=self.mongo,
@@ -1102,58 +1178,26 @@ class ScanWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             return False
 
-#    def prepare_measurement(self):
-#        if not self.configure_block_measurement():
+#    def save_block_data(self):
+#        try:
+#            if self.database_name is None:
+#                msg = 'Invalid database filename.'
+#                _QMessageBox.critical(
+#                    self, 'Failure', msg, _QMessageBox.Ok)
+#                return False
+#
+#            self.block_data.db_update_database(
+#                self.database_name,
+#                mongo=self.mongo, server=self.server)
+#            self.block_data.db_save()
+#
+#            return True
+#
+#        except Exception:
+#            _traceback.print_exc(file=_sys.stdout)
+#            msg = 'Failed to save measurement to database.'
+#            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
 #            return False
-#
-#        # get list of duplicate entries
-#        undulator = self.global_config.undulator_name
-#        cassette = self.global_config.cassette_name
-#        block = self.global_config.block_number
-#        elem_list = self.access_measurement_data.db_search_collection(
-#            fields=['undulator_name', 'cassette_name', 'block_number'
-#            ],
-#            filters=[undulator, cassette, block
-#            ]
-#        )
-#
-#        # do not accept duplicate entries
-#        if len(elem_list) != 0:
-#            msg = 'Block already saved in DB for this undulator and cassette.'
-#            _QMessageBox.information(
-#                self, 'Measurement', msg, _QMessageBox.Ok)
-#            return False
-#
-#        _QApplication.processEvents()
-#
-#        if not self.save_block_data():
-#            return False
-#
-#        msg = 'Block measurement stored.'
-#        _QMessageBox.information(
-#            self, 'Measurement', msg, _QMessageBox.Ok)
-#        return True
-
-    def save_block_data(self):
-        try:
-            if self.database_name is None:
-                msg = 'Invalid database filename.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
-                return False
-
-            self.block_data.db_update_database(
-                self.database_name,
-                mongo=self.mongo, server=self.server)
-            self.block_data.db_save()
-
-            return True
-
-        except Exception:
-            _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to save measurement to database.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
 
     def update_configuration(self):
         """Update configuration parameters."""

@@ -166,7 +166,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>../../resources/img/refresh.svg</normaloff>../../resources/img/refresh.svg</iconset>
+                   <normaloff>../../../../../../../resources/img/refresh.svg</normaloff>../../../../../../../resources/img/refresh.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -207,7 +207,7 @@
                </property>
                <property name="icon">
                 <iconset>
-                 <normaloff>../../resources/img/database_plus.svg</normaloff>../../resources/img/database_plus.svg</iconset>
+                 <normaloff>../../../../../../../resources/img/database_plus.svg</normaloff>../../../../../../../resources/img/database_plus.svg</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -278,7 +278,7 @@
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../../resources/img/database.svg</normaloff>../../resources/img/database.svg</iconset>
+                <normaloff>../../../../../../../resources/img/database.svg</normaloff>../../../../../../../resources/img/database.svg</iconset>
               </property>
               <property name="iconSize">
                <size>
@@ -325,7 +325,7 @@
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../../resources/img/database_plus.svg</normaloff>../../resources/img/database_plus.svg</iconset>
+                <normaloff>../../../../../../../resources/img/database_plus.svg</normaloff>../../../../../../../resources/img/database_plus.svg</iconset>
               </property>
               <property name="iconSize">
                <size>
@@ -389,6 +389,31 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="chb_show_samples">
+            <property name="maximumSize">
+             <size>
+              <width>150</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>Show error in plots</string>
+            </property>
+            <property name="text">
+             <string>Show Samples</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pbt_clear_all">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -422,7 +447,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>../../resources/img/clear.svg</normaloff>../../resources/img/clear.svg</iconset>
+              <normaloff>../../../../../../../resources/img/clear.svg</normaloff>../../../../../../../resources/img/clear.svg</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -459,7 +484,7 @@
         <item row="6" column="0" colspan="2">
          <widget class="QLabel" name="label_4">
           <property name="text">
-           <string>Hall Probe</string>
+           <string>Hall</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -570,7 +595,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>../../resources/img/stop.svg</normaloff>../../resources/img/stop.svg</iconset>
+              <normaloff>../../../../../../../resources/img/stop.svg</normaloff>../../../../../../../resources/img/stop.svg</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -611,7 +636,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>../../resources/img/move.svg</normaloff>../../resources/img/move.svg</iconset>
+              <normaloff>../../../../../../../resources/img/move.svg</normaloff>../../../../../../../resources/img/move.svg</iconset>
             </property>
             <property name="iconSize">
              <size>
