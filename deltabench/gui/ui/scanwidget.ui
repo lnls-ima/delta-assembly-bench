@@ -166,7 +166,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>../../../../../../../resources/img/refresh.svg</normaloff>../../../../../../../resources/img/refresh.svg</iconset>
+                   <normaloff>../../resources/img/refresh.svg</normaloff>../../resources/img/refresh.svg</iconset>
                  </property>
                  <property name="iconSize">
                   <size>
@@ -207,7 +207,7 @@
                </property>
                <property name="icon">
                 <iconset>
-                 <normaloff>../../../../../../../resources/img/database_plus.svg</normaloff>../../../../../../../resources/img/database_plus.svg</iconset>
+                 <normaloff>../../resources/img/database_plus.svg</normaloff>../../resources/img/database_plus.svg</iconset>
                </property>
                <property name="iconSize">
                 <size>
@@ -278,7 +278,7 @@
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../../../../../../../resources/img/database.svg</normaloff>../../../../../../../resources/img/database.svg</iconset>
+                <normaloff>../../resources/img/database.svg</normaloff>../../resources/img/database.svg</iconset>
               </property>
               <property name="iconSize">
                <size>
@@ -325,7 +325,7 @@
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../../../../../../../resources/img/database_plus.svg</normaloff>../../../../../../../resources/img/database_plus.svg</iconset>
+                <normaloff>../../resources/img/database_plus.svg</normaloff>../../resources/img/database_plus.svg</iconset>
               </property>
               <property name="iconSize">
                <size>
@@ -447,7 +447,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>../../../../../../../resources/img/clear.svg</normaloff>../../../../../../../resources/img/clear.svg</iconset>
+              <normaloff>../../resources/img/clear.svg</normaloff>../../resources/img/clear.svg</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -548,19 +548,6 @@
           <property name="bottomMargin">
            <number>6</number>
           </property>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label">
-            <property name="font">
-             <font>
-              <weight>50</weight>
-              <bold>false</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Measurement Name:</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="9">
            <widget class="QPushButton" name="pbt_stop_scan">
             <property name="enabled">
@@ -595,13 +582,29 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>../../../../../../../resources/img/stop.svg</normaloff>../../../../../../../resources/img/stop.svg</iconset>
+              <normaloff>../../resources/img/stop.svg</normaloff>../../resources/img/stop.svg</iconset>
             </property>
             <property name="iconSize">
              <size>
               <width>24</width>
               <height>24</height>
              </size>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3" colspan="3">
+           <widget class="QLineEdit" name="le_undulator_name">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
             </property>
            </widget>
           </item>
@@ -636,13 +639,29 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>../../../../../../../resources/img/move.svg</normaloff>../../../../../../../resources/img/move.svg</iconset>
+              <normaloff>../../resources/img/move.svg</normaloff>../../resources/img/move.svg</iconset>
             </property>
             <property name="iconSize">
              <size>
               <width>24</width>
               <height>24</height>
              </size>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QLineEdit" name="le_measurement_name">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
             </property>
            </widget>
           </item>
@@ -734,6 +753,22 @@
             </item>
            </layout>
           </item>
+          <item row="1" column="7">
+           <widget class="QLineEdit" name="le_cassette_name">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="6">
            <widget class="QLabel" name="label_5">
             <property name="font">
@@ -744,6 +779,32 @@
             </property>
             <property name="text">
              <string>Cassette Name:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="QLabel" name="label_11">
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Undulator Name:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label">
+            <property name="font">
+             <font>
+              <weight>50</weight>
+              <bold>false</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Measurement Name:</string>
             </property>
            </widget>
           </item>
@@ -784,67 +845,6 @@
               <width>24</width>
               <height>24</height>
              </size>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="3" colspan="3">
-           <widget class="QLineEdit" name="le_undulator_name">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="font">
-             <font>
-              <weight>50</weight>
-              <bold>false</bold>
-             </font>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="7">
-           <widget class="QLineEdit" name="le_cassette_name">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="font">
-             <font>
-              <weight>50</weight>
-              <bold>false</bold>
-             </font>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_11">
-            <property name="font">
-             <font>
-              <weight>50</weight>
-              <bold>false</bold>
-             </font>
-            </property>
-            <property name="text">
-             <string>Undulator Name:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="le_measurement_name">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="font">
-             <font>
-              <weight>50</weight>
-              <bold>false</bold>
-             </font>
             </property>
            </widget>
           </item>

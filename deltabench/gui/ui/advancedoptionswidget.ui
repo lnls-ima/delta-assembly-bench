@@ -415,7 +415,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Move Timeout [mm/rev]:</string>
+         <string>Move Timeout [sec]:</string>
         </property>
        </widget>
       </item>
@@ -605,7 +605,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Hall Threshold:</string>
+         <string>Hall Threshold [V]:</string>
         </property>
        </widget>
       </item>

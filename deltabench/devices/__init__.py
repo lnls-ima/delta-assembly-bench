@@ -2,6 +2,7 @@
 
 import os as _os
 import time as _time
+import numpy as _np
 
 from imautils.devices.utils import configure_logging
 from imautils.devices import HeidenhainLib as _HeidenhainLib

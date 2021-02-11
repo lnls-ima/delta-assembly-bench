@@ -194,12 +194,14 @@ class ScanWidget(_ConfigurationWidget):
 
         # clear previous data and update scan config
         if not self.configure_scan():
-            return False
+            msg = 'Failed to configure scan.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return status
 
-        # interval to wait after motion command
-        wait = _utils.WAIT_MOTION
+        # interval to wait after a display read command
+        wait_display = _utils.WAIT_DISPLAY
         # interval to wait after pneumatic motion start
-        wait_penumatic = _utils.WAIT_PNEUMATIC
+        wait_pneumatic = _utils.WAIT_PNEUMATIC
 
         # disable start scan button
         self.ui.pbt_start_scan.setEnabled(False)
@@ -231,11 +233,11 @@ class ScanWidget(_ConfigurationWidget):
         block_center = hall_step_count / 2
         hall_step = float(block_step / hall_step_count)
         block_count = self.ui.sb_scan_nr_blocks.value()
-        block_list = range(start_block_idx, start_block_idx
-                                            + block_count + 1)
-
+        block_list = range(
+            start_block_idx, start_block_idx + block_count
+        )
         # do homing
-        if not _driver.homing(move_timeout):
+        if not self.homing():
             msg = 'Homing failed - scan aborted.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             # enable start scan button
@@ -257,11 +259,13 @@ class ScanWidget(_ConfigurationWidget):
                     break
                 # move
                 target_position = target_interval + pos*hall_step
-                status_tuple = move_and_retry(target_position, tolerance,
-                                      driver_address, rotation_direction,
-                                      motor_resolution, velocity,
-                                      acceleration, linear_conversion,
-                                      move_timeout)
+                status_tuple = self.move_and_retry(
+                                   target_position, tolerance,
+                                   driver_address, rotation_direction,
+                                   motor_resolution, velocity,
+                                   acceleration, linear_conversion,
+                                   move_timeout
+                )
                 status = status_tuple[0]
                 last_enc_pos = status_tuple[1]
                 if status is False:
@@ -276,10 +280,12 @@ class ScanWidget(_ConfigurationWidget):
                 # when all hall samples were taken for a block
                 # calculate direction of block
                 if pos == hall_step_count - 1:
-                    self.calculate_block_direction(
-                        self.hall_sample_list[
-                            (hall_cnt - hall_step_count):hall_cnt
-                        ]
+                    self.block_direction_list.append(
+                        self.calculate_block_direction(
+                            self.hall_sample_list[
+                                (hall_cnt - hall_step_count):hall_cnt
+                            ]
+                        )
                     )
                 # measure position at block center
                 if pos == block_center:
@@ -290,7 +296,7 @@ class ScanWidget(_ConfigurationWidget):
                     # wait pneumatic motion to finish
                     _time.sleep(wait_pneumatic)
                     # read position probes
-                    readings = _display.read_display(display_model)
+                    readings = _display.read_display(display_model, wait=wait_display)
                     # store probe measurements
                     self.x_probe_sample_list.append(readings[0])
                     self.z_probe_sample_list.append(readings[1])
@@ -309,7 +315,7 @@ class ScanWidget(_ConfigurationWidget):
         # and update graphs
 #        if status is True and not self.stop_sent:
 #            target_position = scan_beginning + block_count * block_step
-#            status_tuple = move_and_retry(target_position, tolerance,
+#            status_tuple = self.move_and_retry(target_position, tolerance,
 #                                      driver_address, rotation_direction,
 #                                      motor_resolution, velocity,
 #                                      acceleration, linear_conversion,
@@ -330,31 +336,29 @@ class ScanWidget(_ConfigurationWidget):
 
             # calculate error for each sample
             x_ref = 0
-            y_ref = 0
+            z_ref = 0
             for x_sample in self.x_probe_sample_list:
                 self.x_probe_sample_error_list.append(x_sample - x_ref)
-            for y_sample in probe_y_sample_list:
-                self.probe_y_sample_error_list.append(y_sample - y_ref)
+            for z_sample in self.z_probe_sample_list:
+                self.z_probe_sample_error_list.append(z_sample - z_ref)
 
             self.update_graph_x_probe(
                 self.block_number_list,
                 self.x_probe_sample_list,
                 self.x_probe_sample_error_list
             )
-
             self.update_graph_z_probe(
                 self.block_number_list,
                 self.z_probe_sample_list,
                 self.z_probe_sample_error_list
             )
-
             self.update_graph_hall(
-                self.hall_sample_index_list,
+                self.encoder_sample_list_for_hall,
                 self.hall_sample_list
             )
 
         # re-enable start scan button
-        self.ui.pbt_start_scan.setEnabled(False)
+        self.ui.pbt_start_scan.setEnabled(True)
 
         if status is False:
             msg = 'Scan failed.'
@@ -525,6 +529,34 @@ class ScanWidget(_ConfigurationWidget):
         self.clear()
 
         try:
+            # search if scan config already exists
+            # if multiple exist, select first one
+            meas = self.ui.le_measurement_name.text()
+            und = self.ui.le_undulator_name.text()
+            cass = self.ui.le_cassette_name.text()
+            scan_id = self.get_scan_id(meas, und, cass)
+            if scan_id != -1:
+                # check if there is a conflict between
+                # the saved config and the parameters for
+                # the new one with same id
+                scan_data = self.access_scan_data.db_search_field('id', scan_id)
+                scan_data = scan_data[0]
+                if not (scan_data['start_reference_position']
+                            == self.ui.sbd_start_reference_position.value()
+                        and scan_data['scan_step_size']
+                            == self.ui.sbd_scan_step_size.value()
+                        and scan_data['hall_samples_per_block']
+                            == self.ui.sb_hall_samples_per_block.value()):
+                    msg = ('Scan config already exists with ID '
+                          +str(scan_id)
+                          +' but parameters do not match.'
+                    )
+                    _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                    return False
+                # load config
+                self.ui.cmb_idn.setCurrentText(str(scan_id))
+                self.load_db()
+
             if not self.update_configuration():
                 return False
             if not self.save_db():
@@ -542,6 +574,21 @@ class ScanWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
+
+    def get_scan_id(self, measurement, undulator, cassette):
+        # get scan id from DB
+        scan_list = self.access_scan_data.db_search_collection(
+            fields=['measurement_name', 'undulator_name', 'cassette_name', 'id'
+            ],
+            filters=[measurement, undulator, cassette, ''
+            ]
+        )
+        if len(scan_list) == 0:
+            return -1
+        scan_list = sorted(scan_list, key=lambda k: k['id'])
+        scan_data = scan_list[0]
+        scan_id = scan_data['id']
+        return scan_id
 
     def update_graphs_lines_visibility(self):
         """ Update graphs without changing data """
@@ -725,7 +772,7 @@ class ScanWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return (False, 0.0)
         # check encoder connection
-        if not _driver.connected:
+        if not _display.connected:
             msg = 'Encoder not connected.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return (False, 0.0)
@@ -733,6 +780,8 @@ class ScanWidget(_ConfigurationWidget):
         # get display info
         display_model = self.advanced_options.display_model
 
+        # interval to wait after display read command
+        wait_display = _utils.WAIT_DISPLAY
         # interval to wait after move
         wait = _utils.WAIT_MOTION
 
@@ -749,9 +798,16 @@ class ScanWidget(_ConfigurationWidget):
             while True:
                 if self.stop_sent:
                     return (False, 0.0)
+                # check timeout
+                if (_time.time() - t_start) > timeout:
+                    break
                 # read encoder
-                readings = _display.read_display(display_model)
+                readings = _display.read_display(display_model, wait=wait_display)
                 encoder_position = readings[2]
+                # skip loop if failed to read encoder
+                if math.isnan(encoder_position):
+                    _time.sleep(wait_display)
+                    continue
                 # update difference
                 diff = target_position - encoder_position
                 steps = math.floor(
@@ -760,8 +816,7 @@ class ScanWidget(_ConfigurationWidget):
                 if rotation_direction == '-':
                     steps = -steps
                 # check if difference is relevant
-                if (abs(diff) <= abs(tolerance)
-                   or (_time.time() - t_start) > timeout):
+                if abs(diff) <= abs(tolerance):
                     break
                 # try to reach position
                 if steps != 0 and not self.stop_sent:
@@ -794,11 +849,11 @@ class ScanWidget(_ConfigurationWidget):
 
             # check if move was successful
             if not abs(diff) <= abs(tolerance):
-                msg = 'Move timeout in '+str(move_timeout)+' seconds.'
+                msg = 'Move timeout in '+str(timeout)+' seconds.'
                 _QMessageBox.critical(
                     self, 'Failure', msg, _QMessageBox.Ok)
                 # stop move
-                _driver.stop_motor()
+                _driver.stop_motor(driver_address)
                 return (False, 0.0)
 
         except Exception:
@@ -1007,13 +1062,13 @@ class ScanWidget(_ConfigurationWidget):
             # save all new hall data entries
             j = 0
             for i in range(0, len(self.hall_sample_list)):
+                if (i % hall_samples_per_block == 0 and i != 0):
+                    j = j + 1
                 self.hall_data.scan_id = self.global_config.idn
                 self.hall_data.block_number = self.block_number_list[j]
                 self.hall_data.reading_index = self.hall_sample_index_list[i]
                 self.hall_data.hall_sensor_voltage = self.hall_sample_list[i]
                 self.hall_data.encoder_position = self.encoder_sample_list_for_hall[i]
-                if (i % hall_samples_per_block == 0 and i != 0):
-                    j = j + 1
                 self.hall_data.db_update_database(
                     self.database_name, mongo=self.mongo,
                     server=self.server
@@ -1057,11 +1112,15 @@ class ScanWidget(_ConfigurationWidget):
         # clear stop flag
         self.stop_sent = False
 
+        # status flag
+        status = True
+
         # check motor connection
         if not _driver.connected:
             msg = 'Driver not connected.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
+            status = False
+            return status
 
         # disable move and homing buttons
         self.ui.pbt_move_motor.setEnabled(False)
@@ -1083,7 +1142,6 @@ class ScanWidget(_ConfigurationWidget):
 
             # mode = preset (not continuous)
             mode = 0
-            steps = int(int(resolution)*2)
 
             # register move start
             t_start = _time.time()
@@ -1102,6 +1160,7 @@ class ScanWidget(_ConfigurationWidget):
                         msg = 'Failed to send command.'
                         _QMessageBox.critical(
                             self, 'Failure', msg, _QMessageBox.Ok)
+                        status = False
                     else:
                         move_started = True
                 else:
@@ -1113,6 +1172,7 @@ class ScanWidget(_ConfigurationWidget):
                         msg = 'Failed to send command.'
                         _QMessageBox.critical(
                             self, 'Failure', msg, _QMessageBox.Ok)
+                        status = False
                     else:
                         move_started = True
 
@@ -1128,20 +1188,24 @@ class ScanWidget(_ConfigurationWidget):
                     _QApplication.processEvents()
 
                 if (t_curr - t_start) > move_timeout:
-                    self.stop_motor()
+                    _driver.stop_motor(driver_address)
                     msg = 'Homing timeout - stopping motor.'
                     _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                    status = False
+                if self.stop_sent:
+                    status = False
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             msg = 'Homing failed.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            status = False
 
         # re-enable move and homing buttons
         self.ui.pbt_move_motor.setEnabled(True)
         self.ui.pbt_homing.setEnabled(True)
 
-        return
+        return status
 
     def load(self):
         """Load configuration to set parameters."""
@@ -1177,27 +1241,6 @@ class ScanWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
-
-#    def save_block_data(self):
-#        try:
-#            if self.database_name is None:
-#                msg = 'Invalid database filename.'
-#                _QMessageBox.critical(
-#                    self, 'Failure', msg, _QMessageBox.Ok)
-#                return False
-#
-#            self.block_data.db_update_database(
-#                self.database_name,
-#                mongo=self.mongo, server=self.server)
-#            self.block_data.db_save()
-#
-#            return True
-#
-#        except Exception:
-#            _traceback.print_exc(file=_sys.stdout)
-#            msg = 'Failed to save measurement to database.'
-#            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-#            return False
 
     def update_configuration(self):
         """Update configuration parameters."""

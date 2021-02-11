@@ -39,15 +39,15 @@ from PyQt5.QtGui import QPixmap
 class MeasurementWidget(_ConfigurationWidget):
     """Measurement widget class for the control application."""
 
-    _update_display_interval = _utils.UPDATE_DISPLAY_INTERVAL
+#    _update_display_interval = _utils.UPDATE_DISPLAY_INTERVAL
 
     def __init__(self, parent=None):
         """Set up the ui."""
         uifile = _utils.get_ui_file(self)
         config = _configuration.MeasurementConfig()
         super().__init__(uifile, config, parent=parent)
-        self.timer = _QTimer()
-        self.timer.timeout.connect(self.periodic_display_update)
+#        self.timer = _QTimer()
+#        self.timer.timeout.connect(self.periodic_display_update)
 
         # create objects to use database functions
 #        self.access_measurement_data = _database.DatabaseCollection(
@@ -104,7 +104,7 @@ class MeasurementWidget(_ConfigurationWidget):
 #        self.measurement_data = _measurement.MeasurementData()
 
         # start to read display periodically
-        self.timer.start(self._update_display_interval*1000)
+#        self.timer.start(self._update_display_interval*1000)
 
         # create dictionary for magnet directiion images
         self.direction_images = {}
@@ -141,23 +141,23 @@ class MeasurementWidget(_ConfigurationWidget):
     def global_config(self, value):
         _QApplication.instance().measurement_config = value
 
-    def periodic_display_update(self):
-        """ Update probe and encoder information periodically. """
-
-        # update probe and encoder readings
-        if _display.connected:
-            # read probes and encoder
+#    def periodic_display_update(self):
+#        """ Update probe and encoder information periodically. """
+#
+#        # update probe and encoder readings
+#        if _display.connected:
+#            # read probes and encoder
 #            readings = _display.read_display(
 #                    model=self.advanced_options.display_model
 #            )
-            try:
-                # interval to wait after command
-                wait = 0.15
-
-                readings = _display.read_display(
-                     display_model=self.advanced_options.display_model,
-                     wait=wait
-                )
+#            try:
+#                # interval to wait after command
+#                wait = 0.15
+#
+#                readings = _display.read_display(
+#                     display_model=self.advanced_options.display_model,
+#                     wait=wait
+#                )
 #                _display.inst.write(b'\x1bA0200\r')
 #                _time.sleep(wait)
 #                readings = _display.inst.read_all().decode('utf-8')
@@ -173,27 +173,27 @@ class MeasurementWidget(_ConfigurationWidget):
 #                aux3 = aux3.replace(' ', '')
 #    
 #                readings = [float(aux1), float(aux2), float(aux3)]
-    
-                # update ui
-                self.ui.lcd_curr_position_1.display(readings[0])
-                self.ui.lcd_curr_position_2.display(readings[1])
-                self.ui.lcd_linear_encoder_position.display(readings[2])
-    
-                # update global encoder data
-                self.current_encoder_position = readings[2]
-                self.encoder_measurement_index = (
-                    (self.encoder_measurement_index + 1) % 1e6
-                )
-            except Exception:
-                # indicate encoder fault
-                self.encoder_measurement_index = -1
-                # print fault to stdout
-                _traceback.print_exc(file=_sys.stdout)
-        else:
-            # indicate encoder fault
-            self.encoder_measurement_index = -1
-
-        return True
+#    
+#                # update ui
+#                self.ui.lcd_curr_position_1.display(readings[0])
+#                self.ui.lcd_curr_position_2.display(readings[1])
+#                self.ui.lcd_linear_encoder_position.display(readings[2])
+#    
+#                # update global encoder data
+#                self.current_encoder_position = readings[2]
+#                self.encoder_measurement_index = (
+#                    (self.encoder_measurement_index + 1) % 1e6
+#                )
+#            except Exception:
+#                # indicate encoder fault
+#                self.encoder_measurement_index = -1
+#                # print fault to stdout
+#                _traceback.print_exc(file=_sys.stdout)
+#        else:
+#            # indicate encoder fault
+#            self.encoder_measurement_index = -1
+#
+#        return True
 
     def disable_invalid_widgets(self):
         if self.ui.rbt_nr_steps.isChecked():
