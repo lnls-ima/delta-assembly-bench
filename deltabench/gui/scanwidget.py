@@ -236,6 +236,12 @@ class ScanWidget(_ConfigurationWidget):
         block_list = range(
             start_block_idx, start_block_idx + block_count
         )
+
+        # make sure pneumatic actuator is off
+        _driver.set_output_1_low(driver_address)
+        # wait pneumatic motion to finish
+        _time.sleep(wait_pneumatic)
+
         # do homing
         if not self.homing():
             msg = 'Homing failed - scan aborted.'
@@ -254,8 +260,15 @@ class ScanWidget(_ConfigurationWidget):
             # stop to get each hall sample and measure position
             # with probes when at the block center
             for pos in range(0, hall_step_count):
+                # if stop sent
                 if self.stop_sent:
+                    # update status
                     status = False
+                    # show msg
+                    msg = 'Stop command received.'
+                    _QMessageBox.critical(
+                        self, 'Failure', msg, _QMessageBox.Ok
+                    )
                     break
                 # move
                 target_position = target_interval + pos*hall_step
@@ -290,21 +303,31 @@ class ScanWidget(_ConfigurationWidget):
                 # measure position at block center
                 if pos == block_center:
                     # trigger pneumatic actuator
-
-                    # < Still to be written >
-
+                    _driver.set_output_1_high(driver_address)
                     # wait pneumatic motion to finish
                     _time.sleep(wait_pneumatic)
                     # read position probes
                     readings = _display.read_display(display_model, wait=wait_display)
+                    # if error in reading, wait and try again
+                    if math.isnan(readings[0]):
+                        _time.sleep(wait_display * 5)
+                        readings = _display.read_display(
+                            display_model, wait=wait_display
+                        )
+                        # if failed again, stop scan
+                        if math.isnan(readings[0]):
+                            status = False
+                            msg = 'Failed to read display.'
+                            _QMessageBox.critical(
+                                self, 'Failure', msg, _QMessageBox.Ok
+                            )
+                            break
                     # store probe measurements
                     self.x_probe_sample_list.append(readings[0])
                     self.z_probe_sample_list.append(readings[1])
                     self.encoder_sample_list_for_probes.append(last_enc_pos)
                     # deactivate pneumatic actuator
-
-                    # < Still to be written >
-
+                    _driver.set_output_1_low(driver_address)
                     # wait pneumatic motion to finish
                     _time.sleep(wait_pneumatic)
                 
@@ -797,6 +820,9 @@ class ScanWidget(_ConfigurationWidget):
         try:
             while True:
                 if self.stop_sent:
+                    msg = 'Stop command received.'
+                    _QMessageBox.critical(
+                        self, 'Failure', msg, _QMessageBox.Ok)
                     return (False, 0.0)
                 # check timeout
                 if (_time.time() - t_start) > timeout:
@@ -1131,6 +1157,8 @@ class ScanWidget(_ConfigurationWidget):
             wait_motion = _utils.WAIT_MOTION
             # interval to wait before command is received
             wait_cmd = _utils.WAIT_DRIVER
+            # interval to wait after pneumatic actuator command
+            wait_pneumatic = _utils.WAIT_PNEUMATIC
 
             # motor info
             driver_address = self.advanced_options.motor_driver_address
@@ -1148,6 +1176,11 @@ class ScanWidget(_ConfigurationWidget):
 
             # move start flag
             move_started = False
+
+            # make sure pneumatic actuator is off
+            _driver.set_output_1_low(driver_address)
+            # wait pneumatic motion to finish
+            _time.sleep(wait_pneumatic)
 
             # move towards the negative or positive limit switch
             if not self.stop_sent:
