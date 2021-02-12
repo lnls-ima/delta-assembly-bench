@@ -39,15 +39,15 @@ from PyQt5.QtGui import QPixmap
 class MeasurementWidget(_ConfigurationWidget):
     """Measurement widget class for the control application."""
 
-#    _update_display_interval = _utils.UPDATE_DISPLAY_INTERVAL
+    _update_display_interval = _utils.UPDATE_DISPLAY_INTERVAL
 
     def __init__(self, parent=None):
         """Set up the ui."""
         uifile = _utils.get_ui_file(self)
         config = _configuration.MeasurementConfig()
         super().__init__(uifile, config, parent=parent)
-#        self.timer = _QTimer()
-#        self.timer.timeout.connect(self.periodic_display_update)
+        self.timer = _QTimer()
+        self.timer.timeout.connect(self.periodic_display_update)
 
         # create objects to use database functions
 #        self.access_measurement_data = _database.DatabaseCollection(
@@ -103,10 +103,10 @@ class MeasurementWidget(_ConfigurationWidget):
         self.hall_threshold = None
 #        self.measurement_data = _measurement.MeasurementData()
 
-        # start to read display periodically
-#        self.timer.start(self._update_display_interval*1000)
+        # start periodic display update
+        self.timer.start(self._update_display_interval*1000)
 
-        # create dictionary for magnet directiion images
+        # create dictionary for magnet direction images
         self.direction_images = {}
         self.direction_images['up'] = QPixmap(
             os.path.join('deltabench','resources', 'img',
@@ -141,59 +141,47 @@ class MeasurementWidget(_ConfigurationWidget):
     def global_config(self, value):
         _QApplication.instance().measurement_config = value
 
-#    def periodic_display_update(self):
-#        """ Update probe and encoder information periodically. """
-#
-#        # update probe and encoder readings
-#        if _display.connected:
-#            # read probes and encoder
-#            readings = _display.read_display(
-#                    model=self.advanced_options.display_model
-#            )
-#            try:
-#                # interval to wait after command
-#                wait = 0.15
-#
-#                readings = _display.read_display(
-#                     display_model=self.advanced_options.display_model,
-#                     wait=wait
-#                )
-#                _display.inst.write(b'\x1bA0200\r')
-#                _time.sleep(wait)
-#                readings = _display.inst.read_all().decode('utf-8')
-#                readings = readings.upper().split(' R\r\n')
-#
-#                aux1 = readings[0][readings[0].find('X=') + 2:]
-#                aux1 = aux1.replace(' ', '')
-#    
-#                aux2 = readings[1][readings[1].find('Y=') + 2:]
-#                aux2 = aux2.replace(' ', '')
-#    
-#                aux3 = readings[2][readings[2].find('Z=') + 2:]
-#                aux3 = aux3.replace(' ', '')
-#    
-#                readings = [float(aux1), float(aux2), float(aux3)]
-#    
-#                # update ui
-#                self.ui.lcd_curr_position_1.display(readings[0])
-#                self.ui.lcd_curr_position_2.display(readings[1])
-#                self.ui.lcd_linear_encoder_position.display(readings[2])
-#    
-#                # update global encoder data
-#                self.current_encoder_position = readings[2]
-#                self.encoder_measurement_index = (
-#                    (self.encoder_measurement_index + 1) % 1e6
-#                )
-#            except Exception:
-#                # indicate encoder fault
-#                self.encoder_measurement_index = -1
-#                # print fault to stdout
-#                _traceback.print_exc(file=_sys.stdout)
-#        else:
-#            # indicate encoder fault
-#            self.encoder_measurement_index = -1
-#
-#        return True
+    def periodic_display_update(self):
+        """ Update probe and encoder information periodically. """
+
+        try:
+            # check if enabled
+            update_enabled = (
+                self.ui.chb_encoder_update_enable.isChecked()
+            )
+            # interval to wait after reading request
+            wait_display = _utils.WAIT_DISPLAY
+
+            # update probe and encoder readings
+            if _display.connected and update_enabled:
+                # read encoder from display
+                readings = _display.read_display(
+                    self.advanced_options.display_model, 
+                    wait=wait_display
+                )
+                if math.isnan(readings[2]):
+                    # indicate encoder fault
+                    self.encoder_measurement_index = -1
+                    return False
+
+                # update encoder position on gui
+                self.ui.lcd_linear_encoder_position.display(readings[2])
+
+                # update global encoder data
+                self.current_encoder_position = readings[2]
+                self.encoder_measurement_index = (
+                    (self.encoder_measurement_index + 1) % 1e6
+                )
+            else:
+                # indicate encoder fault
+                self.encoder_measurement_index = -1
+        except Exception:
+            # indicate encoder fault
+            self.encoder_measurement_index = -1
+            # print fault to stdout
+            _traceback.print_exc(file=_sys.stdout)
+
+        return True
 
     def disable_invalid_widgets(self):
         if self.ui.rbt_nr_steps.isChecked():
@@ -211,169 +199,236 @@ class MeasurementWidget(_ConfigurationWidget):
         """ Move motor to commanded position or by the specified
             number of steps. When an encoder target position is
             provided, a max number of retries can also be specified. """
-        # clear stop flag
-        self.stop_sent = False
 
-        # check motor connection
-        if not _driver.connected:
-            msg = 'Driver not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
+        try:
+            # ask user to confirm move
+#            msg = 'Please, make sure the stage path is clear '
+#                  'and that the pneumatic actuator is retreated.\n'
+#                  'Ready to proceed?'
+#            reply = _QMessageBox.question(
+#                self, 'Warning', msg, _QMessageBox.Ok | _QMessageBox.Abort
+#            )
+#            if reply != _QMessageBox.OK:
+#                return False
 
-        # whether to use encoder position or step as set point
-        use_encoder = self.ui.rbt_encoder_position.isChecked()
+            # clear stop flag
+            self.stop_sent = False
 
-        # check display connection
-        if use_encoder and not _display.connected:
-            msg = 'Display not connected - invalid encoder position.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
+            # check motor connection
+            if not _driver.connected:
+                msg = 'Driver not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
 
-        # interval to wait after motion command
-        wait = 0.1
-
-        # disable move and homing buttons
-        self.ui.pbt_move_motor.setEnabled(False)
-        self.ui.pbt_homing.setEnabled(False)
-        # process gui events
-        _QApplication.processEvents()
-
-        # get retry count
-        retry_count = int(self.ui.sb_retry_count.value())
-
-        # get motor info
-        driver_address = self.advanced_options.motor_driver_address
-        motor_resolution = (
-            self.advanced_options.motor_resolution
-        )
-        rotation_direction = (
-            self.advanced_options.motor_rotation_direction
-        )
-        velocity = self.advanced_options.motor_velocity
-        acceleration = self.advanced_options.motor_acceleration
-        linear_conversion = self.advanced_options.linear_conversion_factor
-        tolerance = self.advanced_options.position_tolerance
-        move_timeout = self.advanced_options.move_timeout
-
-        # motion mode is 'preset' (not continuous)
-        mode = 0
-
-        # step set point
-        steps = 0
-
-        # only used for encoder set point mode
-        target_position = 0
-        diff = 0
-        previous_encoder_index = 0
-
-        # if steps are selected, just assign number
-        if self.ui.rbt_nr_steps.isChecked():
-            steps = int(
-                self.ui.sb_commanded_nr_steps.value()
+            # whether to use encoder position or step as set point
+            use_encoder = self.ui.rbt_encoder_position.isChecked()
+            # encoder update enable status
+            enc_update_enabled = (
+                self.ui.chb_encoder_update_enable.isChecked()
             )
-            if rotation_direction == '-':
-                steps = -steps
-            # if steps selected, ignore retries
-            retry_count = 0
-        elif use_encoder:
-            # wait until there is a valid encoder reading
-            while (self.encoder_measurement_index == -1
-                  and not self.stop_sent
-                  and (_time.time() - t_start) < move_timeout):
-                _time.sleep(wait)
-                _QApplication.processEvents()
-            # get target position
-            target_position = float(
-                self.ui.sbd_commanded_encoder_position.value()
-            )
-            previous_encoder_index = self.encoder_measurement_index
-            diff = target_position - self.current_encoder_position
-            steps = math.floor(diff / (linear_conversion / motor_resolution))
-            if rotation_direction == '-':
-                steps = -steps
 
-        # try to reach position at the first move
-        if steps != 0 and not self.stop_sent:
-            # configure motor
-            if not _driver.config_motor(
-                   driver_address,
-                   mode,
-                   rotation_direction,
-                   motor_resolution,
-                   velocity,
-                   acceleration,
-                   steps):
-                msg = 'Failed to send configuration to motor.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
-            else:
-                # start motor motion if commanded to
-                _driver.move_motor(driver_address)
-                # wait for command reception
-                _time.sleep(wait)
-                # process gui events
-                _QApplication.processEvents()
+            # check display connection
+            if use_encoder and not _display.connected:
+                msg = 'Display not connected - invalid encoder position.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # check encoder update
+            if use_encoder and not enc_update_enabled:
+                msg = ('Encoder update must be enabled if '
+                       +'encoder set point is selected.'
+                )
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
 
-        # if necessary, retry position
-        while retry_count > 0:
-            # update counter
-            retry_count = retry_count - 1
-            # wait until motor is idle
-            while ((not _driver.ready(driver_address)
-                    or previous_encoder_index ==
-                       self.encoder_measurement_index
-                    or self.encoder_measurement_index == -1)
-                  and not self.stop_sent
-                  and (_time.time() - t_start) < move_timeout):
-                _time.sleep(wait)
-                _QApplication.processEvents()
-            # break if stop was sent or timeout happened
-            if self.stop_sent or (_time.time() - t_start) < move_timeout:
-                break
-            # update diff
-            previous_encoder_index = self.encoder_measurement_index
-            diff = target_position - self.current_encoder_position
-            # check if diff is small enough
-            if abs(diff) > abs(tolerance):
-                break
-            # update number of steps
-            steps = math.floor(diff / (linear_conversion / motor_resolution))
-            if rotation_direction == '-':
-                steps = -steps
-            # configure motor
-            if not _driver.config_motor(
-                   driver_address,
-                   mode,
-                   rotation_direction,
-                   motor_resolution,
-                   velocity,
-                   acceleration,
-                   steps):
-                msg = 'Failed to send configuration to motor.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
-            else:
-                # start motor motion if commanded to
-                _driver.move_motor(driver_address)
-                # wait for command reception
-                _time.sleep(wait)
-                # process gui events
-                _QApplication.processEvents()
+            # make sure pneumatic actuator is off
+            self.pneumatic_off()
 
-        # wait until motor is idle
-        while (not _driver.ready(driver_address)
-              and (_time.time() - t_start) < move_timeout):
-            _time.sleep(wait)
+            # interval to wait after display read command
+            wait_display = _utils.WAIT_DISPLAY
+            # interval to wait after move
+            wait = _utils.WAIT_MOTION
+
+            # disable move and homing buttons
+            self.ui.pbt_move_motor.setEnabled(False)
+            self.ui.pbt_homing.setEnabled(False)
+            # process gui events
             _QApplication.processEvents()
 
-        # update motor moving LED
-        self.ui.la_motor_is_moving.setEnabled(False)
+            # get retry count
+            retry_count = int(self.ui.sb_retry_count.value())
 
-        # re-enable move and homing buttons
-        self.ui.pbt_move_motor.setEnabled(True)
-        self.ui.pbt_homing.setEnabled(True)
+            # get motor info
+            driver_address = self.advanced_options.motor_driver_address
+            motor_resolution = (
+                self.advanced_options.motor_resolution
+            )
+            rotation_direction = (
+                self.advanced_options.motor_rotation_direction
+            )
+            velocity = self.advanced_options.motor_velocity
+            acceleration = self.advanced_options.motor_acceleration
+            linear_conversion = self.advanced_options.linear_conversion_factor
+            tolerance = self.advanced_options.position_tolerance
+            move_timeout = self.advanced_options.move_timeout
 
-        return True
+            # timeout flag
+            is_timeout = False
+
+            # motion mode is 'preset' (not continuous)
+            mode = 0
+
+            # step set point
+            steps = 0
+
+            # only used for encoder set point mode
+            target_position = 0
+            diff = 0
+            previous_encoder_index = 0
+
+            # start time for timeout reference
+            t_start = _time.time()
+
+            # if steps are selected, just assign number
+            if self.ui.rbt_nr_steps.isChecked():
+                steps = int(
+                    self.ui.sb_commanded_nr_steps.value()
+                )
+                if rotation_direction == '-':
+                    steps = -steps
+                # if steps selected, ignore retries
+                retry_count = 0
+            elif use_encoder:
+                # wait until there is a valid encoder reading
+                while (self.encoder_measurement_index == -1
+                      and not self.stop_sent
+                      and (_time.time() - t_start) < move_timeout):
+                    _time.sleep(wait)
+                    _QApplication.processEvents()
+                # get target position
+                target_position = float(
+                    self.ui.sbd_commanded_encoder_position.value()
+                )
+                previous_encoder_index = self.encoder_measurement_index
+                diff = target_position - self.current_encoder_position
+                steps = math.floor(
+                    diff / (linear_conversion / motor_resolution)
+                )
+                if rotation_direction == '-':
+                    steps = -steps
+
+            # try to reach position at the first move
+            if steps != 0 and not self.stop_sent:
+                # configure motor
+                if not _driver.config_motor(
+                       driver_address,
+                       mode,
+                       rotation_direction,
+                       motor_resolution,
+                       velocity,
+                       acceleration,
+                       steps):
+                    msg = 'Failed to send configuration to motor.'
+                    _QMessageBox.critical(
+                        self, 'Failure', msg, _QMessageBox.Ok)
+                else:
+                    # start motor motion if commanded to
+                    _driver.move_motor(driver_address)
+                    # wait for command reception
+                    _time.sleep(wait)
+                    # process gui events
+                    _QApplication.processEvents()
+
+            # if necessary, retry position
+            while retry_count > 0:
+                # update counter
+                retry_count = retry_count - 1
+                # wait until motor is idle
+                while ((not _driver.ready(driver_address)
+                        or previous_encoder_index ==
+                           self.encoder_measurement_index
+                        or self.encoder_measurement_index == -1)
+                      and not self.stop_sent
+                      and (_time.time() - t_start) < move_timeout):
+                    _time.sleep(wait)
+                    _QApplication.processEvents()
+                # break if stop was sent
+                if self.stop_sent:
+                    break
+                if (_time.time() - t_start) >= move_timeout:
+                    is_timeout = True
+                    break
+                # update diff
+                previous_encoder_index = self.encoder_measurement_index
+                diff = target_position - self.current_encoder_position
+                # DEBUG
+                print('retry cnt = '+str(retry_count))
+                print('previous_encoder_index = '+str(previous_encoder_index))
+                print('target position = '+str(target_position))
+                print('diff = '+str(diff))
+                print('\n')
+                # --------------------------
+                # check if diff is small enough
+                if abs(diff) <= abs(tolerance):
+                    # DEBUG
+                    print('Inside tolerance!')
+                    print('\n')
+                    # --------------------------
+                    break
+                # update number of steps
+                    steps = math.floor(diff / (linear_conversion / motor_resolution))
+                if rotation_direction == '-':
+                    steps = -steps
+                # configure motor
+                if not _driver.config_motor(
+                       driver_address,
+                       mode,
+                       rotation_direction,
+                       motor_resolution,
+                       velocity,
+                       acceleration,
+                       steps):
+                    msg = 'Failed to send configuration to motor.'
+                    _QMessageBox.critical(
+                        self, 'Failure', msg, _QMessageBox.Ok)
+                else:
+                    # start motor motion if commanded to
+                    _driver.move_motor(driver_address)
+                    # wait for command reception
+                    _time.sleep(wait)
+                    # process gui events
+                    _QApplication.processEvents()
+
+            # wait until motor is idle
+            while (not _driver.ready(driver_address)
+                  and (_time.time() - t_start) < move_timeout):
+                _time.sleep(wait)
+                _QApplication.processEvents()
+
+            if self.stop_sent:
+                msg = 'Stop command received.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+
+            if is_timeout:
+                msg = 'Move timeout.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+
+            # update motor moving LED
+            self.ui.la_motor_is_moving.setEnabled(False)
+
+            # re-enable move and homing buttons
+            self.ui.pbt_move_motor.setEnabled(True)
+            self.ui.pbt_homing.setEnabled(True)
+
+            return True
+        except Exception:
+            # re-enable move and homing buttons
+            self.ui.pbt_move_motor.setEnabled(True)
+            self.ui.pbt_homing.setEnabled(True)
+            # print erro info to user
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to move motor.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
 
     def stop_motor(self):
         # set flag for move_motor function to see
@@ -421,31 +476,31 @@ class MeasurementWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             return False
 
-    def store_position_1(self):
-        """ Move probe 1 current position to store label """
-        # check if heidenhain display is connected
-        if not _display.connected:
-            msg = 'Heidenhain display not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
-        # transfer current reading
-        self.ui.le_x_position.setText(
-            str(self.ui.lcd_curr_position_1.value())
-        )
-        return True
+#    def store_position_1(self):
+#        """ Move probe 1 current position to store label """
+#        # check if heidenhain display is connected
+#        if not _display.connected:
+#            msg = 'Heidenhain display not connected.'
+ #           _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+ #           return False
+ #       # transfer current reading
+ #       self.ui.le_x_position.setText(
+ #           str(self.ui.lcd_curr_position_1.value())
+ #       )
+ #       return True
 
-    def store_position_2(self):
-        """ Move probe 2 current position to store label """
-        # check if heidenhain display is connected
-        if not _display.connected:
-            msg = 'Heidenhain display not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
-        # transfer current reading
-        self.ui.le_z_position.setText(
-            str(self.ui.lcd_curr_position_2.value())
-        )
-        return True
+#    def store_position_2(self):
+#        """ Move probe 2 current position to store label """
+#        # check if heidenhain display is connected
+#        if not _display.connected:
+#            msg = 'Heidenhain display not connected.'
+#            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+#            return False
+#        # transfer current reading
+#        self.ui.le_z_position.setText(
+#            str(self.ui.lcd_curr_position_2.value())
+#        )
+#        return True
 
     def connect_signal_slots(self):
         """Create signal/slot connections."""
@@ -456,20 +511,119 @@ class MeasurementWidget(_ConfigurationWidget):
             self.disable_invalid_widgets)
         self.ui.pbt_move_motor.clicked.connect(self.move_motor)
         self.ui.pbt_stop_motor.clicked.connect(self.stop_motor)
-        self.ui.tbt_read_hall.clicked.connect(self.read_hall)
-        self.ui.tbt_store_position_1.clicked.connect(self.store_position_1)
-        self.ui.tbt_store_position_2.clicked.connect(self.store_position_2)
+        self.ui.pbt_read_hall.clicked.connect(self.read_hall)
         self.ui.tbt_update_measurement_list.clicked.connect(self.update_measurement_list)
         self.ui.cmb_measurement_list.currentTextChanged.connect(self.update_undulator_list)
         self.ui.cmb_undulator_list.currentTextChanged.connect(self.update_cassette_list)
         self.ui.cmb_cassette_list.currentTextChanged.connect(self.update_block_list)
         self.ui.cmb_block_list.currentTextChanged.connect(self.update_widget_gb_stored_data)
+        self.ui.pbt_pneumatic_off.clicked.connect(self.pneumatic_off)
+        self.ui.pbt_pneumatic_on.clicked.connect(self.pneumatic_on)
+        self.ui.pbt_read_position.clicked.connect(self.read_position)
+        self.ui.pbt_read_all.clicked.connect(self.read_all)
 
     @property
     def advanced_options(self):
         """Return global advanced options."""
         dialog = _QApplication.instance().advanced_options_dialog
         return dialog.config
+
+    def pneumatic_off(self):
+        """ Turn off pneumatic actuator """
+        try:
+            # check driver connection
+            if not _driver.connected:
+                msg = 'Driver not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # send command
+            driver_address = self.advanced_options.motor_driver_address
+            _driver.set_output_1_low(driver_address)
+            # update LEDs
+            self.ui.la_pneumatic_off.setEnabled(True)
+            self.ui.la_pneumatic_on.setEnabled(False)
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to send command to driver.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def pneumatic_on(self):
+        """ Turn on pneumatic actuator """
+        try:
+            # check driver connection
+            if not _driver.connected:
+                msg = 'Driver not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # send command
+            driver_address = self.advanced_options.motor_driver_address
+            _driver.set_output_1_high(driver_address)
+            # update LEDs
+            self.ui.la_pneumatic_off.setEnabled(False)
+            self.ui.la_pneumatic_on.setEnabled(True)
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to send command to driver.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def read_position(self):
+        try:
+            if not _display.connected:
+                msg = 'Display not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # read position probes
+            readings = _display.read_display(
+                display_model, wait=wait_display
+            )
+            # check if reading is invalid
+            if math.isnan(readings[0]):
+                # clear probe data on gui
+                self.ui.lcd_x_position.display('')
+                self.ui.lcd_z_position.display('')
+                self.ui.lcd_linear_encoder_position.display('')
+                # show error
+                msg = 'Failed to read display.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok
+                )
+                return False
+            # update probe data on gui
+            self.ui.lcd_x_position.display(readings[0])
+            self.ui.lcd_z_position.display(readings[1])
+            self.ui.lcd_linear_encoder_position.display(readings[2])
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to read display.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def read_all(self):
+        """ Advance pneumatic actuator, take readings and retreat it """
+        try:
+            wait = _utils.WAIT_PNEUMATIC
+            # advance
+            self.pneumatic_on()
+            _time.sleep(wait)
+            _QApplication.processEvents()
+            # read
+            self.read_position()
+            self.read_hall()
+            # retreat
+            _time.sleep(wait)
+            _QApplication.processEvents()
+            self.pneumatic_off()
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to do read_all.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
 
     def homing(self):
         """ Move motor to limit switch at the beginning of range.
@@ -575,26 +729,25 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def read_hall(self):
         try:
+            # check connection
             if not _multimeter.connected:
                 msg = 'Multimeter not connected.'
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
                 return False
-
             # interval to wait after command
-            wait = 0.1
-
+            wait = _utils.WAIT_MULTIMETER
             # configure multimeter and read measurement
             _multimeter.inst.write(b':MEAS:VOLT:DC? DEF,DEF\r\n')
             _time.sleep(wait)
             reading = _multimeter.inst.readline().decode('utf-8')
             reading = reading.replace('\r\n','')
-
-            self.ui.le_hall_sensor_voltage.setText(reading)
-
+            # update data on gui
+            self.ui.lcd_hall_sensor_voltage.display(reading)
+            return True
         except Exception:
+            _traceback.print_exc(file=_sys.stdout)
             msg = 'Failed to read hall sensor.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
             return False
 
 #    def save_measurement_data(self):
