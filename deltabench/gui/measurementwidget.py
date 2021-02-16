@@ -293,8 +293,12 @@ class MeasurementWidget(_ConfigurationWidget):
                 steps = int(
                     self.ui.sb_commanded_nr_steps.value()
                 )
-                if rotation_direction == '-':
-                    steps = -steps
+                curr_dir = rotation_direction
+                if steps < 0:
+                    if rotation_direction == '+':
+                        curr_dir = '-'
+                    else:
+                        curr_dir = '+'
                 # if steps selected, ignore retries
                 retry_count = 0
             elif use_encoder:
@@ -313,8 +317,12 @@ class MeasurementWidget(_ConfigurationWidget):
                 steps = math.floor(
                     diff / (linear_conversion / motor_resolution)
                 )
-                if rotation_direction == '-':
-                    steps = -steps
+                curr_dir = rotation_direction
+                if steps < 0:
+                    if rotation_direction == '+':
+                        curr_dir = '-'
+                    else:
+                        curr_dir = '+'
 
             # try to reach position at the first move
             if steps != 0 and not self.stop_sent:
@@ -322,7 +330,7 @@ class MeasurementWidget(_ConfigurationWidget):
                 if not _driver.config_motor(
                        driver_address,
                        mode,
-                       rotation_direction,
+                       curr_dir,
                        motor_resolution,
                        velocity,
                        acceleration,
@@ -360,29 +368,22 @@ class MeasurementWidget(_ConfigurationWidget):
                 # update diff
                 previous_encoder_index = self.encoder_measurement_index
                 diff = target_position - self.current_encoder_position
-                # DEBUG
-                print('retry cnt = '+str(retry_count))
-                print('previous_encoder_index = '+str(previous_encoder_index))
-                print('target position = '+str(target_position))
-                print('diff = '+str(diff))
-                print('\n')
-                # --------------------------
                 # check if diff is small enough
                 if abs(diff) <= abs(tolerance):
-                    # DEBUG
-                    print('Inside tolerance!')
-                    print('\n')
-                    # --------------------------
                     break
                 # update number of steps
-                    steps = math.floor(diff / (linear_conversion / motor_resolution))
-                if rotation_direction == '-':
-                    steps = -steps
+                steps = math.floor(diff / (linear_conversion / motor_resolution))
+                curr_dir = rotation_direction
+                if steps < 0:
+                    if rotation_direction == '+':
+                        curr_dir = '-'
+                    else:
+                        curr_dir = '+'
                 # configure motor
                 if not _driver.config_motor(
                        driver_address,
                        mode,
-                       rotation_direction,
+                       curr_dir,
                        motor_resolution,
                        velocity,
                        acceleration,
@@ -578,7 +579,8 @@ class MeasurementWidget(_ConfigurationWidget):
                 return False
             # read position probes
             readings = _display.read_display(
-                display_model, wait=wait_display
+                self.advanced_options.display_model,
+                wait=_utils.WAIT_DISPLAY
             )
             # check if reading is invalid
             if math.isnan(readings[0]):
@@ -739,7 +741,7 @@ class MeasurementWidget(_ConfigurationWidget):
             # configure multimeter and read measurement
             _multimeter.inst.write(b':MEAS:VOLT:DC? DEF,DEF\r\n')
             _time.sleep(wait)
-            reading = _multimeter.inst.readline().decode('utf-8')
+            reading = _multimeter.inst.read_all().decode('utf-8')
             reading = reading.replace('\r\n','')
             # update data on gui
             self.ui.lcd_hall_sensor_voltage.display(reading)

@@ -839,8 +839,12 @@ class ScanWidget(_ConfigurationWidget):
                 steps = math.floor(
                         diff / (linear_conversion / motor_resolution)
                 )
-                if rotation_direction == '-':
-                    steps = -steps
+                curr_dir = rotation_direction
+                if steps < 0:
+                    if rotation_direction == '-':
+                        curr_dir = '+'
+                    else:
+                        curr_dir = '-'
                 # check if difference is relevant
                 if abs(diff) <= abs(tolerance):
                     break
@@ -850,7 +854,7 @@ class ScanWidget(_ConfigurationWidget):
                     if not _driver.config_motor(
                            driver_address,
                            mode,
-                           rotation_direction,
+                           curr_dir,
                            motor_resolution,
                            velocity,
                            acceleration,
