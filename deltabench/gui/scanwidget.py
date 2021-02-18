@@ -263,6 +263,14 @@ class ScanWidget(_ConfigurationWidget):
         # start position
         scan_beginning = first_block_position
 
+        # calculate progress bar step
+        pgb_max = self.ui.pgb_status.maximum()
+        pgb_min = self.ui.pgb_status.minimum()
+        pgb_step = math.floor((pgb_max - pgb_min) / block_count)
+
+        # clear progress bar
+        self.ui.pgb_status.setValue(pgb_min)
+
         for block_idx in block_list:
             # update block interval being measured
             target_interval = scan_beginning + (block_idx - 1)*block_step
@@ -344,6 +352,10 @@ class ScanWidget(_ConfigurationWidget):
             if status is False:
                 break
 
+            # update progress bar
+            pgb_value = self.ui.pgb_status.value()
+            self.ui.pgb_status.setValue(pgb_value + pgb_step)
+
         # measure last hall sample, at the end of last magnet
         # and update graphs
 #        if status is True and not self.stop_sent:
@@ -394,8 +406,13 @@ class ScanWidget(_ConfigurationWidget):
         self.ui.pbt_start_scan.setEnabled(True)
 
         if status is False:
+            self.ui.pgb_status.setValue(pgb_min)
             msg = 'Scan failed.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+        else:
+            self.ui.pgb_status.setValue(pgb_max)
+            msg = 'Scan finished successfully.'
+            _QMessageBox.information(self, 'Success', msg, _QMessageBox.Ok)
 
         return status
 
