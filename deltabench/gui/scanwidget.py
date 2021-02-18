@@ -163,6 +163,16 @@ class ScanWidget(_ConfigurationWidget):
     def global_config(self, value):
         _QApplication.instance().scan_config = value
 
+    @property
+    def emergency_stop(self):
+        """Return the global emergency stop value."""
+        return _QApplication.instance().emergency_stop
+
+    @emergency_stop.setter
+    def emergency_stop(self, value):
+        """Return the global emergency stop value."""
+        _QApplication.instance().emergency_stop = value
+
     def start_scan(self):
         """ Start scan along undulator magnets. Motion is done in small
             steps and data is acquired at each temporary stop.
@@ -243,12 +253,12 @@ class ScanWidget(_ConfigurationWidget):
         _time.sleep(wait_pneumatic)
 
         # do homing
-        if not self.homing():
-            msg = 'Homing failed - scan aborted.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            # enable start scan button
-            self.ui.pbt_start_scan.setEnabled(True)
-            return status
+#        if not self.homing():
+#            msg = 'Homing failed - scan aborted.'
+#            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+#            # enable start scan button
+#            self.ui.pbt_start_scan.setEnabled(True)
+#            return status
 
         # start position
         scan_beginning = first_block_position
