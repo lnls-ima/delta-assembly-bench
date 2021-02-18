@@ -41,7 +41,15 @@ class Display(_HeidenhainLib.HeidenhainSerial):
 
 class Driver(_ParkerDriverLib.ParkerDriverSerial):
     """ Class with custom functions for Parker Driver """
-    pass
+    def input_status(self, address, wait=0.25):
+        if self.connected:
+            # if pending input, clear buffer
+            if self.inst.in_waiting > 0:
+                self.inst.read_all()
+            # read inputs
+            return self.all_input_status(address, wait=wait)
+        else:
+            return None
 
 class Multimeter(_Agilent34401ALib.Agilent34401ASerial):
     """ Class with custom functions for Agilent 34401A multimeter """
