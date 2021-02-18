@@ -31,6 +31,9 @@ class MainApp(_QApplication):
         self.scan_config = _configuration.ScanConfig()
         self.advanced_options_dialog = None
 
+        # emergency variable that all tabs can access
+        self.emergency_stop = False
+
     def create_dialogs(self):
         """Create dialogs."""
         self.advanced_options_dialog = _AdvancedOptionsDialog()

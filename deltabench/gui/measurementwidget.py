@@ -40,14 +40,17 @@ class MeasurementWidget(_ConfigurationWidget):
     """Measurement widget class for the control application."""
 
     _update_display_interval = _utils.UPDATE_DISPLAY_INTERVAL
+    _update_limit_switch_interval = _utils.UPDATE_LIMIT_SWITCH_INTERVAL
 
     def __init__(self, parent=None):
         """Set up the ui."""
         uifile = _utils.get_ui_file(self)
         config = _configuration.MeasurementConfig()
         super().__init__(uifile, config, parent=parent)
-        self.timer = _QTimer()
-        self.timer.timeout.connect(self.periodic_display_update)
+        self.timer1 = _QTimer()
+        self.timer1.timeout.connect(self.periodic_display_update)
+        self.timer2 = _QTimer()
+        self.timer2.timeout.connect(self.periodic_limit_switch_update)
 
         # create objects to use database functions
 #        self.access_measurement_data = _database.DatabaseCollection(
@@ -104,7 +107,9 @@ class MeasurementWidget(_ConfigurationWidget):
 #        self.measurement_data = _measurement.MeasurementData()
 
         # start periodic display update
-        self.timer.start(self._update_display_interval*1000)
+        self.timer1.start(self._update_display_interval*1000)
+        # start periodic limit switch status update
+        self.timer2.start(self._update_limit_switch_interval*1000)
 
         # create dictionary for magnet direction images
         self.direction_images = {}
@@ -140,6 +145,16 @@ class MeasurementWidget(_ConfigurationWidget):
     @global_config.setter
     def global_config(self, value):
         _QApplication.instance().measurement_config = value
+
+    @property
+    def emergency_stop(self):
+        """Return the global emergency stop value."""
+        return _QApplication.instance().emergency_stop
+
+    @emergency_stop.setter
+    def emergency_stop(self, value):
+        """Return the global emergency stop value."""
+        _QApplication.instance().emergency_stop = value
 
     def periodic_display_update(self):
         """ Update probe and encoder information periodically. """
@@ -182,6 +197,40 @@ class MeasurementWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
 
         return True
+
+    def periodic_limit_switch_update(self):
+        """ Periodically update limit status on GUI """
+        try:
+            # check driver connection
+            if not _driver.connected:
+                self.ui.la_positive_limit.setEnabled(False)
+                self.ui.la_negative_limit.setEnabled(False)
+                return False
+
+            driver_address = self.advanced_options.motor_driver_address
+            rotation_direction = (
+                self.advanced_options.motor_rotation_direction
+            )
+
+            # read all input status from driver
+            status = _driver.input_status(driver_address, wait=_utils.WAIT_DRIVER)
+            # if any limit is on, set global emergency stop
+#            if status[8] or status[9]:
+#                self.emergency_stop = True
+            # update GUI and switch limits if main direction is reversed
+            if rotation_direction == '+':
+                self.ui.la_positive_limit.setEnabled(status[8])
+                self.ui.la_negative_limit.setEnabled(status[9])
+            else:
+                self.ui.la_positive_limit.setEnabled(status[9])
+                self.ui.la_negative_limit.setEnabled(status[8])
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            print('Error during periodic limit switch update')
+            self.ui.la_positive_limit.setEnabled(False)
+            self.ui.la_negative_limit.setEnabled(False)
+            return False
 
     def disable_invalid_widgets(self):
         if self.ui.rbt_nr_steps.isChecked():
@@ -522,6 +571,7 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.pbt_pneumatic_on.clicked.connect(self.pneumatic_on)
         self.ui.pbt_read_position.clicked.connect(self.read_position)
         self.ui.pbt_read_all.clicked.connect(self.read_all)
+        self.ui.pbt_set_zero.clicked.connect(self.set_reference_zero)
 
     @property
     def advanced_options(self):
@@ -540,6 +590,7 @@ class MeasurementWidget(_ConfigurationWidget):
             # send command
             driver_address = self.advanced_options.motor_driver_address
             _driver.set_output_1_low(driver_address)
+            _time.sleep(_utils.WAIT_DRIVER)
             # update LEDs
             self.ui.la_pneumatic_off.setEnabled(True)
             self.ui.la_pneumatic_on.setEnabled(False)
@@ -561,6 +612,7 @@ class MeasurementWidget(_ConfigurationWidget):
             # send command
             driver_address = self.advanced_options.motor_driver_address
             _driver.set_output_1_high(driver_address)
+            _time.sleep(_utils.WAIT_DRIVER)
             # update LEDs
             self.ui.la_pneumatic_off.setEnabled(False)
             self.ui.la_pneumatic_on.setEnabled(True)
@@ -568,6 +620,36 @@ class MeasurementWidget(_ConfigurationWidget):
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             msg = 'Failed to send command to driver.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def set_reference_zero(self):
+        """ Set Z encoder position to zero """
+        try:
+            # check display connection
+            if not _display.connected:
+                msg = 'Display not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # check driver connection
+            if not _driver.connected:
+                msg = 'Driver not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # send cmd to reset display Z axis
+            axis = 2
+            value = 0
+            _display.write_display_value(
+                axis, value, wait=_utils.WAIT_DISPLAY
+            )
+            address = self.advanced_options.motor_driver_address
+            # send command to zero driver position as well
+            _driver.zero_absolute_position(address)
+            _time.sleep(_utils.WAIT_DRIVER)
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to send command to display.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return False
 
@@ -739,7 +821,17 @@ class MeasurementWidget(_ConfigurationWidget):
             # interval to wait after command
             wait = _utils.WAIT_MULTIMETER
             # configure multimeter and read measurement
-            _multimeter.inst.write(b':MEAS:VOLT:DC? DEF,DEF\r\n')
+            _multimeter.inst.write(b':CONF:VOLT:DC 10\r\n')
+            _time.sleep(wait)
+            dummy = _multimeter.inst.read_all()
+            _multimeter.inst.write(b'VOLT:DC:NPLC 0.02\r\n')
+            _time.sleep(wait)
+            dummy = _multimeter.inst.read_all()
+            _multimeter.inst.write(b'VOLT:DC:NPLC?\r\n')
+            _time.sleep(wait)
+            dummy = _multimeter.inst.read_all().decode('utf-8')
+            print(dummy)
+            _multimeter.inst.write(b':MEAS:VOLT:DC?\r\n')
             _time.sleep(wait)
             reading = _multimeter.inst.read_all().decode('utf-8')
             reading = reading.replace('\r\n','')
