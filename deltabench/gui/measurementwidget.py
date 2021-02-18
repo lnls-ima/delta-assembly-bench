@@ -215,15 +215,15 @@ class MeasurementWidget(_ConfigurationWidget):
             # read all input status from driver
             status = _driver.input_status(driver_address, wait=_utils.WAIT_DRIVER)
             # if any limit is on, set global emergency stop
-#            if status[8] or status[9]:
+#            if status[5] or status[6]:
 #                self.emergency_stop = True
             # update GUI and switch limits if main direction is reversed
             if rotation_direction == '+':
-                self.ui.la_positive_limit.setEnabled(status[8])
-                self.ui.la_negative_limit.setEnabled(status[9])
+                self.ui.la_positive_limit.setEnabled(status[5])
+                self.ui.la_negative_limit.setEnabled(status[6])
             else:
-                self.ui.la_positive_limit.setEnabled(status[9])
-                self.ui.la_negative_limit.setEnabled(status[8])
+                self.ui.la_positive_limit.setEnabled(status[6])
+                self.ui.la_negative_limit.setEnabled(status[5])
             return True
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
