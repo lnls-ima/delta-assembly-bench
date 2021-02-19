@@ -219,11 +219,11 @@ class MeasurementWidget(_ConfigurationWidget):
 #                self.emergency_stop = True
             # update GUI and switch limits if main direction is reversed
             if rotation_direction == '+':
-                self.ui.la_positive_limit.setEnabled(status[5])
-                self.ui.la_negative_limit.setEnabled(status[6])
-            else:
                 self.ui.la_positive_limit.setEnabled(status[6])
                 self.ui.la_negative_limit.setEnabled(status[5])
+            else:
+                self.ui.la_positive_limit.setEnabled(status[5])
+                self.ui.la_negative_limit.setEnabled(status[6])
             return True
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -690,17 +690,15 @@ class MeasurementWidget(_ConfigurationWidget):
     def read_all(self):
         """ Advance pneumatic actuator, take readings and retreat it """
         try:
-            wait = _utils.WAIT_PNEUMATIC
             # advance
             self.pneumatic_on()
-            _time.sleep(wait)
+            _time.sleep(_utils.WAIT_PNEUMATIC)
             _QApplication.processEvents()
             # read
             self.read_position()
             self.read_hall()
             # retreat
-            _time.sleep(wait)
-            _QApplication.processEvents()
+            _time.sleep(_utils.WAIT_PNEUMATIC)
             self.pneumatic_off()
             return True
         except Exception:
@@ -818,23 +816,13 @@ class MeasurementWidget(_ConfigurationWidget):
                 msg = 'Multimeter not connected.'
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
                 return False
-            # interval to wait after command
-            wait = _utils.WAIT_MULTIMETER
-            # configure multimeter and read measurement
-            _multimeter.inst.write(b':CONF:VOLT:DC 10\r\n')
-            _time.sleep(wait)
-            dummy = _multimeter.inst.read_all()
-            _multimeter.inst.write(b'VOLT:DC:NPLC 0.02\r\n')
-            _time.sleep(wait)
-            dummy = _multimeter.inst.read_all()
-            _multimeter.inst.write(b'VOLT:DC:NPLC?\r\n')
-            _time.sleep(wait)
-            dummy = _multimeter.inst.read_all().decode('utf-8')
-            print(dummy)
-            _multimeter.inst.write(b':MEAS:VOLT:DC?\r\n')
-            _time.sleep(wait)
-            reading = _multimeter.inst.read_all().decode('utf-8')
-            reading = reading.replace('\r\n','')
+            reading = _multimeter.single_dc_read(
+                wait=_utils.WAIT_MULTIMETER
+            )
+            if reading == None:
+                msg = 'Read command failed.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
             # update data on gui
             self.ui.lcd_hall_sensor_voltage.display(reading)
             return True
