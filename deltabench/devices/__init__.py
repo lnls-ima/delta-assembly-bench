@@ -1,8 +1,10 @@
 """Sub-package for delta assembly bench devices."""
 
+import sys as _sys
 import os as _os
 import time as _time
 import numpy as _np
+import traceback as _traceback
 
 from imautils.devices.utils import configure_logging
 from imautils.devices import HeidenhainLib as _HeidenhainLib
@@ -53,12 +55,19 @@ class Driver(_ParkerDriverLib.ParkerDriverSerial):
 
 class Multimeter(_Agilent34401ALib.Agilent34401ASerial):
     """ Class with custom functions for Agilent 34401A multimeter """
-#    def configure_voltage(self):
-#        return True
-#
-#    def read(self):
-#        return True
-    pass
+    def single_dc_read(self, wait=0.5):
+        """ Do a single fast DC read """
+        try:
+            if self.inst.in_waiting > 0:
+                dummy = self.inst.read_all()
+            self.inst.write(b'MEAS:VOLT:DC? 10,0.003\r\n')
+            _time.sleep(wait)
+            reading = self.inst.read_all().decode('utf-8')
+            reading = float(reading.replace('\r\n',''))
+            return reading
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return None
 
 _timestamp = _time.strftime('%Y-%m-%d_%H-%M-%S', _time.localtime())
 
