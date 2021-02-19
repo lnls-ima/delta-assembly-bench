@@ -302,7 +302,7 @@ class ScanWidget(_ConfigurationWidget):
                 if status is False:
                     break
                 # read hall sensor
-                hall_volt = _multimeter.read()
+                hall_volt = _multimeter.single_dc_read(wait=_utils.WAIT_MULTIMETER)
                 # store hall and encoder measurements
                 self.hall_sample_list.append(hall_volt)
                 hall_cnt = 1 + pos + hall_step_count * (block_idx - 1)
