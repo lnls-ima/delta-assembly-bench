@@ -569,7 +569,9 @@ class ScanWidget(_ConfigurationWidget):
                         and scan_data['scan_step_size']
                             == self.ui.sbd_scan_step_size.value()
                         and scan_data['hall_samples_per_block']
-                            == self.ui.sb_hall_samples_per_block.value()):
+                            == self.ui.sb_hall_samples_per_block.value()
+                        and scan_data['advanced_options_id']
+                            == self.advanced_options.idn):
                     msg = ('Scan config already exists with ID '
                           +str(scan_id)
                           +' but parameters do not match.'
