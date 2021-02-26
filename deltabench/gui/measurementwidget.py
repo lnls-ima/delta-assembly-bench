@@ -111,25 +111,25 @@ class MeasurementWidget(_ConfigurationWidget):
         # start periodic limit switch status update
         self.timer2.start(self._update_limit_switch_interval*1000)
 
-        # create dictionary for magnet direction images
-        self.direction_images = {}
-        self.direction_images['up'] = QPixmap(
-            os.path.join('deltabench','resources', 'img',
-                         'arrow-up-bold-outline.png')
-        )
-        self.direction_images['down'] = QPixmap(
-            os.path.join('deltabench','resources', 'img',
-                         'arrow-down-bold-outline.png')
-        )
-        self.direction_images['left'] = QPixmap(
-            os.path.join('deltabench','resources', 'img',
-                         'arrow-left-bold-outline.png')
-        )
-        self.direction_images['right'] = QPixmap(
-            os.path.join('deltabench','resources', 'img',
-                         'arrow-right-bold-outline.png')
-        )
-        self.direction_images['none'] = QPixmap()
+#        # create dictionary for magnet direction images
+#        self.direction_images = {}
+#        self.direction_images['up'] = QPixmap(
+#            os.path.join('deltabench','resources', 'img',
+#                         'arrow-up-bold-outline.png')
+#        )
+#        self.direction_images['down'] = QPixmap(
+#            os.path.join('deltabench','resources', 'img',
+#                         'arrow-down-bold-outline.png')
+#        )
+#        self.direction_images['left'] = QPixmap(
+#            os.path.join('deltabench','resources', 'img',
+#                         'arrow-left-bold-outline.png')
+#        )
+#        self.direction_images['right'] = QPixmap(
+#            os.path.join('deltabench','resources', 'img',
+#                         'arrow-right-bold-outline.png')
+#        )
+#        self.direction_images['none'] = QPixmap()
 
     @property
     def advanced_options(self):
@@ -897,8 +897,7 @@ class MeasurementWidget(_ConfigurationWidget):
             block_data = self.access_block_data.db_search_collection(
                 fields=['scan_id', 'block_number', 'x_position',
                         'x_position_error', 'z_position',
-                        'z_position_error', 'encoder_position',
-                        'block_direction'
+                        'z_position_error', 'encoder_position'
                 ],
                 filters=[scan_id, block, '', '', '', '', '', ''
                 ]
@@ -911,28 +910,28 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.lcd_stored_z_position_error.display(block_data['z_position_error'])
 #            self.ui.lcd_hall_reading_stored.display(block_data['hall_sensor_voltage'])
             self.ui.lcd_stored_encoder_position.display(block_data['encoder_position'])
-            # update block direction image
-            block_direction = block_data['block_direction']
-            if block_direction == 1:
-                self.ui.la_magnet_direction.setPixmap(
-                    self.direction_images['up']
-                )
-            elif block_direction == 2:
-                self.ui.la_magnet_direction.setPixmap(
-                    self.direction_images['right']
-                )
-            elif block_direction == 3:
-                self.ui.la_magnet_direction.setPixmap(
-                    self.direction_images['down']
-                )
-            elif block_direction == 4:
-                self.ui.la_magnet_direction.setPixmap(
-                    self.direction_images['left']
-                )
-            else:
-                self.ui.la_magnet_direction.setPixmap(
-                    self.direction_images['none']
-                )
+#            # update block direction image
+#            block_direction = block_data['block_direction']
+#            if block_direction == 1:
+#                self.ui.la_magnet_direction.setPixmap(
+#                    self.direction_images['up']
+#                )
+#            elif block_direction == 2:
+#                self.ui.la_magnet_direction.setPixmap(
+#                    self.direction_images['right']
+#                )
+#            elif block_direction == 3:
+#                self.ui.la_magnet_direction.setPixmap(
+#                    self.direction_images['down']
+#                )
+#            elif block_direction == 4:
+#                self.ui.la_magnet_direction.setPixmap(
+#                    self.direction_images['left']
+#                )
+#            else:
+#                self.ui.la_magnet_direction.setPixmap(
+#                    self.direction_images['none']
+#                )
         else:
             # clear displays
             self.ui.lcd_stored_x_position.display('')
@@ -941,9 +940,9 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.lcd_stored_z_position_error.display('')
 #            self.ui.lcd_hall_reading_stored.display('')
             self.ui.lcd_stored_encoder_position.display('')
-            self.ui.la_magnet_direction.setPixmap(
-                self.direction_images['none']
-            )
+#            self.ui.la_magnet_direction.setPixmap(
+#                self.direction_images['none']
+#            )
         return True
 
     def update_measurement_list(self):

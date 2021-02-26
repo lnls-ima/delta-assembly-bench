@@ -117,7 +117,7 @@ class ScanWidget(_ConfigurationWidget):
         self.z_probe_sample_error_list = []
         self.block_number_list = []
         self.encoder_sample_list_for_probes = []
-        self.block_direction_list = []
+#        self.block_direction_list = []
 
         # object to store DB entries before saving
         self.block_data = _measurement.BlockData()
@@ -309,15 +309,15 @@ class ScanWidget(_ConfigurationWidget):
                 self.hall_sample_index_list.append(hall_cnt)
                 self.encoder_sample_list_for_hall.append(last_enc_pos)
                 # when all hall samples were taken for a block
-                # calculate direction of block
-                if pos == hall_step_count - 1:
-                    self.block_direction_list.append(
-                        self.calculate_block_direction(
-                            self.hall_sample_list[
-                                (hall_cnt - hall_step_count):hall_cnt
-                            ]
-                        )
-                    )
+#                # calculate direction of block
+#                if pos == hall_step_count - 1:
+#                    self.block_direction_list.append(
+#                        self.calculate_block_direction(
+#                            self.hall_sample_list[
+#                                (hall_cnt - hall_step_count):hall_cnt
+#                            ]
+#                        )
+#                    )
                 # measure position at block center
                 if pos == block_center:
                     # trigger pneumatic actuator
@@ -438,56 +438,56 @@ class ScanWidget(_ConfigurationWidget):
 
         return True
 
-    def calculate_block_direction(self, hall_readings):
-        """ Calculate magnet direction based on hall readings.
-
-            Input: list of hall sensor readings for a given magnet.
-            Return value: list of integers, same size as input,
-                          with the following meanings.
-                0: Magnet direction unknow
-                1: Magnet pointing UP
-                2: Magnet pointing to the RIGHT
-                3: Magnet pointing DOWN
-                4: Magnet pointing to the LEFT """
-        magnet_direction = 0
-
-        list_size = len(hall_readings)
-        if list_size < 3:
-            # return 'unknow direction'
-            return magnet_direction
-
-        # calculate vector of first 'differences'
-        diff_1 = []
-        for i in range(1, list_size):
-            diff_1.append(hall_readings[i] - hall_readings[i-1])
-        # calculate vector of second 'differences'
-        diff_2 = []
-        for i in range(1, len(diff_1)):
-            diff_2.append(diff_1[i] - diff_1[i-1])
-
-        pos_diff_1_cnt = sum(1 for i in diff_1 if i > 0)
-        pos_diff_2_cnt = sum(1 for i in diff_2 if i > 0)
-        neg_diff_1_cnt = sum(1 for i in diff_1 if i < 0)
-        neg_diff_2_cnt = sum(1 for i in diff_2 if i < 0)
-
-        # if field waveform is at first quadrant
-        if (pos_diff_1_cnt > neg_diff_1_cnt
-            and pos_diff_2_cnt < neg_diff_2_cnt):
-            magnet_direction = 1
-        # if field waveform is at second quadrant
-        elif (pos_diff_1_cnt < neg_diff_1_cnt
-            and pos_diff_2_cnt < neg_diff_2_cnt):
-            magnet_direction = 2
-        # if field waveform is at third quadrant
-        elif (pos_diff_1_cnt < neg_diff_1_cnt
-            and pos_diff_2_cnt > neg_diff_2_cnt):
-            magnet_direction = 3
-        # if field waveform is at forth quadrant
-        elif (pos_diff_1_cnt > neg_diff_1_cnt
-            and pos_diff_2_cnt > neg_diff_2_cnt):
-            magnet_direction = 4
-
-        return magnet_direction
+#    def calculate_block_direction(self, hall_readings):
+#        """ Calculate magnet direction based on hall readings.
+#
+#            Input: list of hall sensor readings for a given magnet.
+#            Return value: list of integers, same size as input,
+#                          with the following meanings.
+#                0: Magnet direction unknow
+#                1: Magnet pointing UP
+#                2: Magnet pointing to the RIGHT
+#                3: Magnet pointing DOWN
+#                4: Magnet pointing to the LEFT """
+#        magnet_direction = 0
+#
+#        list_size = len(hall_readings)
+#        if list_size < 3:
+#            # return 'unknow direction'
+#            return magnet_direction
+#
+#        # calculate vector of first 'differences'
+#        diff_1 = []
+#        for i in range(1, list_size):
+#            diff_1.append(hall_readings[i] - hall_readings[i-1])
+#        # calculate vector of second 'differences'
+#        diff_2 = []
+#        for i in range(1, len(diff_1)):
+#            diff_2.append(diff_1[i] - diff_1[i-1])
+#
+#        pos_diff_1_cnt = sum(1 for i in diff_1 if i > 0)
+#        pos_diff_2_cnt = sum(1 for i in diff_2 if i > 0)
+#        neg_diff_1_cnt = sum(1 for i in diff_1 if i < 0)
+#        neg_diff_2_cnt = sum(1 for i in diff_2 if i < 0)
+#
+#        # if field waveform is at first quadrant
+#        if (pos_diff_1_cnt > neg_diff_1_cnt
+#            and pos_diff_2_cnt < neg_diff_2_cnt):
+#            magnet_direction = 1
+#        # if field waveform is at second quadrant
+#        elif (pos_diff_1_cnt < neg_diff_1_cnt
+#            and pos_diff_2_cnt < neg_diff_2_cnt):
+#            magnet_direction = 2
+#        # if field waveform is at third quadrant
+#        elif (pos_diff_1_cnt < neg_diff_1_cnt
+#            and pos_diff_2_cnt > neg_diff_2_cnt):
+#            magnet_direction = 3
+#        # if field waveform is at forth quadrant
+#        elif (pos_diff_1_cnt > neg_diff_1_cnt
+#            and pos_diff_2_cnt > neg_diff_2_cnt):
+#            magnet_direction = 4
+#
+#        return magnet_direction
 
     def clear_x_probe_graph_only(self):
         """ Clear data from ui probe x graph """
@@ -569,7 +569,7 @@ class ScanWidget(_ConfigurationWidget):
         self.z_probe_sample_list = []
         self.z_probe_sample_error_list = []
         self.block_number_list = []
-        self.block_direction_list = []
+#        self.block_direction_list = []
         self.encoder_sample_list_for_probes = []
         # clear database table
         self.block_data.clear()
@@ -1054,10 +1054,10 @@ class ScanWidget(_ConfigurationWidget):
 
         # read hall data from DB
         elem_list = self.access_hall_data.db_search_collection(
-            fields=['scan_id', 'block_number', 'reading_index',
+            fields=['scan_id', 'reading_index',
                     'hall_sensor_voltage', 'encoder_position'
             ],
-            filters=[scan_id, '', '', '', ''
+            filters=[scan_id, '', '', ''
             ]
         )
         if len(elem_list) > 0:
@@ -1117,12 +1117,12 @@ class ScanWidget(_ConfigurationWidget):
             hall_samples_per_block = self.global_config.hall_samples_per_block
 
             # save all new hall data entries
-            j = 0
+#            j = 0
             for i in range(0, len(self.hall_sample_list)):
-                if (i % hall_samples_per_block == 0 and i != 0):
-                    j = j + 1
+#                if (i % hall_samples_per_block == 0 and i != 0):
+#                    j = j + 1
                 self.hall_data.scan_id = self.global_config.idn
-                self.hall_data.block_number = self.block_number_list[j]
+#                self.hall_data.block_number = self.block_number_list[j]
                 self.hall_data.reading_index = self.hall_sample_index_list[i]
                 self.hall_data.hall_sensor_voltage = self.hall_sample_list[i]
                 self.hall_data.encoder_position = self.encoder_sample_list_for_hall[i]
@@ -1136,7 +1136,7 @@ class ScanWidget(_ConfigurationWidget):
             for i in range(0, len(self.block_number_list)):
                 self.block_data.scan_id = self.global_config.idn
                 self.block_data.block_number = self.block_number_list[i]
-                self.block_data.block_direction = self.block_direction_list[i]
+#                self.block_data.block_direction = self.block_direction_list[i]
                 self.block_data.x_position = self.x_probe_sample_list[i]
                 self.block_data.x_position_error = self.x_probe_sample_error_list[i]
                 self.block_data.z_position = self.z_probe_sample_list[i]
