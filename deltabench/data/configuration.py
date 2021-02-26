@@ -94,6 +94,6 @@ class ScanConfig(_database.DatabaseAndFileDocument):
         ('start_reference_position', {'dtype': float, 'not_null': True}),
         ('scan_step_size', {'dtype': float, 'not_null': True}),
         ('hall_samples_per_block', {'dtype': int, 'not_null': True}),
-        ('advanced_options_id', {'dtype': int}),
+        ('advanced_options_id', {'dtype': int, 'not_null':True}),
     ])
 
