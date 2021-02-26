@@ -252,14 +252,6 @@ class ScanWidget(_ConfigurationWidget):
         # wait pneumatic motion to finish
         _time.sleep(wait_pneumatic)
 
-        # do homing
-#        if not self.homing():
-#            msg = 'Homing failed - scan aborted.'
-#            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-#            # enable start scan button
-#            self.ui.pbt_start_scan.setEnabled(True)
-#            return status
-
         # start position
         scan_beginning = first_block_position
 
@@ -356,25 +348,6 @@ class ScanWidget(_ConfigurationWidget):
             pgb_value = self.ui.pgb_status.value()
             self.ui.pgb_status.setValue(pgb_value + pgb_step)
 
-        # measure last hall sample, at the end of last magnet
-        # and update graphs
-#        if status is True and not self.stop_sent:
-#            target_position = scan_beginning + block_count * block_step
-#            status_tuple = self.move_and_retry(target_position, tolerance,
-#                                      driver_address, rotation_direction,
-#                                      motor_resolution, velocity,
-#                                      acceleration, linear_conversion,
-#                                      move_timeout)
-#            status = status_tuple[0]
-#            last_enc_pos = status_tuple[1]
-#            # do last measurement
-#            if status is not False:
-#                # read hall sensor
-#                hall_volt = _multimeter.read()
-#                # store hall and encoder measurements
-#                self.hall_sample_list.append(hall_volt)
-#                self.encoder_sample_list_for_hall.append(last_enc_pos)
-
         if status is True:
             # store block number list
             self.block_number_list = block_list
@@ -432,9 +405,9 @@ class ScanWidget(_ConfigurationWidget):
             driver_address = self.advanced_options.motor_driver_address
             _driver.stop_motor(driver_address)
         except Exception:
+            _traceback.print_exc(file=_sys.stdout)
             msg = 'Failed to stop motor.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
 
         return True
 

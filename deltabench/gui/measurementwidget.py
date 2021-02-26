@@ -250,16 +250,6 @@ class MeasurementWidget(_ConfigurationWidget):
             provided, a max number of retries can also be specified. """
 
         try:
-            # ask user to confirm move
-#            msg = 'Please, make sure the stage path is clear '
-#                  'and that the pneumatic actuator is retreated.\n'
-#                  'Ready to proceed?'
-#            reply = _QMessageBox.question(
-#                self, 'Warning', msg, _QMessageBox.Ok | _QMessageBox.Abort
-#            )
-#            if reply != _QMessageBox.OK:
-#                return False
-
             # clear stop flag
             self.stop_sent = False
 
@@ -525,32 +515,6 @@ class MeasurementWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
-
-#    def store_position_1(self):
-#        """ Move probe 1 current position to store label """
-#        # check if heidenhain display is connected
-#        if not _display.connected:
-#            msg = 'Heidenhain display not connected.'
- #           _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
- #           return False
- #       # transfer current reading
- #       self.ui.le_x_position.setText(
- #           str(self.ui.lcd_curr_position_1.value())
- #       )
- #       return True
-
-#    def store_position_2(self):
-#        """ Move probe 2 current position to store label """
-#        # check if heidenhain display is connected
-#        if not _display.connected:
-#            msg = 'Heidenhain display not connected.'
-#            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-#            return False
-#        # transfer current reading
-#        self.ui.le_z_position.setText(
-#            str(self.ui.lcd_curr_position_2.value())
-#        )
-#        return True
 
     def connect_signal_slots(self):
         """Create signal/slot connections."""
@@ -832,30 +796,6 @@ class MeasurementWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return False
 
-#    def save_measurement_data(self):
-#        try:
-#            if self.database_name is None:
-#                msg = 'Invalid database filename.'
-#                _QMessageBox.critical(
-#                    self, 'Failure', msg, _QMessageBox.Ok)
-#                return False
-#
-#            self.measurement_data.db_update_database(
-#                self.database_name,
-#                mongo=self.mongo, server=self.server)
-#            self.measurement_data.db_save()
-#
-#            # update undulator list on interface
-#            self.update_measurement_list()
-#
-#            return True
-#
-#        except Exception:
-#            _traceback.print_exc(file=_sys.stdout)
-#            msg = 'Failed to save measurement to database.'
-#            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-#            return False
-
     def update_widget_gb_stored_data(self):
         # get names from selected filter values
         measurement = self.ui.cmb_measurement_list.currentText()
@@ -908,7 +848,6 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.lcd_stored_x_position_error.display(block_data['x_position_error'])
             self.ui.lcd_stored_z_position.display(block_data['z_position'])
             self.ui.lcd_stored_z_position_error.display(block_data['z_position_error'])
-#            self.ui.lcd_hall_reading_stored.display(block_data['hall_sensor_voltage'])
             self.ui.lcd_stored_encoder_position.display(block_data['encoder_position'])
 #            # update block direction image
 #            block_direction = block_data['block_direction']
@@ -938,7 +877,6 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.lcd_stored_x_position_error.display('')
             self.ui.lcd_stored_z_position.display('')
             self.ui.lcd_stored_z_position_error.display('')
-#            self.ui.lcd_hall_reading_stored.display('')
             self.ui.lcd_stored_encoder_position.display('')
 #            self.ui.la_magnet_direction.setPixmap(
 #                self.direction_images['none']
