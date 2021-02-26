@@ -38,7 +38,8 @@ WAIT_MOTION = 0.05
 WAIT_PNEUMATIC = 1.0
 WAIT_DRIVER = 0.04
 WAIT_MULTIMETER = 0.1
-WAIT_DISPLAY = 0.05
+WAIT_MULTIMETER_FETCH_READINGS = 5.0
+WAIT_DISPLAY = 0.04
 
 BASEPATH = _os.path.dirname(
     _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))

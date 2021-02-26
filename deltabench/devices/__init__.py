@@ -60,7 +60,8 @@ class Multimeter(_Agilent34401ALib.Agilent34401ASerial):
         try:
             if self.inst.in_waiting > 0:
                 dummy = self.inst.read_all()
-            self.inst.write(b'MEAS:VOLT:DC? 10,0.003\r\n')
+            self.inst.write(b'*CLS\r\n')
+            self.inst.write(b'MEAS:VOLT:DC? 10,0.01\r\n')
             _time.sleep(wait)
             reading = self.inst.read_all().decode('utf-8')
             reading = float(reading.replace('\r\n',''))
@@ -68,6 +69,95 @@ class Multimeter(_Agilent34401ALib.Agilent34401ASerial):
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             return None
+
+    def configure_fast_dc_volt(self):
+        """ Configure device for DC voltage measurements """
+        try:
+            self.inst.write(b'*RST\r\n')
+            _time.sleep(2.0)
+            self.inst.write(b'SYSTem:REMote\r\n')
+            self.inst.write(b':CONF:VOLT:DC 10,0.01\r\n')
+            self.inst.write(b'VOLT:DC:NPLC 0.02\r\n')
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def configure_triggered_read(self, sample_count=1, trigger_count=1):
+        """ Configure device to take readings on trigger """
+        try:
+            if self.inst.in_waiting > 0:
+                dummy = self.inst.read_all()
+            term = b'\r\n'
+            sample_count_bytes = bytes(str(sample_count),'ascii')
+            trigger_count_bytes = bytes(str(trigger_count),'ascii')
+            self.inst.write(b'*CLS'+term)
+            self.inst.write(b'SYSTem:REMote'+term)
+            self.inst.write(b'TRIGger:SOURce BUS'+term)
+            self.inst.write(
+                b'SAMPle:COUNt '+sample_count_bytes+term
+            )
+            self.inst.write(
+                b'TRIGger:COUNt '+trigger_count_bytes+term
+            )
+            self.inst.write(b'INIT'+term)
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def send_soft_trigger(self):
+        """ Send software trigger to device """
+        try:
+            self.inst.write(b'*TRG\r\n')
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def configure_immediate_read(self, sample_count=1, trigger_count=1):
+        """ Configure device for immediate measurements after init """
+        try:
+            if self.inst.in_waiting > 0:
+                dummy = self.inst.read_all()
+            term = b'\r\n'
+            sample_count_bytes = bytes(str(sample_count),'ascii')
+            trigger_count_bytes = bytes(str(trigger_count),'ascii')
+            self.inst.write(b'*CLS'+term)
+            self.inst.write(b'SYSTem:REMote'+term)
+            self.inst.write(b'TRIGger:SOURce IMM'+term)
+            self.inst.write(b'SAMPle:COUNt '+sample_count_bytes+term)
+            self.inst.write(b'TRIGger:COUNt '+trigger_count_bytes+term)
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def start_immediate_read(self):
+        """ Start immediate measurements """
+        try:
+            self.inst.write(b'INIT\r\n')
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return False
+
+    def fetch_readings(self, wait=1.0):
+        """ Fetch readings already available in device memory """
+        try:
+            # read
+            self.inst.write(b'FETCH?\r\n')
+            _time.sleep(wait)
+            readings = self.inst.read_all().decode('utf-8')
+            readings = readings.replace('\r\n','')
+            # try to convert to float list
+            readings_list = [
+                float(r) for r in readings.split(',') if r != ''
+            ]
+            return readings_list
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            return []
 
 _timestamp = _time.strftime('%Y-%m-%d_%H-%M-%S', _time.localtime())
 
