@@ -103,7 +103,6 @@ class MeasurementWidget(_ConfigurationWidget):
         self.current_encoder_position = 0.0
         self.encoder_measurement_index = -1
 
-        self.hall_threshold = None
 #        self.measurement_data = _measurement.MeasurementData()
 
         # start periodic display update

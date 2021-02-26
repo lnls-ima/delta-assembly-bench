@@ -236,7 +236,10 @@ class ScanWidget(_ConfigurationWidget):
             rotation_direction = (
                 self.advanced_options.motor_rotation_direction
             )
-            velocity = self.advanced_options.motor_velocity
+            max_velocity = self.advanced_options.motor_velocity
+            hall_scan_velocity = (
+                self.advanced_options.motor_velocity_hall_scan
+            )
             acceleration = self.advanced_options.motor_acceleration
             linear_conversion = (
                 self.advanced_options.linear_conversion_factor
@@ -284,7 +287,7 @@ class ScanWidget(_ConfigurationWidget):
             _time.sleep(wait_multimeter)
 
             # calculate acceleration distance
-            t_acc = velocity / acceleration
+            t_acc = hall_scan_velocity / acceleration
             acc_distance = (
                 0.5 * acceleration * t_acc * t_acc * linear_conversion
             )
@@ -292,7 +295,7 @@ class ScanWidget(_ConfigurationWidget):
             t_acc_total = t_acc + 0.05
 
             # time between hall points
-            t_hall = hall_step / (velocity * linear_conversion)
+            t_hall = hall_step / (hall_scan_velocity * linear_conversion)
 
             # start position
             scan_beginning = (
@@ -305,7 +308,7 @@ class ScanWidget(_ConfigurationWidget):
             status_tuple = self.move_and_retry(
                            scan_beginning, tolerance,
                            driver_address, rotation_direction,
-                           motor_resolution, velocity,
+                           motor_resolution, max_velocity,
                            acceleration, linear_conversion,
                            timeout=move_timeout)
             status = status_tuple[0]
@@ -343,7 +346,7 @@ class ScanWidget(_ConfigurationWidget):
                         mode,
                         curr_dir,
                         motor_resolution,
-                        velocity,
+                        hall_scan_velocity,
                         acceleration,
                         steps):
                     msg = 'Failed to send configuration to motor.'

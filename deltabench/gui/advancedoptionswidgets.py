@@ -49,22 +49,20 @@ class AdvancedOptionsWidget(_ConfigurationWidget):
 
         self.sb_names = [
             'motor_driver_address',
-            'hall_threshold',
         ]
 
         self.sbd_names = [
             'motor_velocity',
+            'motor_velocity_hall_scan',
             'motor_acceleration',
             'motor_resolution',
             'position_tolerance',
             'linear_conversion_factor',
             'move_timeout',
-            'encoder_resolution',
         ]
 
         self.cmb_names = [
             'motor_rotation_direction',
-            'encoder_direction',
             'display_model',
         ]
 
