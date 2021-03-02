@@ -465,7 +465,7 @@ class ScanWidget(_ConfigurationWidget):
                     )
                 )
                 # update plot
-                self.update_graph_hall(
+                status &= self.update_graph_hall(
                     self.encoder_sample_list_for_hall,
                     self.hall_sample_list
                 )
@@ -660,12 +660,12 @@ class ScanWidget(_ConfigurationWidget):
                 for z_sample in self.z_probe_sample_list:
                     self.z_probe_sample_error_list.append(z_sample - z_ref)
 
-                self.update_graph_x_probe(
+                status &= self.update_graph_x_probe(
                     self.block_number_list,
                     self.x_probe_sample_list,
                     self.x_probe_sample_error_list
                 )
-                self.update_graph_z_probe(
+                status &= self.update_graph_z_probe(
                     self.block_number_list,
                     self.z_probe_sample_list,
                     self.z_probe_sample_error_list
@@ -1202,11 +1202,13 @@ class ScanWidget(_ConfigurationWidget):
             self.ui.pw_x_probe.setLabel('bottom', 'Block index')
             self.ui.pw_x_probe.setLabel('left', 'Probe x [mm]')
             self.ui.pw_x_probe.showGrid(x=True, y=True)
+            return True
+
         except Exception:
+            _traceback.print_exc(file=_sys.stdout)
             msg = 'Failed to update x probe graph.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
-        return True
+            return False
 
     def update_graph_z_probe(self, x_axis_z_probe, y_axis_z_probe,
                               y_axis_z_probe_error):
@@ -1263,11 +1265,13 @@ class ScanWidget(_ConfigurationWidget):
             self.ui.pw_z_probe.setLabel('bottom', 'Block index')
             self.ui.pw_z_probe.setLabel('left', 'Probe z [mm]')
             self.ui.pw_z_probe.showGrid(x=True, y=True)
+            return True
+
         except Exception:
+            _traceback.print_exc(file=_sys.stdout)
             msg = 'Failed to update z probe graph.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
-        return True
+            return False
 
     def update_graph_hall(self, x_axis_hall, y_axis_hall):
         """ Update plots with the data provided. If y axis data
@@ -1303,11 +1307,13 @@ class ScanWidget(_ConfigurationWidget):
             self.ui.pw_hall.setLabel('bottom', 'Encoder Position')
             self.ui.pw_hall.setLabel('left', 'Hall reading [V]')
             self.ui.pw_hall.showGrid(x=True, y=True)
+            return True
+
         except Exception:
+            _traceback.print_exc(file=_sys.stdout)
             msg = 'Failed to update hall graph.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
-        return True
+            return False
 
     def move_and_retry(self, target_position, tolerance, driver_address,
                        rotation_direction, motor_resolution, velocity,
