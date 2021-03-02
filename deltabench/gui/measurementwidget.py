@@ -539,6 +539,7 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.pbt_read_position.clicked.connect(self.read_position)
         self.ui.pbt_read_all.clicked.connect(self.read_all)
         self.ui.pbt_set_zero.clicked.connect(self.set_reference_zero)
+        self.ui.pbt_set_gauge_reference.clicked.connect(self.set_probe_zero)
 
     @property
     def advanced_options(self):
@@ -587,6 +588,44 @@ class MeasurementWidget(_ConfigurationWidget):
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             msg = 'Failed to send command to driver.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def set_probe_zero(self):
+        """ Set display length gauges position to zero """
+        try:
+            # check display connection
+            if not _display.connected:
+                msg = 'Display not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            # advance gauges
+            status = self.pneumatic_on()
+            if status == False:
+                raise RuntimeError('Could not enable pneumatic actuator')
+            _time.sleep(_utils.WAIT_PNEUMATIC)
+            _QApplication.processEvents()
+
+            # send cmds to reset display X and Y axes
+            axes = [0, 1]
+            value = 0
+            for axis in axes:
+                _display.write_display_value(
+                    axis, value, wait=_utils.WAIT_DISPLAY
+                )
+
+            # retreat gauges
+            _time.sleep(_utils.WAIT_PNEUMATIC)
+            status = self.pneumatic_off()
+            if status == False:
+                raise RuntimeError('Could not disable pneumatic actuator')
+
+            return True
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to set length gauges references to zero.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return False
 
