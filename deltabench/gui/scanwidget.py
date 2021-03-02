@@ -1573,12 +1573,29 @@ class ScanWidget(_ConfigurationWidget):
 
             hall_samples_per_block = self.global_config.hall_samples_per_block
 
+            # store hall data
             with _pyqtgraph.ProgressDialog(
                     "Saving hall data...", 0, 100, cancelText=None) as dlg:
 
                 hall_list_size = len(self.hall_sample_list)
                 if hall_list_size > 0:
                     pgb_step = 100/hall_list_size
+                    # verify if some point already exists
+                    data_list = self.access_hall_data.db_search_collection(
+                        fields=['scan_id', 'reading_index'],
+                        filters=[self.global_config.idn, '']
+                    )
+                    if any(e['reading_index'] >= self.hall_sample_index_list[0] 
+                           and e['reading_index'] <= self.hall_sample_index_list[-1] for e in data_list):
+                        msg = (
+                               "The new hall data overlaps with already"
+                               " saved readings. Please, erase the"
+                               " data from DB if necessary and try again."
+                        )
+                        _QMessageBox.critical(
+                            self, 'Conflict', msg, _QMessageBox.Ok)
+                        return False
+
                 # save all new hall data entries
 #                j = 0
                 for i in range(0, hall_list_size):
@@ -1599,12 +1616,29 @@ class ScanWidget(_ConfigurationWidget):
                     # update progress bar
                     dlg.setValue(pgb_step * i)
 
+            # store block data
             with _pyqtgraph.ProgressDialog(
                     "Saving block data...", 0, 100, cancelText=None) as dlg:
 
                 block_list_size = len(self.block_number_list)
                 if block_list_size > 0:
                     pgb_step = 100/block_list_size
+                    # verify if some point already exists
+                    data_list = self.access_block_data.db_search_collection(
+                        fields=['scan_id', 'block_number'],
+                        filters=[self.global_config.idn, '']
+                    )
+                    if any(e['block_number'] >= self.block_number_list[0] 
+                           and e['block_number'] <= self.block_number_list[-1] for e in data_list):
+                        msg = (
+                               "The new position data overlaps with already"
+                               " saved readings. Please, erase the"
+                               " data from DB if necessary and try again."
+                        )
+                        _QMessageBox.critical(
+                            self, 'Conflict', msg, _QMessageBox.Ok)
+                        return False
+
                 # save all new block data entries
                 for i in range(0, block_list_size):
                     self.block_data.scan_id = self.global_config.idn
