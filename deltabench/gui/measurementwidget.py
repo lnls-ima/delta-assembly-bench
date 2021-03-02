@@ -3,6 +3,7 @@
 """Manual Measurement widget for the control application."""
 
 import sys as _sys
+import os
 import numpy as _np
 import time as _time
 import math
@@ -33,24 +34,46 @@ from deltabench.devices import (
 from imautils.db import database as _database
 import collections as _collections
 import natsort as _natsort
+from PyQt5.QtGui import QPixmap        
 
 class MeasurementWidget(_ConfigurationWidget):
     """Measurement widget class for the control application."""
 
     _update_display_interval = _utils.UPDATE_DISPLAY_INTERVAL
+    _update_limit_switch_interval = _utils.UPDATE_LIMIT_SWITCH_INTERVAL
 
     def __init__(self, parent=None):
         """Set up the ui."""
         uifile = _utils.get_ui_file(self)
-        config = _configuration.MeasurementConfig()
+        config = _configuration.ControlConfig()
         super().__init__(uifile, config, parent=parent)
-        self.timer = _QTimer()
-        self.timer.timeout.connect(self.periodic_display_update)
+        self.timer1 = _QTimer()
+        self.timer1.timeout.connect(self.periodic_display_update)
+        self.timer2 = _QTimer()
+        self.timer2.timeout.connect(self.periodic_limit_switch_update)
 
-        # create object to use database functions
-        self.access_measurement_data = _database.DatabaseCollection(
+        # create objects to use database functions
+#        self.access_measurement_data = _database.DatabaseCollection(
+#            database_name=self.database_name,
+#            collection_name=_measurement.MeasurementData.collection_name,
+#            mongo=self.mongo,
+#            server=self.server
+#        )
+        self.access_block_data = _database.DatabaseCollection(
             database_name=self.database_name,
-            collection_name=_measurement.MeasurementData.collection_name,
+            collection_name=_measurement.BlockData.collection_name,
+            mongo=self.mongo,
+            server=self.server
+        )
+        self.access_hall_data = _database.DatabaseCollection(
+            database_name=self.database_name,
+            collection_name=_measurement.HallWaveformData.collection_name,
+            mongo=self.mongo,
+            server=self.server
+        )
+        self.access_scan_data = _database.DatabaseCollection(
+            database_name=self.database_name,
+            collection_name=_configuration.ScanConfig.collection_name,
             mongo=self.mongo,
             server=self.server
         )
@@ -59,13 +82,9 @@ class MeasurementWidget(_ConfigurationWidget):
         ]
 
         self.le_names = [
-            'undulator_name',
-            'cassette_name',
-            'block_name',
         ]
 
         self.te_names = [
-            'comments',
         ]
 
         self.sbd_names = [
@@ -84,11 +103,32 @@ class MeasurementWidget(_ConfigurationWidget):
         self.current_encoder_position = 0.0
         self.encoder_measurement_index = -1
 
-        self.hall_threshold = None
-        self.measurement_data = _measurement.MeasurementData()
+#        self.measurement_data = _measurement.MeasurementData()
 
-        # start to read display periodically
-        self.timer.start(self._update_display_interval*1000)
+        # start periodic display update
+        self.timer1.start(self._update_display_interval*1000)
+        # start periodic limit switch status update
+        self.timer2.start(self._update_limit_switch_interval*1000)
+
+#        # create dictionary for magnet direction images
+#        self.direction_images = {}
+#        self.direction_images['up'] = QPixmap(
+#            os.path.join('deltabench','resources', 'img',
+#                         'arrow-up-bold-outline.png')
+#        )
+#        self.direction_images['down'] = QPixmap(
+#            os.path.join('deltabench','resources', 'img',
+#                         'arrow-down-bold-outline.png')
+#        )
+#        self.direction_images['left'] = QPixmap(
+#            os.path.join('deltabench','resources', 'img',
+#                         'arrow-left-bold-outline.png')
+#        )
+#        self.direction_images['right'] = QPixmap(
+#            os.path.join('deltabench','resources', 'img',
+#                         'arrow-right-bold-outline.png')
+#        )
+#        self.direction_images['none'] = QPixmap()
 
     @property
     def advanced_options(self):
@@ -105,55 +145,91 @@ class MeasurementWidget(_ConfigurationWidget):
     def global_config(self, value):
         _QApplication.instance().measurement_config = value
 
+    @property
+    def emergency_stop(self):
+        """Return the global emergency stop value."""
+        return _QApplication.instance().emergency_stop
+
+    @emergency_stop.setter
+    def emergency_stop(self, value):
+        """Return the global emergency stop value."""
+        _QApplication.instance().emergency_stop = value
+
     def periodic_display_update(self):
         """ Update probe and encoder information periodically. """
 
-        # update probe and encoder readings
-        if _display.connected:
-            # read probes and encoder
-#            readings = _display.read_display(
-#                    model=self.advanced_options.display_model
-#            )
-            try:
-                # interval to wait after command
-                wait = 0.15
+        try:
+            # check if enabled
+            update_enabled = (
+                self.ui.chb_encoder_update_enable.isChecked()
+            )
+            # interval to wait after reading request
+            wait_display = _utils.WAIT_DISPLAY
 
-                _display.inst.write(b'\x1bA0200\r')
-                _time.sleep(wait)
-                readings = _display.inst.read_all().decode('utf-8')
-                readings = readings.upper().split(' R\r\n')
+            # update probe and encoder readings
+            if _display.connected and update_enabled:
+                # read encoder from display
+                readings = _display.read_display(
+                    self.advanced_options.display_model, 
+                    wait=wait_display
+                )
+                if math.isnan(readings[2]):
+                    # indicate encoder fault
+                    self.encoder_measurement_index = -1
+                    return False
 
-                aux1 = readings[0][readings[0].find('X=') + 2:]
-                aux1 = aux1.replace(' ', '')
-    
-                aux2 = readings[1][readings[1].find('Y=') + 2:]
-                aux2 = aux2.replace(' ', '')
-    
-                aux3 = readings[2][readings[2].find('Z=') + 2:]
-                aux3 = aux3.replace(' ', '')
-    
-                readings = [float(aux1), float(aux2), float(aux3)]
-    
-                # update ui
-                self.ui.lcd_curr_position_1.display(readings[0])
-                self.ui.lcd_curr_position_2.display(readings[1])
+                # update encoder position on gui
                 self.ui.lcd_linear_encoder_position.display(readings[2])
-    
+
                 # update global encoder data
                 self.current_encoder_position = readings[2]
                 self.encoder_measurement_index = (
                     (self.encoder_measurement_index + 1) % 1e6
                 )
-            except Exception:
+            else:
                 # indicate encoder fault
                 self.encoder_measurement_index = -1
-                # print fault to stdout
-                _traceback.print_exc(file=_sys.stdout)
-        else:
+        except Exception:
             # indicate encoder fault
             self.encoder_measurement_index = -1
+            # print fault to stdout
+            _traceback.print_exc(file=_sys.stdout)
 
         return True
+
+    def periodic_limit_switch_update(self):
+        """ Periodically update limit status on GUI """
+        try:
+            # check driver connection
+            if not _driver.connected:
+                self.ui.la_positive_limit.setEnabled(False)
+                self.ui.la_negative_limit.setEnabled(False)
+                return False
+
+            driver_address = self.advanced_options.motor_driver_address
+            rotation_direction = (
+                self.advanced_options.motor_rotation_direction
+            )
+
+            # read all input status from driver
+            status = _driver.input_status(driver_address, wait=_utils.WAIT_DRIVER)
+            # if any limit is on, set global emergency stop
+#            if status[5] or status[6]:
+#                self.emergency_stop = True
+            # update GUI and switch limits if main direction is reversed
+            if rotation_direction == '+':
+                self.ui.la_positive_limit.setEnabled(status[6])
+                self.ui.la_negative_limit.setEnabled(status[5])
+            else:
+                self.ui.la_positive_limit.setEnabled(status[5])
+                self.ui.la_negative_limit.setEnabled(status[6])
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            print('Error during periodic limit switch update')
+            self.ui.la_positive_limit.setEnabled(False)
+            self.ui.la_negative_limit.setEnabled(False)
+            return False
 
     def disable_invalid_widgets(self):
         if self.ui.rbt_nr_steps.isChecked():
@@ -171,169 +247,231 @@ class MeasurementWidget(_ConfigurationWidget):
         """ Move motor to commanded position or by the specified
             number of steps. When an encoder target position is
             provided, a max number of retries can also be specified. """
-        # clear stop flag
-        self.stop_sent = False
 
-        # check motor connection
-        if not _driver.connected:
-            msg = 'Driver not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
+        try:
+            # clear stop flag
+            self.stop_sent = False
 
-        # whether to use encoder position or step as set point
-        use_encoder = self.ui.rbt_encoder_position.isChecked()
+            # check motor connection
+            if not _driver.connected:
+                msg = 'Driver not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
 
-        # check display connection
-        if use_encoder and not _display.connected:
-            msg = 'Display not connected - invalid encoder position.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
-
-        # interval to wait after motion command
-        wait = 0.1
-
-        # disable move and homing buttons
-        self.ui.pbt_move_motor.setEnabled(False)
-        self.ui.pbt_homing.setEnabled(False)
-        # process gui events
-        _QApplication.processEvents()
-
-        # get retry count
-        retry_count = int(self.ui.sb_retry_count.value())
-
-        # get motor info
-        driver_address = self.advanced_options.motor_driver_address
-        motor_resolution = (
-            self.advanced_options.motor_resolution
-        )
-        rotation_direction = (
-            self.advanced_options.motor_rotation_direction
-        )
-        velocity = self.advanced_options.motor_velocity
-        acceleration = self.advanced_options.motor_acceleration
-        linear_conversion = self.advanced_options.linear_conversion_factor
-        tolerance = self.advanced_options.position_tolerance
-        move_timeout = self.advanced_options.move_timeout
-
-        # motion mode is 'preset' (not continuous)
-        mode = 0
-
-        # step set point
-        steps = 0
-
-        # only used for encoder set point mode
-        target_position = 0
-        diff = 0
-        previous_encoder_index = 0
-
-        # if steps are selected, just assign number
-        if self.ui.rbt_nr_steps.isChecked():
-            steps = int(
-                self.ui.sb_commanded_nr_steps.value()
+            # whether to use encoder position or step as set point
+            use_encoder = self.ui.rbt_encoder_position.isChecked()
+            # encoder update enable status
+            enc_update_enabled = (
+                self.ui.chb_encoder_update_enable.isChecked()
             )
-            if rotation_direction == '-':
-                steps = -steps
-            # if steps selected, ignore retries
-            retry_count = 0
-        elif use_encoder:
-            # wait until there is a valid encoder reading
-            while (self.encoder_measurement_index == -1
-                  and not self.stop_sent
-                  and (_time.time() - t_start) < move_timeout):
-                _time.sleep(wait)
-                _QApplication.processEvents()
-            # get target position
-            target_position = float(
-                self.ui.sbd_commanded_encoder_position.value()
-            )
-            previous_encoder_index = self.encoder_measurement_index
-            diff = target_position - self.current_encoder_position
-            steps = math.floor(diff / (linear_conversion / motor_resolution))
-            if rotation_direction == '-':
-                steps = -steps
 
-        # try to reach position at the first move
-        if steps != 0 and not self.stop_sent:
-            # configure motor
-            if not _driver.config_motor(
-                   driver_address,
-                   mode,
-                   rotation_direction,
-                   motor_resolution,
-                   velocity,
-                   acceleration,
-                   steps):
-                msg = 'Failed to send configuration to motor.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
-            else:
-                # start motor motion if commanded to
-                _driver.move_motor(driver_address)
-                # wait for command reception
-                _time.sleep(wait)
-                # process gui events
-                _QApplication.processEvents()
+            # check display connection
+            if use_encoder and not _display.connected:
+                msg = 'Display not connected - invalid encoder position.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # check encoder update
+            if use_encoder and not enc_update_enabled:
+                msg = ('Encoder update must be enabled if '
+                       +'encoder set point is selected.'
+                )
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
 
-        # if necessary, retry position
-        while retry_count > 0:
-            # update counter
-            retry_count = retry_count - 1
-            # wait until motor is idle
-            while ((not _driver.ready(driver_address)
-                    or previous_encoder_index ==
-                       self.encoder_measurement_index
-                    or self.encoder_measurement_index == -1)
-                  and not self.stop_sent
-                  and (_time.time() - t_start) < move_timeout):
-                _time.sleep(wait)
-                _QApplication.processEvents()
-            # break if stop was sent or timeout happened
-            if self.stop_sent or (_time.time() - t_start) < move_timeout:
-                break
-            # update diff
-            previous_encoder_index = self.encoder_measurement_index
-            diff = target_position - self.current_encoder_position
-            # check if diff is small enough
-            if abs(diff) > abs(tolerance):
-                break
-            # update number of steps
-            steps = math.floor(diff / (linear_conversion / motor_resolution))
-            if rotation_direction == '-':
-                steps = -steps
-            # configure motor
-            if not _driver.config_motor(
-                   driver_address,
-                   mode,
-                   rotation_direction,
-                   motor_resolution,
-                   velocity,
-                   acceleration,
-                   steps):
-                msg = 'Failed to send configuration to motor.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
-            else:
-                # start motor motion if commanded to
-                _driver.move_motor(driver_address)
-                # wait for command reception
-                _time.sleep(wait)
-                # process gui events
-                _QApplication.processEvents()
+            # make sure pneumatic actuator is off
+            status = self.pneumatic_off()
+            if status == False:
+                msg = 'Failed to retreat pneumatic actuator.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
 
-        # wait until motor is idle
-        while (not _driver.ready(driver_address)
-              and (_time.time() - t_start) < move_timeout):
-            _time.sleep(wait)
+            # interval to wait after display read command
+            wait_display = _utils.WAIT_DISPLAY
+            # interval to wait after move
+            wait = _utils.WAIT_MOTION
+
+            # disable move and homing buttons
+            self.ui.pbt_move_motor.setEnabled(False)
+            self.ui.pbt_homing.setEnabled(False)
+            # process gui events
             _QApplication.processEvents()
 
-        # update motor moving LED
-        self.ui.la_motor_is_moving.setEnabled(False)
+            # get retry count
+            retry_count = int(self.ui.sb_retry_count.value())
 
-        # re-enable move and homing buttons
-        self.ui.pbt_move_motor.setEnabled(True)
-        self.ui.pbt_homing.setEnabled(True)
+            # get motor info
+            driver_address = self.advanced_options.motor_driver_address
+            motor_resolution = (
+                self.advanced_options.motor_resolution
+            )
+            rotation_direction = (
+                self.advanced_options.motor_rotation_direction
+            )
+            velocity = self.advanced_options.motor_velocity
+            acceleration = self.advanced_options.motor_acceleration
+            linear_conversion = self.advanced_options.linear_conversion_factor
+            tolerance = self.advanced_options.position_tolerance
+            move_timeout = self.advanced_options.move_timeout
 
-        return True
+            # timeout flag
+            is_timeout = False
+
+            # motion mode is 'preset' (not continuous)
+            mode = 0
+
+            # step set point
+            steps = 0
+
+            # only used for encoder set point mode
+            target_position = 0
+            diff = 0
+            previous_encoder_index = 0
+
+            # start time for timeout reference
+            t_start = _time.time()
+
+            # if steps are selected, just assign number
+            if self.ui.rbt_nr_steps.isChecked():
+                steps = int(
+                    self.ui.sb_commanded_nr_steps.value()
+                )
+                curr_dir = rotation_direction
+                if steps < 0:
+                    if rotation_direction == '+':
+                        curr_dir = '-'
+                    else:
+                        curr_dir = '+'
+                # if steps selected, ignore retries
+                retry_count = 0
+            elif use_encoder:
+                # wait until there is a valid encoder reading
+                while (self.encoder_measurement_index == -1
+                      and not self.stop_sent
+                      and (_time.time() - t_start) < move_timeout):
+                    _time.sleep(wait)
+                    _QApplication.processEvents()
+                # get target position
+                target_position = float(
+                    self.ui.sbd_commanded_encoder_position.value()
+                )
+                previous_encoder_index = self.encoder_measurement_index
+                diff = target_position - self.current_encoder_position
+                steps = math.floor(
+                    diff / (linear_conversion / motor_resolution)
+                )
+                curr_dir = rotation_direction
+                if steps < 0:
+                    if rotation_direction == '+':
+                        curr_dir = '-'
+                    else:
+                        curr_dir = '+'
+
+            # try to reach position at the first move
+            if steps != 0 and not self.stop_sent:
+                # configure motor
+                if not _driver.config_motor(
+                       driver_address,
+                       mode,
+                       curr_dir,
+                       motor_resolution,
+                       velocity,
+                       acceleration,
+                       steps):
+                    msg = 'Failed to send configuration to motor.'
+                    _QMessageBox.critical(
+                        self, 'Failure', msg, _QMessageBox.Ok)
+                else:
+                    # start motor motion if commanded to
+                    _driver.move_motor(driver_address)
+                    # wait for command reception
+                    _time.sleep(wait)
+                    # process gui events
+                    _QApplication.processEvents()
+
+            # if necessary, retry position
+            while retry_count > 0:
+                # update counter
+                retry_count = retry_count - 1
+                # wait until motor is idle
+                while ((not _driver.ready(driver_address)
+                        or previous_encoder_index ==
+                           self.encoder_measurement_index
+                        or self.encoder_measurement_index == -1)
+                      and not self.stop_sent
+                      and (_time.time() - t_start) < move_timeout):
+                    _time.sleep(wait)
+                    _QApplication.processEvents()
+                # break if stop was sent
+                if self.stop_sent:
+                    break
+                if (_time.time() - t_start) >= move_timeout:
+                    is_timeout = True
+                    break
+                # update diff
+                previous_encoder_index = self.encoder_measurement_index
+                diff = target_position - self.current_encoder_position
+                # check if diff is small enough
+                if abs(diff) <= abs(tolerance):
+                    break
+                # update number of steps
+                steps = math.floor(diff / (linear_conversion / motor_resolution))
+                curr_dir = rotation_direction
+                if steps < 0:
+                    if rotation_direction == '+':
+                        curr_dir = '-'
+                    else:
+                        curr_dir = '+'
+                # configure motor
+                if not _driver.config_motor(
+                       driver_address,
+                       mode,
+                       curr_dir,
+                       motor_resolution,
+                       velocity,
+                       acceleration,
+                       steps):
+                    msg = 'Failed to send configuration to motor.'
+                    _QMessageBox.critical(
+                        self, 'Failure', msg, _QMessageBox.Ok)
+                else:
+                    # start motor motion if commanded to
+                    _driver.move_motor(driver_address)
+                    # wait for command reception
+                    _time.sleep(wait)
+                    # process gui events
+                    _QApplication.processEvents()
+
+            # wait until motor is idle
+            while (not _driver.ready(driver_address)
+                  and (_time.time() - t_start) < move_timeout):
+                _time.sleep(wait)
+                _QApplication.processEvents()
+
+            if self.stop_sent:
+                msg = 'Stop command received.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+
+            if is_timeout:
+                msg = 'Move timeout.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+
+            # update motor moving LED
+            self.ui.la_motor_is_moving.setEnabled(False)
+
+            # re-enable move and homing buttons
+            self.ui.pbt_move_motor.setEnabled(True)
+            self.ui.pbt_homing.setEnabled(True)
+
+            return True
+        except Exception:
+            # re-enable move and homing buttons
+            self.ui.pbt_move_motor.setEnabled(True)
+            self.ui.pbt_homing.setEnabled(True)
+            # print erro info to user
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to move motor.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
 
     def stop_motor(self):
         # set flag for move_motor function to see
@@ -356,9 +494,9 @@ class MeasurementWidget(_ConfigurationWidget):
 
         return True
 
-    def clear(self):
-        """Clear."""
-        self.measurement_data.clear()
+ #   def clear(self):
+ #       """Clear."""
+ #       self.measurement_data.clear()
 
     def configure_driver(self, steps):
         try:
@@ -381,89 +519,6 @@ class MeasurementWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             return False
 
-    def configure_measurement(self):
-        self.clear()
-
-        try:
-
-            if not self.update_configuration():
-                return False
-
-            if not self.save_db():
-                return False
-
-            self.global_config = self.config.copy()
-
-            self.measurement_data.undulator_name = (
-                self.global_config.undulator_name
-            )
-            self.measurement_data.cassette_name = (
-                self.global_config.cassette_name
-            )
-            self.measurement_data.block_name = (
-                self.global_config.block_name
-            )
-            self.measurement_data.comments = (
-                self.global_config.comments
-            )
-            self.measurement_data.advanced_options_id = (
-                self.advanced_options.idn
-            )
-            self.measurement_data.configuration_id = (
-                self.global_config.idn
-            )
-            self.measurement_data.hall_sensor_voltage = (
-                float(self.ui.le_hall_sensor_voltage.text())
-            )
-            self.measurement_data.display_position_1 = (
-                float(self.ui.le_display_position_1.text())
-            )
-            self.measurement_data.display_position_2 = (
-                float(self.ui.le_display_position_2.text())
-            )
-            self.measurement_data.linear_encoder_position = (
-                float(self.ui.lcd_linear_encoder_position.value())
-            )
-
-            if not self.advanced_options.valid_data():
-                msg = 'Invalid advanced options.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-                return False
-
-            return True
-
-        except Exception:
-            msg = 'Measurement configuration failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
-            return False
-
-    def store_position_1(self):
-        """ Move probe 1 current position to store label """
-        # check if heidenhain display is connected
-        if not _display.connected:
-            msg = 'Heidenhain display not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
-        # transfer current reading
-        self.ui.le_display_position_1.setText(
-            str(self.ui.lcd_curr_position_1.value())
-        )
-        return True
-
-    def store_position_2(self):
-        """ Move probe 2 current position to store label """
-        # check if heidenhain display is connected
-        if not _display.connected:
-            msg = 'Heidenhain display not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return False
-        # transfer current reading
-        self.ui.le_display_position_2.setText(
-            str(self.ui.lcd_curr_position_2.value())
-        )
-        return True
-
     def connect_signal_slots(self):
         """Create signal/slot connections."""
         super().connect_signal_slots()
@@ -473,21 +528,198 @@ class MeasurementWidget(_ConfigurationWidget):
             self.disable_invalid_widgets)
         self.ui.pbt_move_motor.clicked.connect(self.move_motor)
         self.ui.pbt_stop_motor.clicked.connect(self.stop_motor)
-        self.ui.tbt_read_hall.clicked.connect(self.read_hall)
-        self.ui.le_hall_sensor_voltage.editingFinished.connect(self.update_hall_led)
-        self.ui.tbt_store_position_1.clicked.connect(self.store_position_1)
-        self.ui.tbt_store_position_2.clicked.connect(self.store_position_2)
-        self.ui.pbt_save_measurement.clicked.connect(self.prepare_measurement)
-        self.ui.tbt_update_und_list.clicked.connect(self.update_undulator_list)
+        self.ui.pbt_read_hall.clicked.connect(self.read_hall)
+        self.ui.tbt_update_measurement_list.clicked.connect(self.update_measurement_list)
+        self.ui.cmb_measurement_list.currentTextChanged.connect(self.update_undulator_list)
         self.ui.cmb_undulator_list.currentTextChanged.connect(self.update_cassette_list)
         self.ui.cmb_cassette_list.currentTextChanged.connect(self.update_block_list)
         self.ui.cmb_block_list.currentTextChanged.connect(self.update_widget_gb_stored_data)
+        self.ui.pbt_pneumatic_off.clicked.connect(self.pneumatic_off)
+        self.ui.pbt_pneumatic_on.clicked.connect(self.pneumatic_on)
+        self.ui.pbt_read_position.clicked.connect(self.read_position)
+        self.ui.pbt_read_all.clicked.connect(self.read_all)
+        self.ui.pbt_set_zero.clicked.connect(self.set_reference_zero)
+        self.ui.pbt_set_gauge_reference.clicked.connect(self.set_probe_zero)
 
     @property
     def advanced_options(self):
         """Return global advanced options."""
         dialog = _QApplication.instance().advanced_options_dialog
         return dialog.config
+
+    def pneumatic_off(self):
+        """ Turn off pneumatic actuator """
+        try:
+            # check driver connection
+            if not _driver.connected:
+                msg = 'Driver not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # send command
+            driver_address = self.advanced_options.motor_driver_address
+            _driver.set_output_1_low(driver_address)
+            _time.sleep(_utils.WAIT_DRIVER)
+            # update LEDs
+            self.ui.la_pneumatic_off.setEnabled(True)
+            self.ui.la_pneumatic_on.setEnabled(False)
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to send command to driver.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def pneumatic_on(self):
+        """ Turn on pneumatic actuator """
+        try:
+            # check driver connection
+            if not _driver.connected:
+                msg = 'Driver not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # send command
+            driver_address = self.advanced_options.motor_driver_address
+            _driver.set_output_1_high(driver_address)
+            _time.sleep(_utils.WAIT_DRIVER)
+            # update LEDs
+            self.ui.la_pneumatic_off.setEnabled(False)
+            self.ui.la_pneumatic_on.setEnabled(True)
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to send command to driver.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def set_probe_zero(self):
+        """ Set display length gauges position to zero """
+        try:
+            # check display connection
+            if not _display.connected:
+                msg = 'Display not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            # advance gauges
+            status = self.pneumatic_on()
+            if status == False:
+                raise RuntimeError('Could not enable pneumatic actuator')
+            _time.sleep(_utils.WAIT_PNEUMATIC)
+            _QApplication.processEvents()
+
+            # send cmds to reset display X and Y axes
+            axes = [0, 1]
+            value = 0
+            for axis in axes:
+                _display.write_display_value(
+                    axis, value, wait=_utils.WAIT_DISPLAY
+                )
+
+            # retreat gauges
+            _time.sleep(_utils.WAIT_PNEUMATIC)
+            status = self.pneumatic_off()
+            if status == False:
+                raise RuntimeError('Could not disable pneumatic actuator')
+
+            return True
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to set length gauges references to zero.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def set_reference_zero(self):
+        """ Set Z encoder position to zero """
+        try:
+            # check display connection
+            if not _display.connected:
+                msg = 'Display not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # check driver connection
+            if not _driver.connected:
+                msg = 'Driver not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # send cmd to reset display Z axis
+            axis = 2
+            value = 0
+            _display.write_display_value(
+                axis, value, wait=_utils.WAIT_DISPLAY
+            )
+            address = self.advanced_options.motor_driver_address
+            # send command to zero driver position as well
+            _driver.zero_absolute_position(address)
+            _time.sleep(_utils.WAIT_DRIVER)
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to send command to display.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def read_position(self):
+        try:
+            if not _display.connected:
+                msg = 'Display not connected.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+            # read position probes
+            readings = _display.read_display(
+                self.advanced_options.display_model,
+                wait=_utils.WAIT_DISPLAY
+            )
+            # check if reading is invalid
+            if math.isnan(readings[0]):
+                # clear probe data on gui
+                self.ui.lcd_x_position.display('')
+                self.ui.lcd_z_position.display('')
+                self.ui.lcd_linear_encoder_position.display('')
+                # show error
+                msg = 'Failed to read display.'
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok
+                )
+                return False
+            # update probe data on gui
+            self.ui.lcd_x_position.display(readings[0])
+            self.ui.lcd_z_position.display(readings[1])
+            self.ui.lcd_linear_encoder_position.display(readings[2])
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to read display.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
+
+    def read_all(self):
+        """ Advance pneumatic actuator, take readings and retreat it """
+        try:
+            # advance
+            status = self.pneumatic_on()
+            if status == False:
+                raise RuntimeError(
+                'Could not enable pneumatic actuator'
+            )
+            _time.sleep(_utils.WAIT_PNEUMATIC)
+            _QApplication.processEvents()
+            # read
+            self.read_position()
+            self.read_hall()
+            # retreat
+            _time.sleep(_utils.WAIT_PNEUMATIC)
+            status = self.pneumatic_off()
+            if status == False:
+                raise RuntimeError(
+                'Could not disable pneumatic actuator'
+            )
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Failed to do read_all.'
+            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            return False
 
     def homing(self):
         """ Move motor to limit switch at the beginning of range.
@@ -593,150 +825,180 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def read_hall(self):
         try:
+            # check connection
             if not _multimeter.connected:
                 msg = 'Multimeter not connected.'
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
                 return False
-
-            # interval to wait after command
-            wait = 0.1
-
-            # configure multimeter and read measurement
-            _multimeter.inst.write(b':MEAS:VOLT:DC? DEF,DEF\r\n')
-            _time.sleep(wait)
-            reading = _multimeter.inst.readline().decode('utf-8')
-            reading = reading.replace('\r\n','')
-
-            self.ui.le_hall_sensor_voltage.setText(reading)
-
-            # check if hall sensor reading is as expected
-            self.update_hall_led()
-#            is_ok = float(reading) > self.advanced_options.hall_threshold
-#            self.ui.la_hall_led.setEnabled(is_ok)
-
-        except Exception:
-            msg = 'Failed to read hall sensor.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
-            return False
-
-    def update_hall_led(self):
-        try:
-            # check if hall sensor reading is as expected
-            is_ok = (float(self.ui.le_hall_sensor_voltage.text())
-                     > self.advanced_options.hall_threshold)
-            self.ui.la_hall_led.setEnabled(is_ok)
-        except Exception:
-            msg = 'Failed to evaluate hall reading.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            _traceback.print_exc(file=_sys.stdout)
-            return False
-        return True
-
-    def save_measurement_data(self):
-        try:
-            if self.database_name is None:
-                msg = 'Invalid database filename.'
-                _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+            reading = _multimeter.single_dc_read(
+                wait=_utils.WAIT_MULTIMETER
+            )
+            if reading == None:
+                msg = 'Read command failed.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
                 return False
-
-            self.measurement_data.db_update_database(
-                self.database_name,
-                mongo=self.mongo, server=self.server)
-            self.measurement_data.db_save()
-
-            # update undulator list on interface
-            self.update_undulator_list()
-
+            # update data on gui
+            self.ui.lcd_hall_sensor_voltage.display(reading)
             return True
-
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to save measurement to database.'
+            msg = 'Failed to read hall sensor.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return False
 
     def update_widget_gb_stored_data(self):
-        # get names from selected undulator and block
+        # get names from selected filter values
+        measurement = self.ui.cmb_measurement_list.currentText()
+        meas_idx = self.ui.cmb_measurement_list.currentIndex()
         undulator = self.ui.cmb_undulator_list.currentText()
         und_idx = self.ui.cmb_undulator_list.currentIndex()
         cassette = self.ui.cmb_cassette_list.currentText()
         cassette_idx = self.ui.cmb_cassette_list.currentIndex()
-        block = self.ui.cmb_block_list.currentText()
+        block_str = self.ui.cmb_block_list.currentText()
+        block = -1
+        if block_str != '':
+            block = int(block_str)
         block_idx = self.ui.cmb_block_list.currentIndex()
-        # if a undulator is selected
-        if und_idx != -1:
-            # display number of registered blocks for undulator
-            entries = self.access_measurement_data.db_search_field(
-                'undulator_name', undulator)
+        # if a measurement, undulator and cassette is selected
+        # find associated scan id
+        scan_id = -1
+        if meas_idx != -1 and und_idx != -1 and cassette_idx != -1:
+            # search scan id
+            scan_data = self.access_scan_data.db_search_collection(
+                fields=['measurement_name', 'undulator_name',
+                        'cassette_name', 'id'
+                ],
+                filters=[measurement, undulator, cassette, '',
+                ]
+            )
+            scan_id = scan_data[0]['id']
+        # display number of registered blocks for cassette
+        if scan_id != -1:
+            entries = self.access_block_data.db_search_field(
+                'scan_id', scan_id)
             block_count = len(entries)
             self.ui.lcd_block_count.display(block_count)
         else:
             # clear block count display
             self.ui.lcd_block_count.display('')
         # if a unique block is selected, display data stored for it
-        if und_idx != -1 and cassette_idx != -1 and block_idx != -1:
+        if scan_id != -1 and block_idx != -1:
             # search block data
-            block_data = self.access_measurement_data.db_search_collection(
-                fields=['undulator_name', 'cassette_name', 'block_name',
-                        'display_position_1', 'display_position_2',
-                        'hall_sensor_voltage',
-                        'linear_encoder_position'
+            block_data = self.access_block_data.db_search_collection(
+                fields=['scan_id', 'block_number', 'x_position',
+                        'x_position_error', 'z_position',
+                        'z_position_error', 'encoder_position'
                 ],
-                filters=[undulator, cassette, block, '', '', '', ''
+                filters=[scan_id, block, '', '', '', '', '', ''
                 ]
             )
             block_data = block_data[0]
             # update displays
-            self.ui.lcd_curr_position_1_stored.display(block_data['display_position_1'])
-            self.ui.lcd_curr_position_2_stored.display(block_data['display_position_2'])
-            self.ui.lcd_hall_reading_stored.display(block_data['hall_sensor_voltage'])
-            self.ui.lcd_encoder_stored.display(block_data['linear_encoder_position'])
-            # update LEDs
-            is_ok = (
-                    block_data['hall_sensor_voltage']
-                    > self.advanced_options.hall_threshold
-            )
-            self.ui.la_hall_led_stored.setEnabled(is_ok)
+            self.ui.lcd_stored_x_position.display(block_data['x_position'])
+            self.ui.lcd_stored_x_position_error.display(block_data['x_position_error'])
+            self.ui.lcd_stored_z_position.display(block_data['z_position'])
+            self.ui.lcd_stored_z_position_error.display(block_data['z_position_error'])
+            self.ui.lcd_stored_encoder_position.display(block_data['encoder_position'])
+#            # update block direction image
+#            block_direction = block_data['block_direction']
+#            if block_direction == 1:
+#                self.ui.la_magnet_direction.setPixmap(
+#                    self.direction_images['up']
+#                )
+#            elif block_direction == 2:
+#                self.ui.la_magnet_direction.setPixmap(
+#                    self.direction_images['right']
+#                )
+#            elif block_direction == 3:
+#                self.ui.la_magnet_direction.setPixmap(
+#                    self.direction_images['down']
+#                )
+#            elif block_direction == 4:
+#                self.ui.la_magnet_direction.setPixmap(
+#                    self.direction_images['left']
+#                )
+#            else:
+#                self.ui.la_magnet_direction.setPixmap(
+#                    self.direction_images['none']
+#                )
         else:
             # clear displays
-            self.ui.lcd_curr_position_1_stored.display('')
-            self.ui.lcd_curr_position_2_stored.display('')
-            self.ui.lcd_hall_reading_stored.display('')
-            self.ui.lcd_encoder_stored.display('')
+            self.ui.lcd_stored_x_position.display('')
+            self.ui.lcd_stored_x_position_error.display('')
+            self.ui.lcd_stored_z_position.display('')
+            self.ui.lcd_stored_z_position_error.display('')
+            self.ui.lcd_stored_encoder_position.display('')
+#            self.ui.la_magnet_direction.setPixmap(
+#                self.direction_images['none']
+#            )
+        return True
+
+    def update_measurement_list(self):
+        """ Update the measurement list group box on interface """
+        # store selected measurement name
+        selected_measurement = self.ui.cmb_measurement_list.currentText()
+        # clear measurement list
+        self.ui.cmb_measurement_list.clear()
+        # get list of measurements in db
+        meas_list = self.access_scan_data.db_get_values('measurement_name')
+        # remove empty names if any
+        meas_list = [e for e in meas_list if e != '']
+        # remove duplicates if any
+        meas_list = list(_collections.OrderedDict.fromkeys(meas_list))
+        # apply natural sort order
+        meas_list = _natsort.natsorted(
+            meas_list, alg=_natsort.ns.IGNORECASE
+        )
+        # update measurement list on interface
+        self.ui.cmb_measurement_list.addItems(meas_list)
+        # find index of previously selected measurement
+        meas_idx = self.ui.cmb_measurement_list.findText(selected_measurement)
+        # select corresponding index
+        self.ui.cmb_measurement_list.setCurrentIndex(meas_idx)
+
+        # update undulator list in stored data group box
+        self.update_undulator_list()
+
         return True
 
     def update_undulator_list(self):
         """ Update the undulator list group box on interface """
-        # store selected undulator name
-        selected_undulator = self.ui.cmb_undulator_list.currentText()
-        # clear undulator list
+        # get current measurement list selection
+        meas_idx = self.ui.cmb_measurement_list.currentIndex()
+        measurement = self.ui.cmb_measurement_list.currentText()
+        # store current combo box position and clear it
+        curr_text = self.ui.cmb_undulator_list.currentText()
         self.ui.cmb_undulator_list.clear()
-        # get list of undulators in db
-        und_list = self.access_measurement_data.db_get_values('undulator_name')
+        self.ui.cmb_undulator_list.setCurrentIndex(-1)
+        # if no measurement is selected, return
+        if meas_idx == -1:
+            return True
+        # get list of undulators and order it
+        row_list = self.access_scan_data.db_search_field('measurement_name',
+            measurement)
+        u_list = [i['undulator_name'] for i in row_list]
         # remove empty names if any
-        und_list = [e for e in und_list if e != '']
+        u_list = [e for e in u_list if e != '']
         # remove duplicates if any
-        und_list = list(_collections.OrderedDict.fromkeys(und_list))
+        u_list = list(_collections.OrderedDict.fromkeys(u_list))
         # apply natural sort order
-        und_list = _natsort.natsorted(
-            und_list, alg=_natsort.ns.IGNORECASE
+        u_list = _natsort.natsorted(
+            u_list, alg=_natsort.ns.IGNORECASE
         )
-        # update undulator list on interface
-        self.ui.cmb_undulator_list.addItems(und_list)
-        # find index of previously selected undulator
-        und_idx = self.ui.cmb_undulator_list.findText(selected_undulator)
-        # select corresponding index
-        self.ui.cmb_undulator_list.setCurrentIndex(und_idx)
-
+        # add undulators to combo box
+        self.ui.cmb_undulator_list.addItems(u_list)
+        # update combo box index
+        undulator_idx = self.ui.cmb_undulator_list.findText(curr_text)
+        self.ui.cmb_undulator_list.setCurrentIndex(undulator_idx)
         # update cassette list in stored data group box
         self.update_cassette_list()
-
         return True
 
     def update_cassette_list(self):
         """ Update the cassette list group box on interface """
+        # get current measurement list selection
+        meas_idx = self.ui.cmb_measurement_list.currentIndex()
+        measurement = self.ui.cmb_measurement_list.currentText()
         # get current undulator list selection
         und_idx = self.ui.cmb_undulator_list.currentIndex()
         undulator = self.ui.cmb_undulator_list.currentText()
@@ -744,12 +1006,17 @@ class MeasurementWidget(_ConfigurationWidget):
         curr_text = self.ui.cmb_cassette_list.currentText()
         self.ui.cmb_cassette_list.clear()
         self.ui.cmb_cassette_list.setCurrentIndex(-1)
-        # if no undulator is selected, return
-        if und_idx == -1:
+        # if no measurement or undulator is selected, return
+        if meas_idx == -1 or und_idx == -1:
             return True
         # get list of cassettes and order it
-        row_list = self.access_measurement_data.db_search_field('undulator_name',
-            undulator)
+        row_list = self.access_scan_data.db_search_collection(
+            fields=['measurement_name', 'undulator_name',
+                    'cassette_name',
+            ],
+            filters=[measurement, undulator, '',
+            ]
+        )
         c_list = [i['cassette_name'] for i in row_list]
         # remove empty names if any
         c_list = [e for e in c_list if e != '']
@@ -770,6 +1037,9 @@ class MeasurementWidget(_ConfigurationWidget):
 
     def update_block_list(self):
         """ Update the block list group box on interface """
+        # get current measurement list selection
+        meas_idx = self.ui.cmb_measurement_list.currentIndex()
+        measurement = self.ui.cmb_measurement_list.currentText()
         # get current undulator list selection
         und_idx = self.ui.cmb_undulator_list.currentIndex()
         undulator = self.ui.cmb_undulator_list.currentText()
@@ -780,15 +1050,23 @@ class MeasurementWidget(_ConfigurationWidget):
         curr_text = self.ui.cmb_block_list.currentText()
         self.ui.cmb_block_list.clear()
         self.ui.cmb_block_list.setCurrentIndex(-1)
-        # if no undulator or cassette is selected, return
-        if und_idx == -1 or cassette_idx == -1:
+        # if no measurement, undulator or cassette is selected, return
+        if meas_idx == -1 or und_idx == -1 or cassette_idx == -1:
             return True
-        # get list of blocks and order it
-        row_list = self.access_measurement_data.db_search_collection(
-            fields=['undulator_name', 'cassette_name', 'block_name'],
-            filters=[undulator, cassette, '']
+        # get scan id associated to cassette, undulator and measurement
+        scan_id_list = self.access_scan_data.db_search_collection(
+            fields=['measurement_name', 'undulator_name',
+                    'cassette_name', 'id'
+            ],
+            filters=[measurement, undulator, cassette, '']
         )
-        b_list = [i['block_name'] for i in row_list]
+        scan_id = scan_id_list[0]['id']
+        # get list of blocks and order it
+        row_list = self.access_block_data.db_search_collection(
+            fields=['scan_id', 'block_number'],
+            filters=[scan_id, '']
+        )
+        b_list = [str(i['block_number']) for i in row_list]
         b_list = _natsort.natsorted(
             b_list, alg=_natsort.ns.IGNORECASE
         )
@@ -799,44 +1077,12 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.cmb_block_list.setCurrentIndex(block_idx)
         return True
 
-    def prepare_measurement(self):
-        if not self.configure_measurement():
-            return False
-
-        # get list of duplicate entries
-        undulator = self.global_config.undulator_name
-        cassette = self.global_config.cassette_name
-        block = self.global_config.block_name
-        elem_list = self.access_measurement_data.db_search_collection(
-            fields=['undulator_name', 'cassette_name', 'block_name'
-            ],
-            filters=[undulator, cassette, block
-            ]
-        )
-
-        # do not accept duplicate entries
-        if len(elem_list) != 0:
-            msg = 'Block already saved in DB for this undulator and cassette.'
-            _QMessageBox.information(
-                self, 'Measurement', msg, _QMessageBox.Ok)
-            return False
-
-        _QApplication.processEvents()
-
-        if not self.save_measurement_data():
-            return False
-
-        msg = 'Measurement stored.'
-        _QMessageBox.information(
-            self, 'Measurement', msg, _QMessageBox.Ok)
-        return True
-
-    def update_configuration(self):
-        """Update configuration parameters."""
-        try:
-            return super().update_configuration(clear=False)
-
-        except Exception:
-            _traceback.print_exc(file=_sys.stdout)
-            self.config.clear()
-            return False
+#    def update_configuration(self):
+#        """Update configuration parameters."""
+#        try:
+#            return super().update_configuration(clear=False)
+#
+#        except Exception:
+#            _traceback.print_exc(file=_sys.stdout)
+#            self.config.clear()
+#            return False

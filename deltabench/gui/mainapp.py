@@ -27,8 +27,12 @@ class MainApp(_QApplication):
         self.mongo = _utils.MONGO
         self.server = _utils.SERVER
         self.create_database()
-        self.measurement_config = _configuration.MeasurementConfig()
+        self.control_config = _configuration.ControlConfig()
+        self.scan_config = _configuration.ScanConfig()
         self.advanced_options_dialog = None
+
+        # emergency variable that all tabs can access
+        self.emergency_stop = False
 
     def create_dialogs(self):
         """Create dialogs."""
@@ -42,18 +46,30 @@ class MainApp(_QApplication):
         advanced_options = _configuration.AdvancedOptions(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
-        measurement_config = _configuration.MeasurementConfig(
+        control_config = _configuration.ControlConfig(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
-        measurement_data = _measurement.MeasurementData(
+        scan_config = _configuration.ScanConfig(
+            database_name=self.database_name,
+            mongo=self.mongo, server=self.server)
+#        measurement_data = _measurement.MeasurementData(
+#            database_name=self.database_name,
+#            mongo=self.mongo, server=self.server)
+        hall_data = _measurement.HallWaveformData(
+            database_name=self.database_name,
+            mongo=self.mongo, server=self.server)
+        block_data = _measurement.BlockData(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
 
         status = []
         status.append(connection_config.db_create_collection())
         status.append(advanced_options.db_create_collection())
-        status.append(measurement_config.db_create_collection())
-        status.append(measurement_data.db_create_collection())
+        status.append(control_config.db_create_collection())
+        status.append(scan_config.db_create_collection())
+#        status.append(measurement_data.db_create_collection())
+        status.append(hall_data.db_create_collection())
+        status.append(block_data.db_create_collection())
         if not all(status):
             raise Exception("Failed to create database.")
 

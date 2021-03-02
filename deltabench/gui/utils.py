@@ -32,7 +32,15 @@ DATABASE_NAME = 'delta_bench_measurements.db'
 ADVANCED_OPTIONS_ENABLED = True
 MONGO = False
 SERVER = 'localhost'
-UPDATE_DISPLAY_INTERVAL = 0.5  # [s]
+UPDATE_DISPLAY_INTERVAL = 0.2  # [s]
+UPDATE_LIMIT_SWITCH_INTERVAL = 1.0  # [s]
+WAIT_MOTION = 0.05
+WAIT_PNEUMATIC = 1.0
+WAIT_DRIVER = 0.04
+WAIT_MULTIMETER = 0.1
+WAIT_MULTIMETER_FETCH_READINGS = 30.0
+WAIT_DISPLAY = 0.04
+MULTIMETER_MIN_TRIGGER_TIME = 0.1
 
 BASEPATH = _os.path.dirname(
     _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))

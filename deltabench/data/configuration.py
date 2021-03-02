@@ -51,30 +51,41 @@ class AdvancedOptions(_database.DatabaseAndFileDocument):
         ('hour', {'dtype': str, 'not_null': True}),
         ('motor_driver_address', {'dtype': int, 'not_null': True}),
         ('motor_velocity', {'dtype': float, 'not_null': True}),
+        ('motor_velocity_hall_scan', {'dtype': float, 'not_null': True}),
         ('motor_acceleration', {'dtype': float, 'not_null': True}),
         ('motor_rotation_direction', {'dtype': str, 'not_null': True}),
         ('motor_resolution', {'dtype': int, 'not_null': True}),
-        ('hall_threshold', {'dtype': float, 'not_null': True}),
         ('display_model', {'dtype': str, 'not_null': True}),
-        ('encoder_direction', {'dtype': str, 'not_null': True}),
-        ('encoder_resolution', {'dtype': float, 'not_null': True}),
         ('position_tolerance', {'dtype': float, 'not_null': True}),
         ('linear_conversion_factor', {'dtype': float, 'not_null': True}),
         ('move_timeout', {'dtype': float, 'not_null': True}),
     ])
 
 
-class MeasurementConfig(_database.DatabaseAndFileDocument):
-    """Read, write and stored measurement configuration data."""
+class ControlConfig(_database.DatabaseAndFileDocument):
+    """Read, write and stored manual measurement configuration data."""
 
     label = 'Configuration'
-    collection_name = 'configuration'
+    collection_name = 'control_configuration'
     db_dict = _collections.OrderedDict([
         ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
-        ('undulator_name', {'dtype': str, 'not_null': True}),
+    ])
+
+class ScanConfig(_database.DatabaseAndFileDocument):
+    """Read, write and stored scan configuration data."""
+
+    label = 'Configuration'
+    collection_name = 'scan_configuration'
+    db_dict = _collections.OrderedDict([
+        ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
         ('date', {'dtype': str, 'not_null': True}),
         ('hour', {'dtype': str, 'not_null': True}),
+        ('measurement_name', {'dtype': str, 'not_null': True}),
+        ('undulator_name', {'dtype': str, 'not_null': True}),
         ('cassette_name', {'dtype': str, 'not_null': True}),
-        ('block_name', {'dtype': str, 'not_null': True}),
-        ('comments', {'dtype': str}),
+        ('start_reference_position', {'dtype': float, 'not_null': True}),
+        ('scan_step_size', {'dtype': float, 'not_null': True}),
+        ('hall_samples_per_block', {'dtype': int, 'not_null': True}),
+        ('advanced_options_id', {'dtype': int, 'not_null':True}),
     ])
+
