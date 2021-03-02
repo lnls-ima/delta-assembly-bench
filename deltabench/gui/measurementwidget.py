@@ -279,7 +279,11 @@ class MeasurementWidget(_ConfigurationWidget):
                 return False
 
             # make sure pneumatic actuator is off
-            self.pneumatic_off()
+            status = self.pneumatic_off()
+            if status == False:
+                msg = 'Failed to retreat pneumatic actuator.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
 
             # interval to wait after display read command
             wait_display = _utils.WAIT_DISPLAY
@@ -654,7 +658,11 @@ class MeasurementWidget(_ConfigurationWidget):
         """ Advance pneumatic actuator, take readings and retreat it """
         try:
             # advance
-            self.pneumatic_on()
+            status = self.pneumatic_on()
+            if status == False:
+                raise RuntimeError(
+                'Could not enable pneumatic actuator'
+            )
             _time.sleep(_utils.WAIT_PNEUMATIC)
             _QApplication.processEvents()
             # read
@@ -662,7 +670,11 @@ class MeasurementWidget(_ConfigurationWidget):
             self.read_hall()
             # retreat
             _time.sleep(_utils.WAIT_PNEUMATIC)
-            self.pneumatic_off()
+            status = self.pneumatic_off()
+            if status == False:
+                raise RuntimeError(
+                'Could not disable pneumatic actuator'
+            )
             return True
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
