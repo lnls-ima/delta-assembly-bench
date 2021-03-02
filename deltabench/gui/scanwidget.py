@@ -203,12 +203,6 @@ class ScanWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             return status
 
-        # clear previous data and update scan config
-        if not self.configure_scan():
-            msg = 'Failed to configure scan.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-            return status
-
         try:
             # interval to wait after a display read command
             wait_display = _utils.WAIT_DISPLAY
@@ -265,6 +259,51 @@ class ScanWidget(_ConfigurationWidget):
                 start_block_idx, start_block_idx + block_count
             )
 
+            if total_hall_count > 512:
+                msg = (
+                       "Multimeter cannot hold more than 512 readings."
+                       " Please, do multiple subscans or reduce the"
+                       " number of points."
+                )
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                status = False
+                raise ValueError(
+                    'Multimeter cannot store more than 512 readings'
+                )
+
+            # calculate acceleration distance
+            t_acc = hall_scan_velocity / acceleration
+            acc_distance = (
+                0.5 * acceleration * t_acc * t_acc * linear_conversion
+            )
+            # add a constant to account for driver reaction time
+            t_acc_total = t_acc
+
+            # time between hall points
+            t_hall = hall_step / (hall_scan_velocity * linear_conversion)
+
+            if t_hall < _utils.MULTIMETER_MIN_TRIGGER_TIME:
+                msg = (
+                       "Trigger intervals smaller than "
+                       + str(_utils.MULTIMETER_MIN_TRIGGER_TIME)
+                       + " seconds can make the acquisition unstable."
+                       + " Please, decrease the motor velocity or the"
+                       + " number of points per block."
+                )
+                _QMessageBox.critical(
+                    self, 'Failure', msg, _QMessageBox.Ok)
+                status = False
+                raise ValueError(
+                    'Too small Multimeter trigger interval'
+                )
+
+            # clear previous data and update scan config
+            if not self.configure_scan():
+                msg = 'Failed to configure scan.'
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                raise RuntimeError('Failed to configure database for scan')
+
             # make sure pneumatic actuator is off
             _driver.set_output_1_low(driver_address)
             # wait pneumatic motion to finish
@@ -285,17 +324,6 @@ class ScanWidget(_ConfigurationWidget):
                 sample_count=1, trigger_count=total_hall_count
             )
             _time.sleep(wait_multimeter)
-
-            # calculate acceleration distance
-            t_acc = hall_scan_velocity / acceleration
-            acc_distance = (
-                0.5 * acceleration * t_acc * t_acc * linear_conversion
-            )
-            # add a constant to account for driver reaction time
-            t_acc_total = t_acc + 0.05
-
-            # time between hall points
-            t_hall = hall_step / (hall_scan_velocity * linear_conversion)
 
             # start position
             scan_beginning = (
