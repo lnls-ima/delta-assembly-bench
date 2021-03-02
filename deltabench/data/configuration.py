@@ -62,19 +62,13 @@ class AdvancedOptions(_database.DatabaseAndFileDocument):
     ])
 
 
-class MeasurementConfig(_database.DatabaseAndFileDocument):
+class ControlConfig(_database.DatabaseAndFileDocument):
     """Read, write and stored manual measurement configuration data."""
 
     label = 'Configuration'
-    collection_name = 'measurement_configuration'
+    collection_name = 'control_configuration'
     db_dict = _collections.OrderedDict([
         ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
-        ('undulator_name', {'dtype': str, 'not_null': True}),
-        ('date', {'dtype': str, 'not_null': True}),
-        ('hour', {'dtype': str, 'not_null': True}),
-        ('cassette_name', {'dtype': str, 'not_null': True}),
-        ('block_number', {'dtype': int, 'not_null': True}),
-        ('comments', {'dtype': str}),
     ])
 
 class ScanConfig(_database.DatabaseAndFileDocument):

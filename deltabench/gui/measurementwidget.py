@@ -45,7 +45,7 @@ class MeasurementWidget(_ConfigurationWidget):
     def __init__(self, parent=None):
         """Set up the ui."""
         uifile = _utils.get_ui_file(self)
-        config = _configuration.MeasurementConfig()
+        config = _configuration.ControlConfig()
         super().__init__(uifile, config, parent=parent)
         self.timer1 = _QTimer()
         self.timer1.timeout.connect(self.periodic_display_update)
