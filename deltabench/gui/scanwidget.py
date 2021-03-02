@@ -6,6 +6,7 @@ import sys as _sys
 import numpy as _np
 import time as _time
 import math
+import statistics
 import warnings as _warnings
 import traceback as _traceback
 import pyqtgraph as _pyqtgraph
@@ -34,6 +35,7 @@ from deltabench.devices import (
 from imautils.db import database as _database
 import collections as _collections
 import natsort as _natsort
+import re
 
 class ScanWidget(_ConfigurationWidget):
     """Scan widget class for the control application."""
@@ -1185,6 +1187,20 @@ class ScanWidget(_ConfigurationWidget):
                 self.x_axis_x_probe = x_axis_x_probe
                 self.y_axis_x_probe = y_axis_x_probe
                 self.y_axis_x_probe_error = y_axis_x_probe_error
+                # update summary
+                avg = statistics.mean(y_axis_x_probe)
+                if len(y_axis_x_probe) > 1:
+                    std = statistics.stdev(y_axis_x_probe)
+                else:
+                    std = 0
+                minx = min(y_axis_x_probe)
+                maxx = max(y_axis_x_probe)
+                summary = (
+                    "X Pos: "
+                    "avg={0:.3f} std={1:.3f} min={2:.3f} max={3:.3f}"
+                )
+                summary = summary.format(avg, std, minx, maxx)
+                self.ui.la_x_probe_summary.setText(summary)
             else:
                 self.clear_x_probe_graph_only()
             # check if should plot data
@@ -1248,6 +1264,20 @@ class ScanWidget(_ConfigurationWidget):
                 self.x_axis_z_probe = x_axis_z_probe
                 self.y_axis_z_probe = y_axis_z_probe
                 self.y_axis_z_probe_error = y_axis_z_probe_error
+                # update summary
+                avg = statistics.mean(y_axis_z_probe)
+                if len(y_axis_z_probe) > 1:
+                    std = statistics.stdev(y_axis_z_probe)
+                else:
+                    std = 0
+                minx = min(y_axis_z_probe)
+                maxx = max(y_axis_z_probe)
+                summary = (
+                    "Z Pos: "
+                    "avg={0:.3f} std={1:.3f} min={2:.3f} max={3:.3f}"
+                )
+                summary = summary.format(avg, std, minx, maxx)
+                self.ui.la_z_probe_summary.setText(summary)
             else:
                 self.clear_z_probe_graph_only()
             # check if should plot data
@@ -1309,6 +1339,19 @@ class ScanWidget(_ConfigurationWidget):
                 self.clear_hall_graph_and_data()
                 self.x_axis_hall = x_axis_hall
                 self.y_axis_hall = y_axis_hall
+                # update summary
+                avg = statistics.mean(y_axis_hall)
+                if len(y_axis_hall) > 1:
+                    std = statistics.stdev(y_axis_hall)
+                else:
+                    std = 0
+                minx = min(y_axis_hall)
+                maxx = max(y_axis_hall)
+                summary = (
+                    "Hall: avg={0:.2f} std={1:.2f} min={2:.2f} max={3:.2f}"
+                )
+                summary = summary.format(avg, std, minx, maxx)
+                self.ui.la_hall_summary.setText(summary)
             else:
                 self.clear_hall_graph_only()
             # check if should plot data
