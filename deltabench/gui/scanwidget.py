@@ -1073,15 +1073,41 @@ class ScanWidget(_ConfigurationWidget):
         self.block_data.clear()
         self.hall_data.clear()
 
+    def clean_str(self, text):
+        """ Remove leading and trailing white spaces from
+            input string and remove more than 1 sequential
+            spaces between words and numbers """
+        return re.sub(' +', ' ', text.strip())
+
     def configure_scan(self):
         self.clear()
 
         try:
-            # search if scan config already exists
-            # if multiple exist, select first one
+            # get measurement names that define ID
             meas = self.ui.le_measurement_name.text()
             und = self.ui.le_undulator_name.text()
             cass = self.ui.le_cassette_name.text()
+
+            # clean strings from unnecessary white spaces
+            meas = self.clean_str(meas)
+            und = self.clean_str(und)
+            cass = self.clean_str(cass)
+
+            # correct names on GUI after removing extra spaces
+            self.ui.le_measurement_name.setText(meas)
+            self.ui.le_undulator_name.setText(und)
+            self.ui.le_cassette_name.setText(cass)
+
+            # check that no name field is empty
+            if meas == '' or und == '' or cass == '':
+                msg = ("Measurement, undulator and cassette"
+                       " names must be Non-empty"
+                )
+                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                return False
+
+            # search if scan config already exists
+            # if multiple exist, select first one
             scan_id = self.get_scan_id(meas, und, cass)
             if scan_id != -1:
                 # check if there is a conflict between
@@ -1494,6 +1520,11 @@ class ScanWidget(_ConfigurationWidget):
         measurement = self.ui.le_measurement_name.text()
         undulator = self.ui.le_undulator_name.text()
         cassette = self.ui.le_cassette_name.text()
+
+        # clean strings from unnecessary white spaces
+        measurement = self.clean_str(measurement)
+        undulator = self.clean_str(undulator)
+        cassette = self.clean_str(cassette)
 
         # get scan id from DB
         scan_list = self.access_scan_data.db_search_collection(
