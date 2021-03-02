@@ -13,8 +13,6 @@ from imautils.devices import Agilent34401ALib as _Agilent34401ALib
 
 class Display(_HeidenhainLib.HeidenhainSerial):
     """ Class with custom functions for Heidenhain display """
-#    def configure_display(self):
-#        return True
 
     def read_display(self, display_model, wait=0.1):
         try:
@@ -145,11 +143,23 @@ class Multimeter(_Agilent34401ALib.Agilent34401ASerial):
     def fetch_readings(self, wait=1.0):
         """ Fetch readings already available in device memory """
         try:
+            readings = ''
             # read
             self.inst.write(b'FETCH?\r\n')
-            _time.sleep(wait)
-            readings = self.inst.read_all().decode('utf-8')
-            readings = readings.replace('\r\n','')
+            t_start = _time.time()
+            diff = _time.time() - t_start
+            while diff < wait:
+                if wait - diff > 1.0:
+                    _time.sleep(1.0)
+                else:
+                    _time.sleep(wait - diff)
+                newdata = self.inst.read_all().decode('utf-8')
+                readings += newdata
+                diff = _time.time() - t_start
+                if '\r\n' in newdata:
+                    break
+
+            readings = readings.replace('\r\n','').replace('\x00','')
             # try to convert to float list
             readings_list = [
                 float(r) for r in readings.split(',') if r != ''
