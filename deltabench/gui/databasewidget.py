@@ -33,7 +33,7 @@ _ConnectionConfig = _data.configuration.ConnectionConfig
 _AdvancedOptions = _data.configuration.AdvancedOptions
 _ControlConfig = _data.configuration.ControlConfig
 _ScanConfig = _data.configuration.ScanConfig
-_MeasurementData = _data.measurement.MeasurementData
+#_MeasurementData = _data.measurement.MeasurementData
 _BlockData = _data.measurement.BlockData
 _HallWaveformData = _data.measurement.HallWaveformData
 
@@ -45,7 +45,7 @@ class DatabaseWidget(_QWidget):
     _advanced_options_table_name = _AdvancedOptions.collection_name
     _control_configuration_table_name = _ControlConfig.collection_name
     _scan_configuration_table_name = _ScanConfig.collection_name
-    _measurement_table_name = _MeasurementData.collection_name
+#    _measurement_table_name = _MeasurementData.collection_name
     _block_table_name = _BlockData.collection_name
     _hall_table_name = _HallWaveformData.collection_name
 
@@ -64,7 +64,7 @@ class DatabaseWidget(_QWidget):
             self._advanced_options_table_name: _AdvancedOptions,
             self._control_configuration_table_name: _ControlConfig,
             self._scan_configuration_table_name: _ScanConfig,
-            self._measurement_table_name: _MeasurementData,
+#            self._measurement_table_name: _MeasurementData,
             self._block_table_name: _BlockData,
             self._hall_table_name: _HallWaveformData,
             }
@@ -72,8 +72,8 @@ class DatabaseWidget(_QWidget):
         self._table_page_dict = {}
         for key in self._table_object_dict.keys():
             self._table_page_dict[key] = None
-        self._table_page_dict[
-            self._measurement_table_name] = self.ui.pg_deltabench_measurement
+#        self._table_page_dict[
+#            self._measurement_table_name] = self.ui.pg_deltabench_measurement
 
         self.short_version_hidden_tables = []
 
@@ -125,73 +125,73 @@ class DatabaseWidget(_QWidget):
         self.ui.twg_database.currentChanged.connect(
             self.disable_invalid_buttons)
 
-        self.ui.pbt_save_summary.clicked.connect(self.save_summary)
+#        self.ui.pbt_save_summary.clicked.connect(self.save_summary)
 
-    def save_summary(self):
-        try:
-            table_name = self.twg_database.get_current_table_name()
-            if table_name is None:
-                return
-
-            object_class = self._table_object_dict[table_name]
-
-            idns = self.twg_database.get_table_selected_ids(table_name)
-            nr_idns = len(idns)
-            if nr_idns == 0:
-                return
-
-            try:
-                attrs = [
-                    'date', 'hour', 'measurement_name', 'undulator_name',
-                    'cassette_name', 'block_number', 'x_position',
-                    'x_position_error', 'z_position', 'z_position_error',
-                    'encoder_position'
-                    ]
-                df = _pd.DataFrame(columns=attrs)
-                for i in range(nr_idns):
-                    idn = idns[i]
-                    obj = object_class(
-                        database_name=self.database_name,
-                        mongo=self.mongo, server=self.server)
-                    obj.db_read(idn)
-                    for attr in attrs:
-                        value = getattr(obj, attr)
-                        if attr == 'block_volume':
-                            value = value*1e9
-                        df.at[idn, attr] = value
-
-            except Exception:
-                _traceback.print_exc(file=_sys.stdout)
-                msg = 'Failed to read database entries.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-                return
-
-            timestamp = _time.strftime(
-                '%Y-%m-%d_%H-%M-%S', _time.localtime())
-
-            default_filename = timestamp + '_DeltaBench_Measurement_Summary.xlsx'
-
-            filename = _QFileDialog.getSaveFileName(
-                self, caption='Save file',
-                directory=_os.path.join(self.directory, default_filename),
-                filter="Text files (*.txt *.dat)")
-
-            if isinstance(filename, tuple):
-                filename = filename[0]
-
-            if len(filename) == 0:
-                return
-
-            try:
-                df.to_excel(filename)
-
-            except Exception:
-                _traceback.print_exc(file=_sys.stdout)
-                msg = 'Failed to save file.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-        
-        except Exception:
-            _traceback.print_exc(file=_sys.stdout)
+#    def save_summary(self):
+#        try:
+#            table_name = self.twg_database.get_current_table_name()
+#            if table_name is None:
+#                return
+#
+#            object_class = self._table_object_dict[table_name]
+#
+#            idns = self.twg_database.get_table_selected_ids(table_name)
+#            nr_idns = len(idns)
+#            if nr_idns == 0:
+#                return
+#
+#            try:
+#                attrs = [
+#                    'date', 'hour', 'measurement_name', 'undulator_name',
+#                    'cassette_name', 'block_number', 'x_position',
+#                    'x_position_error', 'z_position', 'z_position_error',
+#                    'encoder_position'
+#                    ]
+#                df = _pd.DataFrame(columns=attrs)
+#                for i in range(nr_idns):
+#                    idn = idns[i]
+#                    obj = object_class(
+#                        database_name=self.database_name,
+#                        mongo=self.mongo, server=self.server)
+#                    obj.db_read(idn)
+#                    for attr in attrs:
+#                        value = getattr(obj, attr)
+#                        if attr == 'block_volume':
+#                            value = value*1e9
+#                        df.at[idn, attr] = value
+#
+#            except Exception:
+#                _traceback.print_exc(file=_sys.stdout)
+#                msg = 'Failed to read database entries.'
+#                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+#                return
+#
+#            timestamp = _time.strftime(
+#                '%Y-%m-%d_%H-%M-%S', _time.localtime())
+#
+#            default_filename = timestamp + '_DeltaBench_Measurement_Summary.xlsx'
+#
+#            filename = _QFileDialog.getSaveFileName(
+#                self, caption='Save file',
+#                directory=_os.path.join(self.directory, default_filename),
+#                filter="Text files (*.txt *.dat)")
+#
+#            if isinstance(filename, tuple):
+#                filename = filename[0]
+#
+#            if len(filename) == 0:
+#                return
+#
+#            try:
+#                df.to_excel(filename)
+#
+#            except Exception:
+#                _traceback.print_exc(file=_sys.stdout)
+#                msg = 'Failed to save file.'
+#                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+#        
+#        except Exception:
+#            _traceback.print_exc(file=_sys.stdout)
 
     def disable_invalid_buttons(self):
         """Disable invalid buttons."""
