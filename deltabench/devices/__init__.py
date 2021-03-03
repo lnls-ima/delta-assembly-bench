@@ -58,7 +58,10 @@ class Multimeter(_Agilent34401ALib.Agilent34401ASerial):
         try:
             if self.inst.in_waiting > 0:
                 dummy = self.inst.read_all()
-            self.inst.write(b'*CLS\r\n')
+            self.inst.write(b'SYSTem:REMote\r\n')
+            # send device clear
+            self.inst.write(b'\x03\r\n')
+            # measure and read
             self.inst.write(b'MEAS:VOLT:DC? 10,0.01\r\n')
             _time.sleep(wait)
             reading = self.inst.read_all().decode('utf-8')
