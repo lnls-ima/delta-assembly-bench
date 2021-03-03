@@ -243,8 +243,11 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="currentText">
+           <string>115200</string>
+          </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>9</number>
           </property>
           <item>
            <property name="text">
@@ -307,7 +310,7 @@
            <number>8</number>
           </property>
           <property name="value">
-           <number>7</number>
+           <number>8</number>
           </property>
          </widget>
         </item>
@@ -932,6 +935,12 @@
         </item>
         <item row="4" column="1">
          <widget class="QComboBox" name="cmb_multimeter_stopbits">
+          <property name="currentText">
+           <string>2</string>
+          </property>
+          <property name="currentIndex">
+           <number>2</number>
+          </property>
           <item>
            <property name="text">
             <string>1</string>
