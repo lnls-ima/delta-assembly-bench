@@ -59,6 +59,8 @@ class AdvancedOptions(_database.DatabaseAndFileDocument):
         ('position_tolerance', {'dtype': float, 'not_null': True}),
         ('linear_conversion_factor', {'dtype': float, 'not_null': True}),
         ('move_timeout', {'dtype': float, 'not_null': True}),
+        ('pneumatic_advance_wait', {'dtype': float, 'not_null': True}),
+        ('pneumatic_retreat_wait', {'dtype': float, 'not_null': True}),
     ])
 
 

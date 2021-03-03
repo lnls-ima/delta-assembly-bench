@@ -209,7 +209,9 @@ class ScanWidget(_ConfigurationWidget):
             # interval to wait after a display read command
             wait_display = _utils.WAIT_DISPLAY
             # interval to wait after pneumatic motion start
-            wait_pneumatic = _utils.WAIT_PNEUMATIC
+            wait_pneumatic_retreat = (
+                self.advanced_options.pneumatic_retreat_wait
+            )
             # interval to wait after a multimeter command
             wait_multimeter = _utils.WAIT_MULTIMETER
             # interval to wait after a multimeter command
@@ -309,7 +311,7 @@ class ScanWidget(_ConfigurationWidget):
             # make sure pneumatic actuator is off
             _driver.set_output_1_low(driver_address)
             # wait pneumatic motion to finish
-            _time.sleep(wait_pneumatic)
+            _time.sleep(wait_pneumatic_retreat)
 
             # calculate progress bar step
             pgb_max = self.ui.pgb_status.maximum()
@@ -535,7 +537,12 @@ class ScanWidget(_ConfigurationWidget):
             # interval to wait after a display read command
             wait_display = _utils.WAIT_DISPLAY
             # interval to wait after pneumatic motion start
-            wait_pneumatic = _utils.WAIT_PNEUMATIC
+            wait_pneumatic_advance = (
+                self.advanced_options.pneumatic_advance_wait
+            )
+            wait_pneumatic_retreat = (
+                self.advanced_options.pneumatic_retreat_wait
+            )
 
             # disable start scan buttons
             self.ui.pbt_start_hall_scan.setEnabled(False)
@@ -572,7 +579,7 @@ class ScanWidget(_ConfigurationWidget):
             # make sure pneumatic actuator is off
             _driver.set_output_1_low(driver_address)
             # wait pneumatic motion to finish
-            _time.sleep(wait_pneumatic)
+            _time.sleep(wait_pneumatic_retreat)
 
             # start position
             scan_beginning = first_block_position
@@ -617,7 +624,7 @@ class ScanWidget(_ConfigurationWidget):
                 # trigger pneumatic actuator
                 _driver.set_output_1_high(driver_address)
                 # wait pneumatic motion to finish
-                _time.sleep(wait_pneumatic)
+                _time.sleep(wait_pneumatic_advance)
                 # read position probes
                 readings = _display.read_display(display_model, wait=wait_display)
                 # if error in reading, wait and try again
@@ -641,7 +648,7 @@ class ScanWidget(_ConfigurationWidget):
                 # deactivate pneumatic actuator
                 _driver.set_output_1_low(driver_address)
                 # wait pneumatic motion to finish
-                _time.sleep(wait_pneumatic)
+                _time.sleep(wait_pneumatic_retreat)
                 
                 if status is False:
                     break
@@ -738,7 +745,12 @@ class ScanWidget(_ConfigurationWidget):
         # interval to wait after a display read command
         wait_display = _utils.WAIT_DISPLAY
         # interval to wait after pneumatic motion start
-        wait_pneumatic = _utils.WAIT_PNEUMATIC
+        wait_pneumatic_advance = (
+            self.advanced_options.pneumatic_advance_wait
+        )
+        wait_pneumatic_retreat = (
+            self.advanced_options.pneumatic_retreat_wait
+        )
 
         # disable start scan button
         self.ui.pbt_start_scan.setEnabled(False)
@@ -777,7 +789,7 @@ class ScanWidget(_ConfigurationWidget):
         # make sure pneumatic actuator is off
         _driver.set_output_1_low(driver_address)
         # wait pneumatic motion to finish
-        _time.sleep(wait_pneumatic)
+        _time.sleep(wait_pneumatic_retreat)
 
         # start position
         scan_beginning = first_block_position
@@ -842,7 +854,7 @@ class ScanWidget(_ConfigurationWidget):
                     # trigger pneumatic actuator
                     _driver.set_output_1_high(driver_address)
                     # wait pneumatic motion to finish
-                    _time.sleep(wait_pneumatic)
+                    _time.sleep(wait_pneumatic_advance)
                     # read position probes
                     readings = _display.read_display(display_model, wait=wait_display)
                     # if error in reading, wait and try again
@@ -866,7 +878,7 @@ class ScanWidget(_ConfigurationWidget):
                     # deactivate pneumatic actuator
                     _driver.set_output_1_low(driver_address)
                     # wait pneumatic motion to finish
-                    _time.sleep(wait_pneumatic)
+                    _time.sleep(wait_pneumatic_retreat)
                 
             if status is False:
                 break
@@ -1775,7 +1787,9 @@ class ScanWidget(_ConfigurationWidget):
             # interval to wait before command is received
             wait_cmd = _utils.WAIT_DRIVER
             # interval to wait after pneumatic actuator command
-            wait_pneumatic = _utils.WAIT_PNEUMATIC
+            wait_pneumatic_retreat = (
+                self.advanced_options.pneumatic_retreat_wait
+            )
 
             # motor info
             driver_address = self.advanced_options.motor_driver_address
@@ -1797,7 +1811,7 @@ class ScanWidget(_ConfigurationWidget):
             # make sure pneumatic actuator is off
             _driver.set_output_1_low(driver_address)
             # wait pneumatic motion to finish
-            _time.sleep(wait_pneumatic)
+            _time.sleep(wait_pneumatic_retreat)
 
             # move towards the negative or positive limit switch
             if not self.stop_sent:

@@ -604,8 +604,8 @@ class MeasurementWidget(_ConfigurationWidget):
             status = self.pneumatic_on()
             if status == False:
                 raise RuntimeError('Could not enable pneumatic actuator')
-            _time.sleep(_utils.WAIT_PNEUMATIC)
             _QApplication.processEvents()
+            _time.sleep(self.advanced_options.pneumatic_advance_wait)
 
             # send cmds to reset display X and Y axes
             axes = [0, 1]
@@ -616,10 +616,10 @@ class MeasurementWidget(_ConfigurationWidget):
                 )
 
             # retreat gauges
-            _time.sleep(_utils.WAIT_PNEUMATIC)
             status = self.pneumatic_off()
             if status == False:
                 raise RuntimeError('Could not disable pneumatic actuator')
+            _time.sleep(self.advanced_options.pneumatic_retreat_wait)
 
             return True
 
@@ -702,18 +702,18 @@ class MeasurementWidget(_ConfigurationWidget):
                 raise RuntimeError(
                 'Could not enable pneumatic actuator'
             )
-            _time.sleep(_utils.WAIT_PNEUMATIC)
             _QApplication.processEvents()
+            _time.sleep(self.advanced_options.pneumatic_advance_wait)
             # read
             self.read_position()
             self.read_hall()
             # retreat
-            _time.sleep(_utils.WAIT_PNEUMATIC)
             status = self.pneumatic_off()
             if status == False:
                 raise RuntimeError(
                 'Could not disable pneumatic actuator'
             )
+            _time.sleep(self.advanced_options.pneumatic_retreat_wait)
             return True
         except Exception:
             _traceback.print_exc(file=_sys.stdout)

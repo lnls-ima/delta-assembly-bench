@@ -59,6 +59,8 @@ class AdvancedOptionsWidget(_ConfigurationWidget):
             'position_tolerance',
             'linear_conversion_factor',
             'move_timeout',
+            'pneumatic_advance_wait',
+            'pneumatic_retreat_wait',
         ]
 
         self.cmb_names = [
