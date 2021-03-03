@@ -366,6 +366,9 @@ class MeasurementWidget(_ConfigurationWidget):
                     else:
                         curr_dir = '+'
 
+            # update motor moving LED
+            self.ui.la_motor_is_moving.setEnabled(True)
+
             # try to reach position at the first move
             if steps != 0 and not self.stop_sent:
                 # configure motor
@@ -464,6 +467,8 @@ class MeasurementWidget(_ConfigurationWidget):
 
             return True
         except Exception:
+            # update motor moving LED
+            self.ui.la_motor_is_moving.setEnabled(False)
             # re-enable move and homing buttons
             self.ui.pbt_move_motor.setEnabled(True)
             self.ui.pbt_homing.setEnabled(True)
