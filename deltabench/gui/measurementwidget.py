@@ -3,10 +3,10 @@
 """Manual Measurement widget for the control application."""
 
 import sys as _sys
-import os
+# import os as _os
 import numpy as _np
 import time as _time
-import math
+import math as _math
 import warnings as _warnings
 import traceback as _traceback
 from qtpy.QtWidgets import (
@@ -113,19 +113,19 @@ class MeasurementWidget(_ConfigurationWidget):
 #        # create dictionary for magnet direction images
 #        self.direction_images = {}
 #        self.direction_images['up'] = QPixmap(
-#            os.path.join('deltabench','resources', 'img',
+#            _os.path.join('deltabench','resources', 'img',
 #                         'arrow-up-bold-outline.png')
 #        )
 #        self.direction_images['down'] = QPixmap(
-#            os.path.join('deltabench','resources', 'img',
+#            _os.path.join('deltabench','resources', 'img',
 #                         'arrow-down-bold-outline.png')
 #        )
 #        self.direction_images['left'] = QPixmap(
-#            os.path.join('deltabench','resources', 'img',
+#            _os.path.join('deltabench','resources', 'img',
 #                         'arrow-left-bold-outline.png')
 #        )
 #        self.direction_images['right'] = QPixmap(
-#            os.path.join('deltabench','resources', 'img',
+#            _os.path.join('deltabench','resources', 'img',
 #                         'arrow-right-bold-outline.png')
 #        )
 #        self.direction_images['none'] = QPixmap()
@@ -173,7 +173,7 @@ class MeasurementWidget(_ConfigurationWidget):
                     self.advanced_options.display_model, 
                     wait=wait_display
                 )
-                if math.isnan(readings[2]):
+                if _math.isnan(readings[2]):
                     # indicate encoder fault
                     self.encoder_measurement_index = -1
                     return False
@@ -356,7 +356,7 @@ class MeasurementWidget(_ConfigurationWidget):
                 )
                 previous_encoder_index = self.encoder_measurement_index
                 diff = target_position - self.current_encoder_position
-                steps = math.floor(
+                steps = _math.floor(
                     diff / (linear_conversion / motor_resolution)
                 )
                 curr_dir = rotation_direction
@@ -417,7 +417,7 @@ class MeasurementWidget(_ConfigurationWidget):
                 if abs(diff) <= abs(tolerance):
                     break
                 # update number of steps
-                steps = math.floor(diff / (linear_conversion / motor_resolution))
+                steps = _math.floor(diff / (linear_conversion / motor_resolution))
                 curr_dir = rotation_direction
                 if steps < 0:
                     if rotation_direction == '+':
@@ -676,7 +676,7 @@ class MeasurementWidget(_ConfigurationWidget):
                 wait=_utils.WAIT_DISPLAY
             )
             # check if reading is invalid
-            if math.isnan(readings[0]):
+            if _math.isnan(readings[0]):
                 # clear probe data on gui
                 self.ui.lcd_x_position.display('')
                 self.ui.lcd_z_position.display('')

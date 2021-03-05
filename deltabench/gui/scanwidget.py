@@ -5,8 +5,8 @@
 import sys as _sys
 import numpy as _np
 import time as _time
-import math
-import statistics
+import math as _math
+import statistics as _statistics
 import warnings as _warnings
 import traceback as _traceback
 import pyqtgraph as _pyqtgraph
@@ -356,7 +356,7 @@ class ScanWidget(_ConfigurationWidget):
 
                 # calculate number of steps
                 diff = target_position - last_enc_pos
-                steps = math.floor(
+                steps = _math.floor(
                     diff / (linear_conversion / motor_resolution)
                 )
 
@@ -394,7 +394,7 @@ class ScanWidget(_ConfigurationWidget):
                 # delaying the readings first trigger 
                 n = 0
                 if t_acc_total > 0.5:
-                    n = math.floor(t_acc_total / 0.5)
+                    n = _math.floor(t_acc_total / 0.5)
                 for i in range(0, n):
                     _time.sleep(0.5)
                     _QApplication.processEvents()
@@ -434,12 +434,12 @@ class ScanWidget(_ConfigurationWidget):
                     readings = _display.read_display(
                         display_model, wait=wait_display
                     )
-                    if math.isnan(readings[0]):
+                    if _math.isnan(readings[0]):
                         readings = _display.read_display(
                             display_model, wait=wait_display
                         )
                         # if failed again, stop scan
-                        if math.isnan(readings[0]):
+                        if _math.isnan(readings[0]):
                             status = False
                             msg = 'Failed to read display.'
                             _QMessageBox.critical(
@@ -587,7 +587,7 @@ class ScanWidget(_ConfigurationWidget):
             # calculate progress bar step
             pgb_max = self.ui.pgb_status.maximum()
             pgb_min = self.ui.pgb_status.minimum()
-            pgb_step = math.floor((pgb_max - pgb_min) / block_count)
+            pgb_step = _math.floor((pgb_max - pgb_min) / block_count)
 
             # clear progress bar
             self.ui.pgb_status.setValue(pgb_min)
@@ -628,13 +628,13 @@ class ScanWidget(_ConfigurationWidget):
                 # read position probes
                 readings = _display.read_display(display_model, wait=wait_display)
                 # if error in reading, wait and try again
-                if math.isnan(readings[0]):
+                if _math.isnan(readings[0]):
                     _time.sleep(wait_display * 5)
                     readings = _display.read_display(
                         display_model, wait=wait_display
                     )
                     # if failed again, stop scan
-                    if math.isnan(readings[0]):
+                    if _math.isnan(readings[0]):
                         status = False
                         msg = 'Failed to read display.'
                         _QMessageBox.critical(
@@ -797,7 +797,7 @@ class ScanWidget(_ConfigurationWidget):
         # calculate progress bar step
         pgb_max = self.ui.pgb_status.maximum()
         pgb_min = self.ui.pgb_status.minimum()
-        pgb_step = math.floor((pgb_max - pgb_min) / block_count)
+        pgb_step = _math.floor((pgb_max - pgb_min) / block_count)
 
         # clear progress bar
         self.ui.pgb_status.setValue(pgb_min)
@@ -858,13 +858,13 @@ class ScanWidget(_ConfigurationWidget):
                     # read position probes
                     readings = _display.read_display(display_model, wait=wait_display)
                     # if error in reading, wait and try again
-                    if math.isnan(readings[0]):
+                    if _math.isnan(readings[0]):
                         _time.sleep(wait_display * 5)
                         readings = _display.read_display(
                             display_model, wait=wait_display
                         )
                         # if failed again, stop scan
-                        if math.isnan(readings[0]):
+                        if _math.isnan(readings[0]):
                             status = False
                             msg = 'Failed to read display.'
                             _QMessageBox.critical(
@@ -1200,9 +1200,9 @@ class ScanWidget(_ConfigurationWidget):
                 self.y_axis_x_probe = y_axis_x_probe
                 self.y_axis_x_probe_error = y_axis_x_probe_error
                 # update summary
-                avg = statistics.mean(y_axis_x_probe)
+                avg = _statistics.mean(y_axis_x_probe)
                 if len(y_axis_x_probe) > 1:
-                    std = statistics.stdev(y_axis_x_probe)
+                    std = _statistics.stdev(y_axis_x_probe)
                 else:
                     std = 0
                 minx = min(y_axis_x_probe)
@@ -1277,9 +1277,9 @@ class ScanWidget(_ConfigurationWidget):
                 self.y_axis_z_probe = y_axis_z_probe
                 self.y_axis_z_probe_error = y_axis_z_probe_error
                 # update summary
-                avg = statistics.mean(y_axis_z_probe)
+                avg = _statistics.mean(y_axis_z_probe)
                 if len(y_axis_z_probe) > 1:
-                    std = statistics.stdev(y_axis_z_probe)
+                    std = _statistics.stdev(y_axis_z_probe)
                 else:
                     std = 0
                 minx = min(y_axis_z_probe)
@@ -1352,9 +1352,9 @@ class ScanWidget(_ConfigurationWidget):
                 self.x_axis_hall = x_axis_hall
                 self.y_axis_hall = y_axis_hall
                 # update summary
-                avg = statistics.mean(y_axis_hall)
+                avg = _statistics.mean(y_axis_hall)
                 if len(y_axis_hall) > 1:
-                    std = statistics.stdev(y_axis_hall)
+                    std = _statistics.stdev(y_axis_hall)
                 else:
                     std = 0
                 minx = min(y_axis_hall)
@@ -1445,12 +1445,12 @@ class ScanWidget(_ConfigurationWidget):
                 readings = _display.read_display(display_model, wait=wait_display)
                 encoder_position = readings[2]
                 # skip loop if failed to read encoder
-                if math.isnan(encoder_position):
+                if _math.isnan(encoder_position):
                     _time.sleep(wait_display)
                     continue
                 # update difference
                 diff = target_position - encoder_position
-                steps = math.floor(
+                steps = _math.floor(
                         diff / (linear_conversion / motor_resolution)
                 )
                 curr_dir = rotation_direction
