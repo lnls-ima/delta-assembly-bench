@@ -546,12 +546,6 @@ class MeasurementWidget(_ConfigurationWidget):
         self.ui.pbt_set_zero.clicked.connect(self.set_reference_zero)
         self.ui.pbt_set_gauge_reference.clicked.connect(self.set_probe_zero)
 
-    @property
-    def advanced_options(self):
-        """Return global advanced options."""
-        dialog = _QApplication.instance().advanced_options_dialog
-        return dialog.config
-
     def pneumatic_off(self):
         """ Turn off pneumatic actuator """
         try:
