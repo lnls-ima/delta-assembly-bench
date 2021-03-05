@@ -23,6 +23,8 @@ from deltabench.gui.auxiliarywidgets import (
     )
 from deltabench.gui.connectionwidget import ConnectionWidget \
     as _ConnectionWidget
+from deltabench.gui.assemblywidget import AssemblyWidget \
+    as _AssemblyWidget
 from deltabench.gui.measurementwidget import MeasurementWidget \
     as _MeasurementWidget
 from deltabench.gui.scanwidget import ScanWidget \
@@ -52,6 +54,7 @@ class MainWindow(_QMainWindow):
         # define tab names and corresponding widgets
         self.tab_names = [
             'connection',
+            'assembly',
             'control',
             'scan',
             'database',
@@ -59,6 +62,7 @@ class MainWindow(_QMainWindow):
 
         self.tab_widgets = [
             _ConnectionWidget,
+            _AssemblyWidget,
             _MeasurementWidget,
             _ScanWidget,
             _DatabaseWidget,
@@ -67,6 +71,7 @@ class MainWindow(_QMainWindow):
         # add select tabs dialog
         self.select_tabs_dialog = _SelectTabsDialog(self.tab_names)
         self.select_tabs_dialog.chb_connection.setChecked(True)
+        self.select_tabs_dialog.chb_assembly.setChecked(True)
         self.select_tabs_dialog.chb_control.setChecked(True)
         self.select_tabs_dialog.chb_scan.setChecked(True)
         self.select_tabs_dialog.chb_database.setChecked(True)
