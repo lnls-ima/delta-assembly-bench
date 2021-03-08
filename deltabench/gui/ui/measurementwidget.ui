@@ -1471,6 +1471,16 @@
           <property name="text">
            <string>Take Length Gauge Reference</string>
           </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>../../resources/img/gauge.svg</normaloff>../../resources/img/gauge.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
+          </property>
          </widget>
         </item>
        </layout>

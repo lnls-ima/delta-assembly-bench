@@ -28,6 +28,7 @@ __credits__     = [
     ('arrow-left-bold-outline.png', 'Arrow Left Bold Outline Icon (from https://materialdesignicons.com/)'),
     ('arrow-right-bold-outline.png', 'Arrow Right Bold Outline Icon (from https://materialdesignicons.com/)'),
     ('folder-open-outline.png', 'Folder Open Outline Icon (from https://materialdesignicons.com/)'),
+    ('gauge.svg', 'Gauge Icon (from https://materialdesignicons.com/)'),
     ]
 
 
