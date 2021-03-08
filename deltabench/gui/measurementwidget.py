@@ -888,7 +888,7 @@ class MeasurementWidget(_ConfigurationWidget):
                         'x_position_error', 'z_position',
                         'z_position_error', 'encoder_position'
                 ],
-                filters=[scan_id, block, '', '', '', '', '', ''
+                filters=[scan_id, block, '', '', '', '', ''
                 ]
             )
             block_data = block_data[0]
