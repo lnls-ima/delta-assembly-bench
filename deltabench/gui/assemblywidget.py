@@ -247,10 +247,11 @@ class AssemblyWidget(_QWidget):
             formatted_text = ''
             idx = 1
             for block in self.block_list:
-                line = '{0} | '.format(idx)
+                line = '{0:03} | '.format(idx)
                 idx += 1
                 for k, v in block.items():
-                    line += '{0}: {1}; '.format(k,v)
+                    info = '{0}: {1}; '.format(k,v)
+                    line += '{:<20}'.format(info)
                 formatted_text += line + '\r\n'
             # show data in ready only text editor
             self.ui.te_file_data.setText(formatted_text)

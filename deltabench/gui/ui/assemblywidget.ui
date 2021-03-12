@@ -152,8 +152,13 @@
           <property name="bottomMargin">
            <number>6</number>
           </property>
-          <item row="2" column="0">
+          <item row="0" column="0">
            <widget class="QTextEdit" name="te_file_data">
+            <property name="font">
+             <font>
+              <family>Courier 10 Pitch</family>
+             </font>
+            </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
