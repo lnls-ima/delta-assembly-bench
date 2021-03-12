@@ -267,18 +267,10 @@ class AssemblyWidget(_QWidget):
 
     def read_file(self, filename, sheet_name):
         """ Read spreadsheet data """
-#        fail_response = ''
-#        try:
-#            data = ''
-#            with open(filename, 'r') as f:
-#                data = f.read()
-#            return data
-#        except Exception:
-#            _traceback.print_exc(file=_sys.stdout)
-#            msg = 'Failed to read file.'
-#            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
-#            return fail_response
         try:
+            # clear stored block list
+            self.block_list = []
+            # read spreadsheet
             sheet = _pd.read_excel(
                 filename, sheet_name=sheet_name, dtype=str
             )
@@ -309,7 +301,9 @@ class AssemblyWidget(_QWidget):
                         'Invalid block type prefix at row {0}'.format(n)
                     )
                 block['type'] = block_type
+                # append block to list
                 self.block_list.append(block)
+            # update block list size
             self.block_count = len(self.block_list)
 
         except Exception:
