@@ -31,6 +31,7 @@ import deltabench.data as _data
 
 _ConnectionConfig = _data.configuration.ConnectionConfig
 _AdvancedOptions = _data.configuration.AdvancedOptions
+_AssemblyData = _data.measurement.AssemblyData
 _ControlConfig = _data.configuration.ControlConfig
 _ScanConfig = _data.configuration.ScanConfig
 #_MeasurementData = _data.measurement.MeasurementData
@@ -43,6 +44,7 @@ class DatabaseWidget(_QWidget):
 
     _connection_table_name = _ConnectionConfig.collection_name
     _advanced_options_table_name = _AdvancedOptions.collection_name
+    _assembly_table_name = _AssemblyData.collection_name
     _control_configuration_table_name = _ControlConfig.collection_name
     _scan_configuration_table_name = _ScanConfig.collection_name
 #    _measurement_table_name = _MeasurementData.collection_name
@@ -62,6 +64,7 @@ class DatabaseWidget(_QWidget):
         self._table_object_dict = {
             self._connection_table_name: _ConnectionConfig,
             self._advanced_options_table_name: _AdvancedOptions,
+            self._assembly_table_name: _AssemblyData,
             self._control_configuration_table_name: _ControlConfig,
             self._scan_configuration_table_name: _ScanConfig,
 #            self._measurement_table_name: _MeasurementData,

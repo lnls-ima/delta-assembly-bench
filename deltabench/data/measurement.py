@@ -40,6 +40,20 @@ class BlockData(_database.DatabaseAndFileDocument):
         ('encoder_position', {'dtype': float, 'not_null': True}),
     ])
 
+class AssemblyData(_database.DatabaseAndFileDocument):
+    """Read, write and stored assembly data."""
+
+    collection_name = 'assembly'
+    db_dict = _collections.OrderedDict([
+        ('idn', {'field': 'id', 'dtype': int, 'not_null': True}),
+        ('date', {'dtype': str, 'not_null': True}),
+        ('hour', {'dtype': str, 'not_null': True}),
+        ('filename', {'dtype': str, 'not_null': True}),
+        ('cassette', {'dtype': str, 'not_null': True}),
+        ('last_position', {'dtype': int}),
+        ('used_blocks', {'dtype': list}),
+    ])
+
 #class MeasurementData(_database.DatabaseAndFileDocument):
 #    """Read, write and stored measurement data."""
 #
