@@ -61,6 +61,9 @@ class AdvancedOptions(_database.DatabaseAndFileDocument):
         ('move_timeout', {'dtype': float, 'not_null': True}),
         ('pneumatic_advance_wait', {'dtype': float, 'not_null': True}),
         ('pneumatic_retreat_wait', {'dtype': float, 'not_null': True}),
+        ('vertical_motor_driver_address', {'dtype': int, 'not_null': True}),
+        ('vertical_motor_rotation_direction', {'dtype': str, 'not_null': True}),
+        ('vertical_motor_resolution', {'dtype': int, 'not_null': True}),
     ])
 
 
