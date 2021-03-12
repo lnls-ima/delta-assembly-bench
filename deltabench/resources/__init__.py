@@ -29,6 +29,11 @@ __credits__     = [
     ('arrow-right-bold-outline.png', 'Arrow Right Bold Outline Icon (from https://materialdesignicons.com/)'),
     ('folder-open-outline.png', 'Folder Open Outline Icon (from https://materialdesignicons.com/)'),
     ('gauge.svg', 'Gauge Icon (from https://materialdesignicons.com/)'),
+    ('arrow-left-circle-outline.svg', 'Arrow Left Circle Outline Icon (from https://materialdesignicons.com/)'),
+    ('arrow-right-circle-outline.svg', 'Arrow Right Circle Outline Icon (from https://materialdesignicons.com/)'),
+    ('arrow-up-circle-outline.svg', 'Arrow Up Circle Outline Icon (from https://materialdesignicons.com/)'),
+    ('arrow-down-circle-outline.svg', 'Arrow Down Circle Outline Icon (from https://materialdesignicons.com/)'),
+    ('check-circle-outline.png', 'Check Circle Outline Icon (from https://materialdesignicons.com/)'),
     ]
 
 

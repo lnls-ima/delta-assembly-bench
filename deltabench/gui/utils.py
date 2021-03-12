@@ -41,6 +41,18 @@ WAIT_MULTIMETER_FETCH_READINGS = 30.0
 WAIT_DISPLAY = 0.04
 MULTIMETER_MIN_TRIGGER_TIME = 0.1
 
+# Assembly GUI file configuration
+CASSETTE_1_NAME = 'Cassete DR'
+CASSETTE_2_NAME = 'Cassete DL'
+CASSETTE_3_NAME = 'Cassete UL'
+CASSETTE_4_NAME = 'Cassete UR'
+BLOCK_NAME_COLUMN_TITLE = 'Name'
+BLOCK_FLIP_BOOL_COLUMN_TITLE = 'should flip'
+SUBCASSETTE_COLUMN_TITLE = 'sub-cassete'
+PREFIX_BLOCK_FIELD_UP = 'A-'
+PREFIX_BLOCK_FIELD_DOWN = 'B-'
+PREFIX_BLOCK_FIELD_SIDE = 'C-'
+
 BASEPATH = _os.path.dirname(
     _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
 if not MONGO:
