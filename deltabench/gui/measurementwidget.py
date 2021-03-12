@@ -34,7 +34,7 @@ from deltabench.devices import (
 from imautils.db import database as _database
 import collections as _collections
 import natsort as _natsort
-from PyQt5.QtGui import QPixmap        
+from PyQt5.QtGui import QPixmap as _QPixmap
 
 class MeasurementWidget(_ConfigurationWidget):
     """Measurement widget class for the control application."""
@@ -112,23 +112,23 @@ class MeasurementWidget(_ConfigurationWidget):
 
 #        # create dictionary for magnet direction images
 #        self.direction_images = {}
-#        self.direction_images['up'] = QPixmap(
+#        self.direction_images['up'] = _QPixmap(
 #            _os.path.join('deltabench','resources', 'img',
 #                         'arrow-up-bold-outline.png')
 #        )
-#        self.direction_images['down'] = QPixmap(
+#        self.direction_images['down'] = _QPixmap(
 #            _os.path.join('deltabench','resources', 'img',
 #                         'arrow-down-bold-outline.png')
 #        )
-#        self.direction_images['left'] = QPixmap(
+#        self.direction_images['left'] = _QPixmap(
 #            _os.path.join('deltabench','resources', 'img',
 #                         'arrow-left-bold-outline.png')
 #        )
-#        self.direction_images['right'] = QPixmap(
+#        self.direction_images['right'] = _QPixmap(
 #            _os.path.join('deltabench','resources', 'img',
 #                         'arrow-right-bold-outline.png')
 #        )
-#        self.direction_images['none'] = QPixmap()
+#        self.direction_images['none'] = _QPixmap()
 
     @property
     def advanced_options(self):
@@ -492,12 +492,12 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             driver_address = self.advanced_options.motor_driver_address
             _driver.stop_motor(driver_address)
+            return True
         except Exception:
             msg = 'Failed to stop motor.'
             _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
-
-        return True
+            return False
 
  #   def clear(self):
  #       """Clear."""
