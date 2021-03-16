@@ -254,8 +254,8 @@ class MeasurementWidget(_ConfigurationWidget):
 
             # check motor connection
             if not _driver.connected:
-                msg = 'Driver not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Driver nao conectado.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
 
             # whether to use encoder position or step as set point
@@ -267,22 +267,25 @@ class MeasurementWidget(_ConfigurationWidget):
 
             # check display connection
             if use_encoder and not _display.connected:
-                msg = 'Display not connected - invalid encoder position.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = ('Display nao conectado -'
+                      ' posicao do encoder invalida.'
+                )
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
             # check encoder update
             if use_encoder and not enc_update_enabled:
-                msg = ('Encoder update must be enabled if '
-                       +'encoder set point is selected.'
+                msg = ('Leitura do Encoder precisa estar habilitada '
+                       'se um set point de posicao de encoder esta '
+                       'sendo utilizado.'
                 )
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
 
             # make sure pneumatic actuator is off
             status = self.pneumatic_off()
             if status == False:
-                msg = 'Failed to retreat pneumatic actuator.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Falha ao tentar recuar atuador pneumatico.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
 
             # interval to wait after display read command
@@ -380,9 +383,9 @@ class MeasurementWidget(_ConfigurationWidget):
                        velocity,
                        acceleration,
                        steps):
-                    msg = 'Failed to send configuration to motor.'
+                    msg = 'Falha ao enviar configuracao para motor.'
                     _QMessageBox.critical(
-                        self, 'Failure', msg, _QMessageBox.Ok)
+                        self, 'Falha', msg, _QMessageBox.Ok)
                 else:
                     # start motor motion if commanded to
                     _driver.move_motor(driver_address)
@@ -433,9 +436,9 @@ class MeasurementWidget(_ConfigurationWidget):
                        velocity,
                        acceleration,
                        steps):
-                    msg = 'Failed to send configuration to motor.'
+                    msg = 'Falha ao enviar configuracao para motor.'
                     _QMessageBox.critical(
-                        self, 'Failure', msg, _QMessageBox.Ok)
+                        self, 'Falha', msg, _QMessageBox.Ok)
                 else:
                     # start motor motion if commanded to
                     _driver.move_motor(driver_address)
@@ -451,12 +454,12 @@ class MeasurementWidget(_ConfigurationWidget):
                 _QApplication.processEvents()
 
             if self.stop_sent:
-                msg = 'Stop command received.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Recebido comando de Pare.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
 
             if is_timeout:
-                msg = 'Move timeout.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Timeout de movimentacao esgotado.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
 
             # update motor moving LED
             self.ui.la_motor_is_moving.setEnabled(False)
@@ -474,8 +477,8 @@ class MeasurementWidget(_ConfigurationWidget):
             self.ui.pbt_homing.setEnabled(True)
             # print erro info to user
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to move motor.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar mover o motor.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def stop_motor(self):
@@ -484,8 +487,8 @@ class MeasurementWidget(_ConfigurationWidget):
 
         # check connection
         if not _driver.connected:
-            msg = 'Driver not connected - failed to stop motor.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Driver nao conectado - falha ao tentar parar o motor.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
         # stop motor
@@ -494,8 +497,8 @@ class MeasurementWidget(_ConfigurationWidget):
             _driver.stop_motor(driver_address)
             return True
         except Exception:
-            msg = 'Failed to stop motor.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar parar o motor.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 
@@ -519,8 +522,8 @@ class MeasurementWidget(_ConfigurationWidget):
                 steps)
 
         except Exception:
-            msg = 'Failed to configure driver.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar configurar driver.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 
@@ -551,8 +554,8 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             # check driver connection
             if not _driver.connected:
-                msg = 'Driver not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Driver nao conectado.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
             # send command
             driver_address = self.advanced_options.motor_driver_address
@@ -564,8 +567,8 @@ class MeasurementWidget(_ConfigurationWidget):
             return True
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to send command to driver.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar enviar comando para o driver.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def pneumatic_on(self):
@@ -573,8 +576,8 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             # check driver connection
             if not _driver.connected:
-                msg = 'Driver not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Driver nao conectado.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
             # send command
             driver_address = self.advanced_options.motor_driver_address
@@ -586,8 +589,8 @@ class MeasurementWidget(_ConfigurationWidget):
             return True
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to send command to driver.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar enviar comando para o driver.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def set_probe_zero(self):
@@ -595,7 +598,7 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             # check display connection
             if not _display.connected:
-                msg = 'Display not connected.'
+                msg = 'Display nao conectado.'
                 _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
                 return False
 
@@ -639,7 +642,7 @@ class MeasurementWidget(_ConfigurationWidget):
             # check driver connection
             if not _driver.connected:
                 msg = 'Driver not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
             # send cmd to reset display Z axis
             axis = 2
@@ -654,15 +657,15 @@ class MeasurementWidget(_ConfigurationWidget):
             return True
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to send command to display.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar enviar comando para display.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def read_position(self):
         try:
             if not _display.connected:
-                msg = 'Display not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Display nao conectado.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
             # read position probes
             readings = _display.read_display(
@@ -676,9 +679,9 @@ class MeasurementWidget(_ConfigurationWidget):
                 self.ui.lcd_z_position.display('')
                 self.ui.lcd_linear_encoder_position.display('')
                 # show error
-                msg = 'Failed to read display.'
+                msg = 'Falha ao tentar ler display.'
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok
+                    self, 'Falha', msg, _QMessageBox.Ok
                 )
                 return False
             # update probe data on gui
@@ -688,8 +691,8 @@ class MeasurementWidget(_ConfigurationWidget):
             return True
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to read display.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar ler display.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def read_all(self):
@@ -716,8 +719,8 @@ class MeasurementWidget(_ConfigurationWidget):
             return True
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to do read_all.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar executar atuacao + leitura.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def homing(self):
@@ -729,8 +732,8 @@ class MeasurementWidget(_ConfigurationWidget):
 
         # check motor connection
         if not _driver.connected:
-            msg = 'Driver not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Driver nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
         # disable move and homing buttons
@@ -767,9 +770,11 @@ class MeasurementWidget(_ConfigurationWidget):
                             velocity,
                             acceleration,
                             wait):
-                        msg = 'Failed to send command.'
+                        msg = ('Falha ao tentar enviar comando '
+                               'para driver.'
+                        )
                         _QMessageBox.critical(
-                            self, 'Failure', msg, _QMessageBox.Ok)
+                            self, 'Falha', msg, _QMessageBox.Ok)
                     else:
                         move_started = True
                 else:
@@ -778,9 +783,11 @@ class MeasurementWidget(_ConfigurationWidget):
                             velocity,
                             acceleration,
                             wait):
-                        msg = 'Failed to send command.'
+                        msg = ('Falha ao tentar enviar comando '
+                               'para driver.'
+                        )
                         _QMessageBox.critical(
-                            self, 'Failure', msg, _QMessageBox.Ok)
+                            self, 'Falha', msg, _QMessageBox.Ok)
                     else:
                         move_started = True
 
@@ -797,13 +804,13 @@ class MeasurementWidget(_ConfigurationWidget):
 
                 if (t_curr - t_start) > move_timeout:
                     self.stop_motor()
-                    msg = 'Homing timeout - stopping motor.'
-                    _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                    msg = 'Timeout durante Homing - parando motor.'
+                    _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Homing failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Homing falhou.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
 
         # re-enable move and homing buttons
         self.ui.pbt_move_motor.setEnabled(True)
@@ -826,23 +833,23 @@ class MeasurementWidget(_ConfigurationWidget):
         try:
             # check connection
             if not _multimeter.connected:
-                msg = 'Multimeter not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Multimeter nao conectado.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
             reading = _multimeter.single_dc_read(
                 wait=_utils.WAIT_MULTIMETER
             )
             if reading == None:
-                msg = 'Read command failed.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Comando de leitura falhou.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
             # update data on gui
             self.ui.lcd_hall_sensor_voltage.display(reading)
             return True
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to read hall sensor.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar ler sensor hall.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def update_widget_gb_stored_data(self):

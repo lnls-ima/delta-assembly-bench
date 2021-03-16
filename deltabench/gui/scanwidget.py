@@ -189,20 +189,20 @@ class ScanWidget(_ConfigurationWidget):
 
         # check motor connection
         if not _driver.connected:
-            msg = 'Driver not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Driver nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
 
         # check encoder connection
         if not _display.connected:
-            msg = 'Display not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Display nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
 
         # check multimeter connection
         if not _multimeter.connected:
-            msg = 'Multimeter not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Multimetro nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
 
         try:
@@ -265,15 +265,15 @@ class ScanWidget(_ConfigurationWidget):
 
             if total_hall_count > 512:
                 msg = (
-                       "Multimeter cannot hold more than 512 readings."
-                       " Please, do multiple subscans or reduce the"
-                       " number of points."
+                       "Multimetro nao pode armazenar mais de 512 "
+                       "pontos. Por favor, realize multiplas "
+                       "vareduras or reduza o numero de pontos."
                 )
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, 'Falha', msg, _QMessageBox.Ok)
                 status = False
                 raise ValueError(
-                    'Multimeter cannot store more than 512 readings'
+                    'Multimetro nao pode armazenar mais de 512 pontos'
                 )
 
             # calculate acceleration distance
@@ -289,23 +289,23 @@ class ScanWidget(_ConfigurationWidget):
 
             if t_hall < _utils.MULTIMETER_MIN_TRIGGER_TIME:
                 msg = (
-                       "Trigger intervals smaller than "
+                       "Intervalos de Trigger menores do que "
                        + str(_utils.MULTIMETER_MIN_TRIGGER_TIME)
-                       + " seconds can make the acquisition unstable."
-                       + " Please, decrease the motor velocity or the"
-                       + " number of points per block."
+                       + " segudos podem tornar a aquisicao instavel."
+                       + " Por favor, reduza a velocidade do motor ou"
+                       + " reduza o numero de pontos por bloco."
                 )
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, 'Falha', msg, _QMessageBox.Ok)
                 status = False
                 raise ValueError(
-                    'Too small Multimeter trigger interval'
+                    'Too small Multimetro trigger interval'
                 )
 
             # clear previous data and update scan config
             if not self.configure_scan():
-                msg = 'Failed to configure scan.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Falha ao configurar a varredura.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 raise RuntimeError('Failed to configure database for scan')
 
             # make sure pneumatic actuator is off
@@ -381,9 +381,11 @@ class ScanWidget(_ConfigurationWidget):
                         hall_scan_velocity,
                         acceleration,
                         steps):
-                    msg = 'Failed to send configuration to motor.'
+                    msg = ('Falha ao tentar enviar configuracao'
+                           ' para o driver.'
+                    )
                     _QMessageBox.critical(
-                        self, 'Failure', msg, _QMessageBox.Ok)
+                        self, 'Falha', msg, _QMessageBox.Ok)
                     status = False
                 else:
                     # start motor motion if commanded to
@@ -415,9 +417,9 @@ class ScanWidget(_ConfigurationWidget):
                     # stop if command received
                     if self.stop_sent:
                         status = False
-                        msg = 'Stop command received.'
+                        msg = 'Comando de Pare recebido.'
                         _QMessageBox.critical(
-                            self, 'Failure', msg, _QMessageBox.Ok
+                            self, 'Falha', msg, _QMessageBox.Ok
                         )
                         break
 
@@ -425,9 +427,11 @@ class ScanWidget(_ConfigurationWidget):
                     if _time.time() - t_start >= move_timeout:
                         status = False
                         _driver.stop_motor(driver_address)
-                        msg = 'Move timeout - stopping motor.'
+                        msg = ('Timeout de movimento esgotado'
+                               ' - parando motor.'
+                        )
                         _QMessageBox.critical(
-                            self, 'Failure', msg, _QMessageBox.Ok
+                            self, 'Falha', msg, _QMessageBox.Ok
                         )
                         break
 
@@ -441,9 +445,9 @@ class ScanWidget(_ConfigurationWidget):
                         # if failed again, stop scan
                         if _math.isnan(readings[0]):
                             status = False
-                            msg = 'Failed to read display.'
+                            msg = 'Falha ao tentar ler display.'
                             _QMessageBox.critical(
-                                self, 'Failure', msg, _QMessageBox.Ok
+                                self, 'Falha', msg, _QMessageBox.Ok
                             )
                             break
                     self.encoder_sample_list_for_hall.append(readings[2])
@@ -480,22 +484,22 @@ class ScanWidget(_ConfigurationWidget):
 
             if status is False:
                 self.ui.pgb_status.setValue(pgb_min)
-                msg = 'Scan failed.'
+                msg = 'Varredura falhou.'
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok
+                    self, 'Falha', msg, _QMessageBox.Ok
                 )
             else:
                 self.ui.pgb_status.setValue(pgb_max)
-                msg = 'Scan finished successfully.'
+                msg = 'Varredura finalizada com sucesso.'
                 _QMessageBox.information(
-                    self, 'Success', msg, _QMessageBox.Ok
+                    self, 'Sucesso', msg, _QMessageBox.Ok
                 )
             return status
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Scan failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Varredura falhou.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             self.ui.pgb_status.setValue(
                 self.ui.pgb_status.minimum()
             )
@@ -517,20 +521,20 @@ class ScanWidget(_ConfigurationWidget):
 
         # check motor connection
         if not _driver.connected:
-            msg = 'Driver not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Driver nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
 
         # check encoder connection
         if not _display.connected:
-            msg = 'Display not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Display nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
 
         # clear previous data and update scan config
         if not self.configure_scan():
             msg = 'Failed to configure scan.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
 
         try:
@@ -598,9 +602,9 @@ class ScanWidget(_ConfigurationWidget):
                     # update status
                     status = False
                     # show msg
-                    msg = 'Stop command received.'
+                    msg = 'Comando de Pare recebido.'
                     _QMessageBox.critical(
-                        self, 'Failure', msg, _QMessageBox.Ok
+                        self, 'Falha', msg, _QMessageBox.Ok
                     )
                     break
                 # update target position
@@ -636,9 +640,9 @@ class ScanWidget(_ConfigurationWidget):
                     # if failed again, stop scan
                     if _math.isnan(readings[0]):
                         status = False
-                        msg = 'Failed to read display.'
+                        msg = 'Falha ao tentar ler display.'
                         _QMessageBox.critical(
-                            self, 'Failure', msg, _QMessageBox.Ok
+                            self, 'Falha', msg, _QMessageBox.Ok
                         )
                         break
                 # store probe measurements
@@ -686,19 +690,19 @@ class ScanWidget(_ConfigurationWidget):
 
             if status is False:
                 self.ui.pgb_status.setValue(pgb_min)
-                msg = 'Scan failed.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Varredura falhou.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             else:
                 self.ui.pgb_status.setValue(pgb_max)
-                msg = 'Scan finished successfully.'
-                _QMessageBox.information(self, 'Success', msg, _QMessageBox.Ok)
+                msg = 'Varredura finalizada com sucesso.'
+                _QMessageBox.information(self, 'Sucesso', msg, _QMessageBox.Ok)
 
             return status
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Scan failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Varredura falhou.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             self.ui.pgb_status.setValue(
                 self.ui.pgb_status.minimum()
             )
@@ -720,26 +724,26 @@ class ScanWidget(_ConfigurationWidget):
 
         # check motor connection
         if not _driver.connected:
-            msg = 'Driver not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Driver nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
 
         # check encoder connection
         if not _display.connected:
-            msg = 'Display not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Display nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
 
         # check multimeter connection
         if not _multimeter.connected:
-            msg = 'Multimeter not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Multimetro nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
 
         # clear previous data and update scan config
         if not self.configure_scan():
-            msg = 'Failed to configure scan.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao configurar varredura.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
 
         # interval to wait after a display read command
@@ -814,9 +818,9 @@ class ScanWidget(_ConfigurationWidget):
                     # update status
                     status = False
                     # show msg
-                    msg = 'Stop command received.'
+                    msg = 'Comando de Pare recebido.'
                     _QMessageBox.critical(
-                        self, 'Failure', msg, _QMessageBox.Ok
+                        self, 'Falha', msg, _QMessageBox.Ok
                     )
                     break
                 # move
@@ -866,9 +870,9 @@ class ScanWidget(_ConfigurationWidget):
                         # if failed again, stop scan
                         if _math.isnan(readings[0]):
                             status = False
-                            msg = 'Failed to read display.'
+                            msg = 'Falha ao tentar ler display.'
                             _QMessageBox.critical(
-                                self, 'Failure', msg, _QMessageBox.Ok
+                                self, 'Falha', msg, _QMessageBox.Ok
                             )
                             break
                     # store probe measurements
@@ -919,12 +923,12 @@ class ScanWidget(_ConfigurationWidget):
 
         if status is False:
             self.ui.pgb_status.setValue(pgb_min)
-            msg = 'Scan failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Varredura falhou.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
         else:
             self.ui.pgb_status.setValue(pgb_max)
-            msg = 'Scan finished successfully.'
-            _QMessageBox.information(self, 'Success', msg, _QMessageBox.Ok)
+            msg = 'Varredura finalizada com sucesso.'
+            _QMessageBox.information(self, 'Sucesso', msg, _QMessageBox.Ok)
 
         return status
 
@@ -935,8 +939,8 @@ class ScanWidget(_ConfigurationWidget):
 
         # check connection
         if not _driver.connected:
-            msg = 'Driver not connected - failed to stop motor.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Driver nao conectado - falha ao tentar parar motor.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
         # stop motor
@@ -945,8 +949,8 @@ class ScanWidget(_ConfigurationWidget):
             _driver.stop_motor(driver_address)
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to stop motor.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar parar motor.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
 
         return True
 
@@ -1114,10 +1118,10 @@ class ScanWidget(_ConfigurationWidget):
 
             # check that no name field is empty
             if meas == '' or und == '' or cass == '':
-                msg = ("Measurement, undulator and cassette"
-                       " names must be Non-empty"
+                msg = ("Campos nome da medida, ondulador e cassete"
+                       " nao podem ser vazios"
                 )
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
 
             # search if scan config already exists
@@ -1137,11 +1141,12 @@ class ScanWidget(_ConfigurationWidget):
                             == self.ui.sb_hall_samples_per_block.value()
                         and scan_data['advanced_options_id']
                             == self.advanced_options.idn):
-                    msg = ('Scan config already exists with ID '
+                    msg = ('Configuracao de varredura ja existe com ID '
                           +str(scan_id)
-                          +' but parameters do not match.'
+                          +' mas parametros nao coincidem com'
+                          +' valores armazenados.'
                     )
-                    _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                    _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                     return False
                 # load config
                 self.ui.cmb_idn.setCurrentText(str(scan_id))
@@ -1154,14 +1159,14 @@ class ScanWidget(_ConfigurationWidget):
 
             self.global_config = self.config.copy()
             if not self.advanced_options.valid_data():
-                msg = 'Invalid advanced options.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Opcoes avancadas invalidas.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
             return True
 
         except Exception:
-            msg = 'Scan configuration failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao configurar varredura.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 
@@ -1260,8 +1265,8 @@ class ScanWidget(_ConfigurationWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to update x probe graph.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao atualizar grafico do apalpador X.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def update_graph_z_probe(self, x_axis_z_probe, y_axis_z_probe,
@@ -1337,8 +1342,8 @@ class ScanWidget(_ConfigurationWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to update z probe graph.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao atualizar grafico do apalpador Z.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def update_graph_hall(self, x_axis_hall, y_axis_hall):
@@ -1392,8 +1397,8 @@ class ScanWidget(_ConfigurationWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to update hall graph.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao atualizar grafico do sensor Hall.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def move_and_retry(self, target_position, tolerance, driver_address,
@@ -1405,13 +1410,13 @@ class ScanWidget(_ConfigurationWidget):
             Return value: (true_if_success, last_encoder_position) """
         # check motor connection
         if not _driver.connected:
-            msg = 'Driver not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Driver nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return (False, 0.0)
         # check encoder connection
         if not _display.connected:
-            msg = 'Encoder not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Encoder nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return (False, 0.0)
 
         # get display info
@@ -1434,9 +1439,9 @@ class ScanWidget(_ConfigurationWidget):
         try:
             while True:
                 if self.stop_sent:
-                    msg = 'Stop command received.'
+                    msg = 'Comando de Pare recebido.'
                     _QMessageBox.critical(
-                        self, 'Failure', msg, _QMessageBox.Ok)
+                        self, 'Falha', msg, _QMessageBox.Ok)
                     return (False, 0.0)
                 # check timeout
                 if (_time.time() - t_start) > timeout:
@@ -1473,9 +1478,11 @@ class ScanWidget(_ConfigurationWidget):
                            velocity,
                            acceleration,
                            steps):
-                        msg = 'Failed to send configuration to motor.'
+                        msg = ('Falha ao tentar enviar configuracao'
+                               ' para o driver.'
+                        )
                         _QMessageBox.critical(
-                            self, 'Failure', msg, _QMessageBox.Ok)
+                            self, 'Falha', msg, _QMessageBox.Ok)
                         return (False, 0.0)
                     else:
                         # start motor motion if commanded to
@@ -1493,16 +1500,16 @@ class ScanWidget(_ConfigurationWidget):
 
             # check if move was successful
             if not abs(diff) <= abs(tolerance):
-                msg = 'Move timeout in '+str(timeout)+' seconds.'
+                msg = 'Timeout de movimentacao esgotado em '+str(timeout)+' segundos.'
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, 'Falha', msg, _QMessageBox.Ok)
                 # stop move
                 _driver.stop_motor(driver_address)
                 return (False, 0.0)
 
         except Exception:
-            msg = 'Failed to move motor.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar mover motor.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return (False, 0.0)
 
@@ -1532,8 +1539,8 @@ class ScanWidget(_ConfigurationWidget):
                 steps)
 
         except Exception:
-            msg = 'Failed to configure driver.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar configurar driver.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 
@@ -1589,8 +1596,8 @@ class ScanWidget(_ConfigurationWidget):
             ]
         )
         if len(scan_list) == 0:
-            msg = 'Scan data not found.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Dados da varredura nao encontrados.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
         scan_data = scan_list[0]
         scan_id = scan_data['id']
@@ -1652,16 +1659,16 @@ class ScanWidget(_ConfigurationWidget):
     def save_data_to_db(self):
         try:
             if self.database_name is None:
-                msg = 'Invalid database filename.'
+                msg = 'Nome do arquivo de banco de dados invalido.'
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok)
+                    self, 'Falha', msg, _QMessageBox.Ok)
                 return False
 
             hall_samples_per_block = self.global_config.hall_samples_per_block
 
             # store hall data
             with _pyqtgraph.ProgressDialog(
-                    "Saving hall data...", 0, 100, cancelText=None) as dlg:
+                    "Savando dados do sensor hall...", 0, 100, cancelText=None) as dlg:
 
                 hall_list_size = len(self.hall_sample_list)
                 if hall_list_size > 0:
@@ -1674,12 +1681,14 @@ class ScanWidget(_ConfigurationWidget):
                     if any(e['reading_index'] >= self.hall_sample_index_list[0] 
                            and e['reading_index'] <= self.hall_sample_index_list[-1] for e in data_list):
                         msg = (
-                               "The new hall data overlaps with already"
-                               " saved readings. Please, erase the"
-                               " data from DB if necessary and try again."
+                               "As novas medidas do sensor hall"
+                               " sobrepoem o indice de medidas ja salvas."
+                               " Por favor, apague os pontos antigos"
+                               " do banco de dados, se necessario, e"
+                               " tente novamente."
                         )
                         _QMessageBox.critical(
-                            self, 'Conflict', msg, _QMessageBox.Ok)
+                            self, 'Conflito', msg, _QMessageBox.Ok)
                         return False
 
                 # save all new hall data entries
@@ -1704,7 +1713,7 @@ class ScanWidget(_ConfigurationWidget):
 
             # store block data
             with _pyqtgraph.ProgressDialog(
-                    "Saving block data...", 0, 100, cancelText=None) as dlg:
+                    "Salvando dados de posicao...", 0, 100, cancelText=None) as dlg:
 
                 block_list_size = len(self.block_number_list)
                 if block_list_size > 0:
@@ -1717,12 +1726,13 @@ class ScanWidget(_ConfigurationWidget):
                     if any(e['block_number'] >= self.block_number_list[0] 
                            and e['block_number'] <= self.block_number_list[-1] for e in data_list):
                         msg = (
-                               "The new position data overlaps with already"
-                               " saved readings. Please, erase the"
-                               " data from DB if necessary and try again."
+                               "As novas medidas de posicao sobrepoem"
+                               " medidas ja salvas. Por favor, apague "
+                               " os pontos antigos do banco de dados"
+                               ", se necessario, e tente novamente."
                         )
                         _QMessageBox.critical(
-                            self, 'Conflict', msg, _QMessageBox.Ok)
+                            self, 'Conflito', msg, _QMessageBox.Ok)
                         return False
 
                 # save all new block data entries
@@ -1749,8 +1759,8 @@ class ScanWidget(_ConfigurationWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to save data to DB.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao salvar dados.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def hall_samples_even_only(self):
@@ -1772,8 +1782,8 @@ class ScanWidget(_ConfigurationWidget):
 
         # check motor connection
         if not _driver.connected:
-            msg = 'Driver not connected.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Driver nao conectado.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             status = False
             return status
 
@@ -1821,9 +1831,11 @@ class ScanWidget(_ConfigurationWidget):
                             velocity,
                             acceleration,
                             wait_cmd):
-                        msg = 'Failed to send command.'
+                        msg = ('Falha ao tentar enviar comando para'
+                               ' driver.'
+                        )
                         _QMessageBox.critical(
-                            self, 'Failure', msg, _QMessageBox.Ok)
+                            self, 'Falha', msg, _QMessageBox.Ok)
                         status = False
                     else:
                         move_started = True
@@ -1833,9 +1845,11 @@ class ScanWidget(_ConfigurationWidget):
                             velocity,
                             acceleration,
                             wait_cmd):
-                        msg = 'Failed to send command.'
+                        msg = ('Falha ao tentar enviar comando para'
+                               ' driver.'
+                        )
                         _QMessageBox.critical(
-                            self, 'Failure', msg, _QMessageBox.Ok)
+                            self, 'Falha', msg, _QMessageBox.Ok)
                         status = False
                     else:
                         move_started = True
@@ -1853,16 +1867,16 @@ class ScanWidget(_ConfigurationWidget):
 
                 if (t_curr - t_start) > move_timeout:
                     _driver.stop_motor(driver_address)
-                    msg = 'Homing timeout - stopping motor.'
-                    _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                    msg = 'Timeout de Homing - parando motor.'
+                    _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                     status = False
                 if self.stop_sent:
                     status = False
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Homing failed.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Homing falhou.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             status = False
 
         # re-enable move and homing buttons
@@ -1885,8 +1899,8 @@ class ScanWidget(_ConfigurationWidget):
     def read_hall(self):
         try:
             if not _multimeter.connected:
-                msg = 'Multimeter not connected.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Multimetro nao conectado.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return False
 
             # interval to wait after command
@@ -1901,8 +1915,8 @@ class ScanWidget(_ConfigurationWidget):
             self.ui.le_hall_sensor_voltage.setText(reading)
 
         except Exception:
-            msg = 'Failed to read hall sensor.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar ler sensor hall.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             _traceback.print_exc(file=_sys.stdout)
             return False
 

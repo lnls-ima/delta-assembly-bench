@@ -236,8 +236,8 @@ class AssemblyWidget(_QWidget):
             self.reset_block_list_data()
             # reset display
             self.reset_all_display_data()
-            msg = 'Failed to open file.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao abrir arquivo.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def update_data_overview(self):
@@ -262,8 +262,8 @@ class AssemblyWidget(_QWidget):
             # clear text on GUI
             self.ui.te_file_data.setText('')
             # show error message dialog
-            msg = 'Failed to update block list data overview.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao atualizar visao geral da lista de blocos.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def read_file(self, filename, sheet_name):
@@ -309,8 +309,8 @@ class AssemblyWidget(_QWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to read input file.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao ler arquivo de entrada.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def update_navigation_buttons_state(self):
@@ -349,8 +349,8 @@ class AssemblyWidget(_QWidget):
             self.display_block_data(self.list_position)
             return True
         else:
-            msg = 'Invalid next position.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Proxima posicao invalida.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def display_block_data(self, position):
@@ -377,9 +377,9 @@ class AssemblyWidget(_QWidget):
                 # update navigation buttons
                 self.update_navigation_buttons_state()
                 # show end of assembly message
-                msg = 'Cassette assembly finished.'
+                msg = 'Montagem do Cassete finalizada.'
                 _QMessageBox.information(
-                    self, 'Finished', msg, _QMessageBox.Ok
+                    self, 'Finalizado', msg, _QMessageBox.Ok
                 )
                 return True
 
@@ -394,11 +394,11 @@ class AssemblyWidget(_QWidget):
             # update flip status text and LED
             flip = block[_utils.BLOCK_FLIP_BOOL_COLUMN_TITLE]
             if flip == '0':
-                self.ui.la_flip_block_msg.setText('Normal Direction')
+                self.ui.la_flip_block_msg.setText('Direcao Normal')
                 self.ui.la_flip_block_img.setPixmap(self.led_images['green'])
                 self.ui.la_flip_block_img.setEnabled(True)
             if flip == '1':
-                self.ui.la_flip_block_msg.setText('Inverted Direction!')
+                self.ui.la_flip_block_msg.setText('Direcao Invertida!')
                 self.ui.la_flip_block_img.setPixmap(self.led_images['red'])
                 self.ui.la_flip_block_img.setEnabled(True)
 
@@ -421,8 +421,8 @@ class AssemblyWidget(_QWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to display block data.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao exibir dados do bloco.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def reset_block_list_data(self):
@@ -437,8 +437,8 @@ class AssemblyWidget(_QWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to reset block list data.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao realizar reset dos dados da lista de blocos.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def reset_all_display_data(self):
@@ -473,8 +473,8 @@ class AssemblyWidget(_QWidget):
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to reset displayed block data.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao realizar reset da exibicao de dados do bloco.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def move_up(self):
@@ -482,9 +482,9 @@ class AssemblyWidget(_QWidget):
         try:
             # check connection
             if not _driver.connected:
-                msg = 'Driver not connected.'
+                msg = 'Driver nao conectado.'
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok
+                    self, 'Falha', msg, _QMessageBox.Ok
                 )
                 return False
 
@@ -540,9 +540,9 @@ class AssemblyWidget(_QWidget):
 #            # light button down
 #            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
-            msg = 'Failed to send configuration to motor.'
+            msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(
-                self, 'Failure', msg, _QMessageBox.Ok)
+                self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def move_down(self):
@@ -550,9 +550,9 @@ class AssemblyWidget(_QWidget):
         try:
             # check connection
             if not _driver.connected:
-                msg = 'Driver not connected.'
+                msg = 'Driver nao conectado.'
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok
+                    self, 'Falha', msg, _QMessageBox.Ok
                 )
                 return False
 
@@ -605,9 +605,9 @@ class AssemblyWidget(_QWidget):
 #            # light button down
 #            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
-            msg = 'Failed to send configuration to motor.'
+            msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(
-                self, 'Failure', msg, _QMessageBox.Ok)
+                self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def move_fwd(self):
@@ -615,9 +615,9 @@ class AssemblyWidget(_QWidget):
         try:
             # check connection
             if not _driver.connected:
-                msg = 'Driver not connected.'
+                msg = 'Driver nao conectado.'
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok
+                    self, 'Falha', msg, _QMessageBox.Ok
                 )
                 return False
 
@@ -672,9 +672,9 @@ class AssemblyWidget(_QWidget):
 #            # light button down
 #            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
-            msg = 'Failed to send configuration to motor.'
+            msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(
-                self, 'Failure', msg, _QMessageBox.Ok)
+                self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def move_rev(self):
@@ -682,9 +682,9 @@ class AssemblyWidget(_QWidget):
         try:
             # check connection
             if not _driver.connected:
-                msg = 'Driver not connected.'
+                msg = 'Driver nao conectado.'
                 _QMessageBox.critical(
-                    self, 'Failure', msg, _QMessageBox.Ok
+                    self, 'Falha', msg, _QMessageBox.Ok
                 )
                 return False
 
@@ -742,9 +742,9 @@ class AssemblyWidget(_QWidget):
 #            # light button down
 #            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
-            msg = 'Failed to send configuration to motor.'
+            msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(
-                self, 'Failure', msg, _QMessageBox.Ok)
+                self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def set_all_motion_pbt_stylesheet(self, style):
@@ -768,9 +768,11 @@ class AssemblyWidget(_QWidget):
     def stop_motor(self, address):
         # check connection
         if not _driver.connected:
-            msg = 'Driver not connected - failed to stop motor {0}.'
+            msg = ('Driver nao conectado -'
+                  ' falha ao tentar parar motor {0}.'
+            )
             msg = msg.format(address)
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
         # send stop command
@@ -779,9 +781,9 @@ class AssemblyWidget(_QWidget):
             return True
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to stop motor {0}.'
+            msg = 'Falha ao tentar parar motor {0}.'
             msg = msg.format(address)
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
     def update_db_with_curr_state(self):

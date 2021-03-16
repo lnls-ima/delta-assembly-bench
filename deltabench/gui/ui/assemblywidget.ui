@@ -34,13 +34,13 @@
       </font>
      </property>
      <property name="title">
-      <string>File Selection</string>
+      <string>Selecao do Arquivo</string>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
        <widget class="QLabel" name="label_4">
         <property name="text">
-         <string>Finename:</string>
+         <string>Arquivo:</string>
         </property>
        </widget>
       </item>
@@ -77,7 +77,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Open</string>
+         <string>Abrir</string>
         </property>
         <property name="icon">
          <iconset>
@@ -137,7 +137,7 @@
           </font>
          </property>
          <property name="title">
-          <string>File Overview</string>
+          <string>Visao Geral</string>
          </property>
          <layout class="QGridLayout" name="gridLayout">
           <property name="leftMargin">
@@ -176,7 +176,7 @@
           </font>
          </property>
          <property name="title">
-          <string>Manual Control</string>
+          <string>Controle Manual</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
           <item row="1" column="0" colspan="3">
@@ -199,7 +199,7 @@
             <item row="0" column="0">
              <widget class="QLabel" name="label">
               <property name="text">
-               <string>Velocity [rev/sec]:</string>
+               <string>Vel Vert:</string>
               </property>
              </widget>
             </item>
@@ -209,7 +209,7 @@
             <item row="0" column="2">
              <widget class="QLabel" name="label_2">
               <property name="text">
-               <string>Acceleration [rev/sec²]:</string>
+               <string>Acc Vert:</string>
               </property>
              </widget>
             </item>
@@ -252,7 +252,7 @@
                <string notr="true">background-color: rgb(232, 232, 232);</string>
               </property>
               <property name="text">
-               <string>UP</string>
+               <string>CIMA</string>
               </property>
               <property name="icon">
                <iconset>
@@ -286,7 +286,7 @@
                </font>
               </property>
               <property name="text">
-               <string>FWD</string>
+               <string>AVANCAR</string>
               </property>
               <property name="icon">
                <iconset>
@@ -320,7 +320,7 @@
                </font>
               </property>
               <property name="text">
-               <string>REV</string>
+               <string>RECUAR</string>
               </property>
               <property name="icon">
                <iconset>
@@ -354,7 +354,7 @@
                </font>
               </property>
               <property name="text">
-               <string>DOWN</string>
+               <string>BAIXO</string>
               </property>
               <property name="icon">
                <iconset>
@@ -419,11 +419,11 @@
         <widget class="QLabel" name="la_cassette_name">
          <property name="font">
           <font>
-           <pointsize>22</pointsize>
+           <pointsize>24</pointsize>
           </font>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color: rgb(199, 199, 199);</string>
+          <string notr="true">background-color: rgb(255, 255, 127);</string>
          </property>
          <property name="text">
           <string>???</string>
@@ -572,7 +572,7 @@
               </font>
              </property>
              <property name="text">
-              <string>Next</string>
+              <string>Proximo</string>
              </property>
             </widget>
            </item>
@@ -631,7 +631,7 @@
               </font>
              </property>
              <property name="text">
-              <string>Previous</string>
+              <string>Anterior</string>
              </property>
             </widget>
            </item>
@@ -667,7 +667,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Normal Direction</string>
+          <string>Direcao Normal</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
