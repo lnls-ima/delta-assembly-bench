@@ -340,11 +340,15 @@ class AssemblyWidget(_QWidget):
 
     def show_previous(self):
         """ Show previous block in list on GUI """
+        # first decrement to display the previous block
+        self.list_position -= 1
         # update display
-        if (self.block_count > 0
-            and self.list_position > 0):
-            self.list_position -= 1
-            self.display_block_data(self.list_position)
+        self.display_block_data(self.list_position)
+        # then decrement again since displayed block should
+        # still be assembled
+        self.list_position -= 1
+        # then save
+        self.update_db_with_curr_state()
         return True
 
     def show_next(self):
@@ -352,8 +356,10 @@ class AssemblyWidget(_QWidget):
         # update DB and display
         if (self.block_count > 0
             and self.list_position < self.block_count):
+            # first update DB then increment pos
             self.update_db_with_curr_state()
             self.list_position += 1
+            # update display
             self.display_block_data(self.list_position)
             return True
         else:
