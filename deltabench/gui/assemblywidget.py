@@ -150,6 +150,9 @@ class AssemblyWidget(_QWidget):
         self.ui.pbt_fwd.released.connect(self.stop_all_motors)
         self.ui.pbt_rev.pressed.connect(self.move_rev)
         self.ui.pbt_rev.released.connect(self.stop_all_motors)
+        self.ui.chb_block_previous_btn.stateChanged.connect(
+            self.update_navigation_buttons_state
+        )
 
     def open_file(self):
         """ Allow user to select file through dialog and store
@@ -328,6 +331,11 @@ class AssemblyWidget(_QWidget):
             self.ui.pbt_next.setEnabled(False)
         else:
             self.ui.pbt_next.setEnabled(True)
+
+        # if return button is blocked, then disable it
+        if self.ui.chb_block_previous_btn.isChecked():
+            self.ui.pbt_previous.setEnabled(False)
+
         return True
 
     def show_previous(self):

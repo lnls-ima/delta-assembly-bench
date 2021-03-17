@@ -711,6 +711,13 @@
          </property>
         </widget>
        </item>
+       <item>
+        <widget class="QCheckBox" name="chb_block_previous_btn">
+         <property name="text">
+          <string>Bloquear retorno</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </item>
     </layout>
