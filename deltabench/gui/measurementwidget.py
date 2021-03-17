@@ -110,26 +110,6 @@ class MeasurementWidget(_ConfigurationWidget):
         # start periodic limit switch status update
         self.timer2.start(self._update_limit_switch_interval*1000)
 
-#        # create dictionary for magnet direction images
-#        self.direction_images = {}
-#        self.direction_images['up'] = _QPixmap(
-#            _os.path.join('deltabench','resources', 'img',
-#                         'arrow-up-bold-outline.png')
-#        )
-#        self.direction_images['down'] = _QPixmap(
-#            _os.path.join('deltabench','resources', 'img',
-#                         'arrow-down-bold-outline.png')
-#        )
-#        self.direction_images['left'] = _QPixmap(
-#            _os.path.join('deltabench','resources', 'img',
-#                         'arrow-left-bold-outline.png')
-#        )
-#        self.direction_images['right'] = _QPixmap(
-#            _os.path.join('deltabench','resources', 'img',
-#                         'arrow-right-bold-outline.png')
-#        )
-#        self.direction_images['none'] = _QPixmap()
-
     @property
     def advanced_options(self):
         """Return global advanced options."""
@@ -146,13 +126,28 @@ class MeasurementWidget(_ConfigurationWidget):
         _QApplication.instance().measurement_config = value
 
     @property
+    def encoder_update_enabled(self):
+        """Return the encoder update status."""
+        return _QApplication.instance().encoder_update_enabled
+
+    @property
+    def linear_encoder_position(self):
+        """Return the linear encoder position value."""
+        return _QApplication.instance().linear_encoder_position
+
+    @linear_encoder_position.setter
+    def linear_encoder_position(self, value):
+        """Set the linear encoder position value."""
+        _QApplication.instance().linear_encoder_position = value
+
+    @property
     def emergency_stop(self):
         """Return the global emergency stop value."""
         return _QApplication.instance().emergency_stop
 
     @emergency_stop.setter
     def emergency_stop(self, value):
-        """Return the global emergency stop value."""
+        """Set the global emergency stop value."""
         _QApplication.instance().emergency_stop = value
 
     def periodic_display_update(self):
@@ -160,9 +155,11 @@ class MeasurementWidget(_ConfigurationWidget):
 
         try:
             # check if enabled
-            update_enabled = (
-                self.ui.chb_encoder_update_enable.isChecked()
-            )
+#            update_enabled = (
+#                self.ui.chb_encoder_update_enable.isChecked()
+#            )
+            update_enabled = self.encoder_update_enabled
+
             # interval to wait after reading request
             wait_display = _utils.WAIT_DISPLAY
 
@@ -181,10 +178,14 @@ class MeasurementWidget(_ConfigurationWidget):
                 # update encoder position on gui
                 self.ui.lcd_linear_encoder_position.display(readings[2])
 
-                # update global encoder data
+                # update widget encoder data
                 self.current_encoder_position = readings[2]
                 self.encoder_measurement_index = (
                     (self.encoder_measurement_index + 1) % 1e6
+                )
+                # update main application encoder data
+                self.linear_encoder_position = (
+                    self.current_encoder_position
                 )
             else:
                 # indicate encoder fault
@@ -261,9 +262,10 @@ class MeasurementWidget(_ConfigurationWidget):
             # whether to use encoder position or step as set point
             use_encoder = self.ui.rbt_encoder_position.isChecked()
             # encoder update enable status
-            enc_update_enabled = (
-                self.ui.chb_encoder_update_enable.isChecked()
-            )
+#            enc_update_enabled = (
+#                self.ui.chb_encoder_update_enable.isChecked()
+#            )
+            enc_update_enabled = self.encoder_update_enabled
 
             # check display connection
             if use_encoder and not _display.connected:

@@ -12,7 +12,10 @@ import pandas as _pd
 import warnings as _warnings
 import traceback as _traceback
 import qtpy.uic as _uic
-from qtpy.QtCore import Qt as _Qt
+from qtpy.QtCore import (
+    Qt as _Qt,
+    QTimer as _QTimer
+)
 from qtpy.QtWidgets import (
     QWidget as _QWidget,
     QMessageBox as _QMessageBox,
@@ -34,6 +37,9 @@ from PyQt5.QtGui import QPixmap as _QPixmap
 class AssemblyWidget(_QWidget):
     """Assembly widget class for the control application."""
 
+    # encoder info update time [sec]
+    _update_interval = 0.1
+
     def __init__(self, parent=None):
         """Set up the ui."""
         super().__init__(parent)
@@ -42,6 +48,9 @@ class AssemblyWidget(_QWidget):
         uifile = _utils.get_ui_file(self)
         self.ui = _uic.loadUi(uifile, self)
         self.assembly_data = _measurement.AssemblyData()
+
+        self.timer1 = _QTimer()
+        self.timer1.timeout.connect(self.periodic_update)
 
         # create object to use database function
         self.access_assembly_data = _database.DatabaseCollection(
@@ -111,6 +120,9 @@ class AssemblyWidget(_QWidget):
         # connect widgets to functions
         self.connect_signal_slots()
 
+        # start periodic info update
+        self.timer1.start(self._update_interval*1000)
+
     @property
     def database_name(self):
         """Database name."""
@@ -137,6 +149,16 @@ class AssemblyWidget(_QWidget):
         dialog = _QApplication.instance().advanced_options_dialog
         return dialog.config
 
+    @property
+    def encoder_update_enabled(self):
+        """Return the global encoder update status."""
+        return _QApplication.instance().encoder_update_enabled
+
+    @property
+    def linear_encoder_position(self):
+        """Return the global linear encoder position."""
+        return _QApplication.instance().linear_encoder_position
+
     def connect_signal_slots(self):
         """Create signal/slot connections."""
         self.ui.pbt_open_file.clicked.connect(self.open_file)
@@ -153,6 +175,14 @@ class AssemblyWidget(_QWidget):
         self.ui.chb_block_previous_btn.stateChanged.connect(
             self.update_navigation_buttons_state
         )
+
+    def periodic_update(self):
+        """ Periodically update relevant info on widget """
+        # update LCD with global encoder data
+        if self.encoder_update_enabled:
+            self.ui.lcd_linear_encoder_position.display(
+                self.linear_encoder_position
+            )
 
     def open_file(self):
         """ Allow user to select file through dialog and store

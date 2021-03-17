@@ -31,7 +31,11 @@ class MainApp(_QApplication):
         self.scan_config = _configuration.ScanConfig()
         self.advanced_options_dialog = None
 
-        # emergency variable that all tabs can access
+        # variables for periodic readings that all tabs can acess
+        self.encoder_update_enabled = True
+        self.linear_encoder_position = 0.0
+
+        # emergency variable that all tabs can access (still not used)
         self.emergency_stop = False
 
     def create_dialogs(self):

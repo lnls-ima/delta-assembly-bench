@@ -166,13 +166,23 @@ class ScanWidget(_ConfigurationWidget):
         _QApplication.instance().scan_config = value
 
     @property
+    def encoder_update_enabled(self):
+        """Return the global encoder update status."""
+        return _QApplication.instance().encoder_update_enabled
+
+    @encoder_update_enabled.setter
+    def encoder_update_enabled(self, value):
+        """Set the global encoder update enable status."""
+        _QApplication.instance().encoder_update_enabled = value
+
+    @property
     def emergency_stop(self):
         """Return the global emergency stop value."""
         return _QApplication.instance().emergency_stop
 
     @emergency_stop.setter
     def emergency_stop(self, value):
-        """Return the global emergency stop value."""
+        """Set the global emergency stop value."""
         _QApplication.instance().emergency_stop = value
 
     def start_hall_scan(self):
@@ -204,6 +214,9 @@ class ScanWidget(_ConfigurationWidget):
             msg = 'Multimetro nao conectado.'
             _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
+
+        # block other tabs from communicating with display
+        self.encoder_update_enabled = False
 
         try:
             # interval to wait after a display read command
@@ -494,6 +507,10 @@ class ScanWidget(_ConfigurationWidget):
                 _QMessageBox.information(
                     self, 'Sucesso', msg, _QMessageBox.Ok
                 )
+
+            # unlock other tabs communication with display
+            self.encoder_update_enabled = True
+
             return status
 
         except Exception:
@@ -506,6 +523,8 @@ class ScanWidget(_ConfigurationWidget):
             # re-enable start scan buttons
             self.ui.pbt_start_hall_scan.setEnabled(True)
             self.ui.pbt_start_position_scan.setEnabled(True)
+            # unlock other tabs communication with display
+            self.encoder_update_enabled = True
             return False
 
     def start_position_scan(self):
@@ -536,6 +555,9 @@ class ScanWidget(_ConfigurationWidget):
             msg = 'Failed to configure scan.'
             _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
+
+        # block other tabs from communicating with display
+        self.encoder_update_enabled = False
 
         try:
             # interval to wait after a display read command
@@ -697,6 +719,9 @@ class ScanWidget(_ConfigurationWidget):
                 msg = 'Varredura finalizada com sucesso.'
                 _QMessageBox.information(self, 'Sucesso', msg, _QMessageBox.Ok)
 
+            # unlock other tabs communication with display
+            self.encoder_update_enabled = True
+
             return status
 
         except Exception:
@@ -709,6 +734,8 @@ class ScanWidget(_ConfigurationWidget):
             # re-enable start scan buttons
             self.ui.pbt_start_hall_scan.setEnabled(True)
             self.ui.pbt_start_position_scan.setEnabled(True)
+            # unlock other tabs communication with display
+            self.encoder_update_enabled = True
             return False
 
     def start_complete_scan(self):
@@ -745,6 +772,9 @@ class ScanWidget(_ConfigurationWidget):
             msg = 'Falha ao configurar varredura.'
             _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
+
+        # block other tabs from communicating with display
+        self.encoder_update_enabled = False
 
         # interval to wait after a display read command
         wait_display = _utils.WAIT_DISPLAY
@@ -929,6 +959,9 @@ class ScanWidget(_ConfigurationWidget):
             self.ui.pgb_status.setValue(pgb_max)
             msg = 'Varredura finalizada com sucesso.'
             _QMessageBox.information(self, 'Sucesso', msg, _QMessageBox.Ok)
+
+        # unlock other tabs communication with display
+        self.encoder_update_enabled = True
 
         return status
 

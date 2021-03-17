@@ -179,7 +179,7 @@
           <string>Controle Manual</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="0" column="1">
+          <item row="1" column="1">
            <spacer name="horizontalSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -192,7 +192,7 @@
             </property>
            </spacer>
           </item>
-          <item row="0" column="0">
+          <item row="1" column="0">
            <layout class="QGridLayout" name="gridLayout_7">
             <property name="leftMargin">
              <number>6</number>
@@ -252,7 +252,7 @@
             </item>
            </layout>
           </item>
-          <item row="0" column="2">
+          <item row="1" column="2">
            <layout class="QGridLayout" name="gridLayout_2">
             <property name="leftMargin">
              <number>6</number>
@@ -407,7 +407,7 @@
             </item>
            </layout>
           </item>
-          <item row="0" column="3">
+          <item row="1" column="3">
            <spacer name="horizontalSpacer_2">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -419,6 +419,31 @@
              </size>
             </property>
            </spacer>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLCDNumber" name="lcd_linear_encoder_position">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
+            <property name="digitCount">
+             <number>9</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Encoder Hor:</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
