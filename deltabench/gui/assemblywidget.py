@@ -161,7 +161,7 @@ class AssemblyWidget(_QWidget):
 
     def connect_signal_slots(self):
         """Create signal/slot connections."""
-        self.ui.pbt_open_file.clicked.connect(self.open_file)
+        self.ui.pbt_open_file.clicked.connect(self.select_file)
         self.ui.pbt_previous.clicked.connect(self.show_previous)
         self.ui.pbt_next.clicked.connect(self.show_next)
         self.ui.pbt_up.pressed.connect(self.move_up)
@@ -175,6 +175,9 @@ class AssemblyWidget(_QWidget):
         self.ui.chb_block_previous_btn.stateChanged.connect(
             self.update_navigation_buttons_state
         )
+        self.ui.cmb_sheet_name.currentIndexChanged.connect(
+            self.select_cassette
+        )
 
     def periodic_update(self):
         """ Periodically update relevant info on widget """
@@ -184,23 +187,43 @@ class AssemblyWidget(_QWidget):
                 self.linear_encoder_position
             )
 
-    def open_file(self):
-        """ Allow user to select file through dialog and store
-            file contents into properties """
+    def select_cassette(self):
+        """ Open already selected file """
+        # check if a file is already selected
+        filename = self.ui.le_filename.text()
+        filename = filename.strip(' ')
+
+        # if no file selected, just silently return false
+        if filename == '':
+            return False
+
+        # open file and store data
+        status = self.open_file(filename)
+        return status
+
+    def select_file(self):
+        """ Allow user to select file through dialog and open it """
+        # let user select file
+        filename, filter_choice = _QFileDialog.getOpenFileName(
+            self,
+            caption="Open File",
+            directory=self.directory,
+            filter= ("Spreadsheet ("
+                     "*.xls *.xlsx *.xlsm *.xlsb *.odf *.ods *.odt)"),
+        )
+
+        # if no file selected, just silently return false
+        if filename == '':
+            return False
+
+        # open file and store data
+        status = self.open_file(filename)
+        return status
+
+    def open_file(self, filename):
+        """ Open file, read it and store file contents into
+            properties """
         try:
-            # let user select file
-            filename, filter_choice = _QFileDialog.getOpenFileName(
-                self,
-                caption="Open File",
-                directory=self.directory,
-                filter= ("Spreadsheet ("
-                         "*.xls *.xlsx *.xlsm *.xlsb *.odf *.ods *.odt)"),
-            )
-
-            # if no file selected, just silently return false
-            if filename == '':
-                return False
-
             # clear GUI displayed data
             self.reset_all_display_data()
 
