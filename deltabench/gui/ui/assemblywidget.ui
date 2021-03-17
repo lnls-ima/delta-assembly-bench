@@ -1,0 +1,754 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>wg_measurement</class>
+ <widget class="QWidget" name="wg_measurement">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>931</width>
+    <height>831</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="font">
+   <font>
+    <pointsize>11</pointsize>
+   </font>
+  </property>
+  <property name="windowTitle">
+   <string>Assembly</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_3">
+   <item row="0" column="0" colspan="3">
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="title">
+      <string>Selecao do Arquivo</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Arquivo:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="le_filename">
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="cmb_sheet_name">
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>0</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pbt_open_file">
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <pointsize>14</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Abrir</string>
+        </property>
+        <property name="icon">
+         <iconset>
+          <normaloff>../../resources/img/folder-open-outline.png</normaloff>../../resources/img/folder-open-outline.png</iconset>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <property name="leftMargin">
+      <number>6</number>
+     </property>
+     <property name="topMargin">
+      <number>6</number>
+     </property>
+     <property name="rightMargin">
+      <number>6</number>
+     </property>
+     <property name="bottomMargin">
+      <number>6</number>
+     </property>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="topMargin">
+        <number>6</number>
+       </property>
+       <property name="bottomMargin">
+        <number>6</number>
+       </property>
+       <item>
+        <widget class="QGroupBox" name="groupBox">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="title">
+          <string>Visao Geral</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout">
+          <property name="leftMargin">
+           <number>6</number>
+          </property>
+          <property name="topMargin">
+           <number>6</number>
+          </property>
+          <property name="rightMargin">
+           <number>6</number>
+          </property>
+          <property name="bottomMargin">
+           <number>6</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QTextEdit" name="te_file_data">
+            <property name="font">
+             <font>
+              <family>Courier 10 Pitch</family>
+             </font>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="title">
+          <string>Controle Manual</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="1" column="1">
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="0">
+           <layout class="QGridLayout" name="gridLayout_7">
+            <property name="leftMargin">
+             <number>6</number>
+            </property>
+            <property name="topMargin">
+             <number>6</number>
+            </property>
+            <property name="rightMargin">
+             <number>6</number>
+            </property>
+            <property name="bottomMargin">
+             <number>6</number>
+            </property>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string>Acel Vert:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QDoubleSpinBox" name="sbd_horizontal_velocity"/>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>Vel Hor:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string>Vel Vert:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QDoubleSpinBox" name="sbd_vertical_velocity">
+              <property name="singleStep">
+               <double>0.200000000000000</double>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="sbd_vertical_acceleration"/>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>Acel Hor:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QDoubleSpinBox" name="sbd_horizontal_acceleration"/>
+            </item>
+           </layout>
+          </item>
+          <item row="1" column="2">
+           <layout class="QGridLayout" name="gridLayout_2">
+            <property name="leftMargin">
+             <number>6</number>
+            </property>
+            <property name="topMargin">
+             <number>6</number>
+            </property>
+            <property name="rightMargin">
+             <number>6</number>
+            </property>
+            <property name="bottomMargin">
+             <number>6</number>
+            </property>
+            <item row="1" column="2">
+             <widget class="QPushButton" name="pbt_fwd">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>60</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>AVANCAR</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../resources/img/arrow-right-circle-outline.svg</normaloff>../../resources/img/arrow-right-circle-outline.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QPushButton" name="pbt_up">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>60</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(232, 232, 232);</string>
+              </property>
+              <property name="text">
+               <string>CIMA</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../resources/img/arrow-up-circle-outline.svg</normaloff>../../resources/img/arrow-up-circle-outline.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QPushButton" name="pbt_down">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>60</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>BAIXO</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../resources/img/arrow-down-circle-outline.svg</normaloff>../../resources/img/arrow-down-circle-outline.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QPushButton" name="pbt_rev">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>60</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>RECUAR</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../resources/img/arrow-left-circle-outline.svg</normaloff>../../resources/img/arrow-left-circle-outline.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="1" column="3">
+           <spacer name="horizontalSpacer_2">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLCDNumber" name="lcd_linear_encoder_position">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <pointsize>9</pointsize>
+             </font>
+            </property>
+            <property name="digitCount">
+             <number>9</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Encoder Hor:</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="leftMargin">
+        <number>6</number>
+       </property>
+       <property name="topMargin">
+        <number>9</number>
+       </property>
+       <property name="rightMargin">
+        <number>6</number>
+       </property>
+       <property name="bottomMargin">
+        <number>6</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="la_cassette_name">
+         <property name="font">
+          <font>
+           <pointsize>24</pointsize>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">background-color: rgb(255, 255, 127);</string>
+         </property>
+         <property name="text">
+          <string>???</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="la_subcassette_name">
+         <property name="font">
+          <font>
+           <pointsize>18</pointsize>
+           <weight>50</weight>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">color: rgb(68, 68, 68);</string>
+         </property>
+         <property name="text">
+          <string>Subcassette: ???</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="la_block_name">
+         <property name="font">
+          <font>
+           <pointsize>18</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>???</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QLabel" name="la_block_image">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>240</width>
+             <height>240</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="baseSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="scaledContents">
+            <bool>true</bool>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="la_block_count">
+         <property name="font">
+          <font>
+           <pointsize>16</pointsize>
+           <weight>50</weight>
+           <bold>false</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>?/?</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <property name="leftMargin">
+          <number>6</number>
+         </property>
+         <property name="topMargin">
+          <number>6</number>
+         </property>
+         <property name="rightMargin">
+          <number>6</number>
+         </property>
+         <property name="bottomMargin">
+          <number>6</number>
+         </property>
+         <item>
+          <layout class="QGridLayout" name="gridLayout_4">
+           <property name="leftMargin">
+            <number>6</number>
+           </property>
+           <property name="topMargin">
+            <number>6</number>
+           </property>
+           <property name="rightMargin">
+            <number>6</number>
+           </property>
+           <property name="bottomMargin">
+            <number>6</number>
+           </property>
+           <item row="1" column="3">
+            <widget class="QPushButton" name="pbt_next">
+             <property name="minimumSize">
+              <size>
+               <width>110</width>
+               <height>40</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Proximo</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <spacer name="horizontalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="1" column="0">
+            <spacer name="horizontalSpacer_4">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="1" column="4">
+            <spacer name="horizontalSpacer_5">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="1" column="1">
+            <widget class="QPushButton" name="pbt_previous">
+             <property name="minimumSize">
+              <size>
+               <width>110</width>
+               <height>40</height>
+              </size>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>16</pointsize>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>Anterior</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QLabel" name="la_flip_block_msg">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>16</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>Direcao Normal</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="la_flip_block_img">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="pixmap">
+          <pixmap>../../resources/img/green_light.png</pixmap>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="chb_block_previous_btn">
+         <property name="text">
+          <string>Bloquear retorno</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

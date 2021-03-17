@@ -22,7 +22,7 @@
    </font>
   </property>
   <property name="windowTitle">
-   <string>Measurement</string>
+   <string>Control</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_3">
    <item row="1" column="1" rowspan="5">
@@ -46,7 +46,7 @@
       </font>
      </property>
      <property name="title">
-      <string>Stored Data</string>
+      <string>Dados Armazenados</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_6">
       <property name="leftMargin">
@@ -116,7 +116,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Cassette Name:</string>
+         <string>Nome do Cassete</string>
         </property>
        </widget>
       </item>
@@ -130,7 +130,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Block Number:</string>
+         <string>Numero do Bloco</string>
         </property>
        </widget>
       </item>
@@ -168,7 +168,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Nr Blocks</string>
+         <string>Nr de blocos</string>
         </property>
        </widget>
       </item>
@@ -244,7 +244,7 @@
          </font>
         </property>
         <property name="text">
-         <string>X Position</string>
+         <string>Posicao X</string>
         </property>
        </widget>
       </item>
@@ -258,7 +258,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Stage Position</string>
+         <string>Posicao do Estagio</string>
         </property>
        </widget>
       </item>
@@ -317,7 +317,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Z Position</string>
+         <string>Posicao Z</string>
         </property>
        </widget>
       </item>
@@ -331,7 +331,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Measurement Name:</string>
+         <string>Nome da medicao</string>
         </property>
        </widget>
       </item>
@@ -345,7 +345,7 @@
          </font>
         </property>
         <property name="text">
-         <string>X Position Error</string>
+         <string>Erro em X</string>
         </property>
        </widget>
       </item>
@@ -359,7 +359,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Z Position Error</string>
+         <string>Erro em Z</string>
         </property>
        </widget>
       </item>
@@ -394,7 +394,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Undulator Name:</string>
+         <string>Nome do Ondulador</string>
         </property>
        </widget>
       </item>
@@ -442,7 +442,7 @@
       </font>
      </property>
      <property name="title">
-      <string>Database</string>
+      <string>Banco de Dados</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_5">
       <property name="leftMargin">
@@ -468,7 +468,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Configuration ID:</string>
+           <string>ID da Configuracao:</string>
           </property>
          </widget>
         </item>
@@ -519,7 +519,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Load from Database</string>
+         <string>Carregar Configuracao</string>
         </property>
        </widget>
       </item>
@@ -568,7 +568,7 @@
       </font>
      </property>
      <property name="title">
-      <string>Stage Motion</string>
+      <string>Movimentacao</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_7">
       <property name="leftMargin">
@@ -656,7 +656,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Move Motor</string>
+         <string>Mover Motor</string>
         </property>
         <property name="icon">
          <iconset>
@@ -686,7 +686,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Encoder position:</string>
+         <string>Posicao do encoder</string>
         </property>
         <property name="checked">
          <bool>true</bool>
@@ -748,7 +748,7 @@
          </font>
         </property>
         <property name="text">
-         <string>&amp;Number of motor steps:</string>
+         <string>Numero de passos</string>
         </property>
        </widget>
       </item>
@@ -778,7 +778,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Set Zero</string>
+         <string>Definir Zero</string>
         </property>
        </widget>
       </item>
@@ -839,7 +839,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Stop Motor</string>
+         <string>Parar Motor</string>
         </property>
         <property name="icon">
          <iconset>
@@ -861,7 +861,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Retry Count</string>
+         <string>Numero de tentativas</string>
         </property>
        </widget>
       </item>
@@ -883,7 +883,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Negative Limit</string>
+           <string>Fim de Curso Negativo</string>
           </property>
          </widget>
         </item>
@@ -895,7 +895,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Positive Limit</string>
+           <string>Fim de Curso Positivo</string>
           </property>
          </widget>
         </item>
@@ -999,7 +999,7 @@
       </font>
      </property>
      <property name="title">
-      <string>Manual Control</string>
+      <string>Controle Manual</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <property name="leftMargin">
@@ -1014,26 +1014,21 @@
       <property name="bottomMargin">
        <number>6</number>
       </property>
-      <item row="8" column="2" colspan="2">
-       <widget class="QLCDNumber" name="lcd_x_position">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+      <item row="8" column="0">
+       <widget class="QLabel" name="label_19">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
         </property>
-        <property name="minimumSize">
-         <size>
-          <width>100</width>
-          <height>30</height>
-         </size>
-        </property>
-        <property name="digitCount">
-         <number>9</number>
+        <property name="text">
+         <string>Posicao X</string>
         </property>
        </widget>
       </item>
-      <item row="9" column="2" colspan="2">
+      <item row="9" column="1" colspan="2">
        <widget class="QLCDNumber" name="lcd_z_position">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -1055,7 +1050,65 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="0" colspan="4">
+      <item row="9" column="0">
+       <widget class="QLabel" name="label_4">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Posicao Z</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="1" colspan="2">
+       <widget class="QLCDNumber" name="lcd_hall_sensor_voltage">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="autoFillBackground">
+         <bool>false</bool>
+        </property>
+        <property name="smallDecimalPoint">
+         <bool>true</bool>
+        </property>
+        <property name="digitCount">
+         <number>14</number>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="1" colspan="2">
+       <widget class="QLCDNumber" name="lcd_x_position">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="digitCount">
+         <number>9</number>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0" colspan="3">
        <layout class="QGridLayout" name="gridLayout_2">
         <property name="leftMargin">
          <number>6</number>
@@ -1089,7 +1142,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Pneumatic OFF</string>
+           <string>Pneumatico OFF</string>
           </property>
          </widget>
         </item>
@@ -1113,7 +1166,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Pneumatic ON</string>
+           <string>Pneumatico ON</string>
           </property>
          </widget>
         </item>
@@ -1211,7 +1264,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Actuator + Read All</string>
+           <string>Atuador + Leitura</string>
           </property>
          </widget>
         </item>
@@ -1235,7 +1288,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Read Hall</string>
+           <string>Ler Hall</string>
           </property>
           <property name="icon">
            <iconset>
@@ -1269,80 +1322,13 @@
            </font>
           </property>
           <property name="text">
-           <string>Read X-Z</string>
+           <string>Ler X-Z</string>
           </property>
          </widget>
         </item>
        </layout>
       </item>
-      <item row="9" column="0">
-       <widget class="QLabel" name="label_4">
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Z Position</string>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Hall sensor reading</string>
-        </property>
-       </widget>
-      </item>
-      <item row="11" column="2" colspan="2">
-       <widget class="QLCDNumber" name="lcd_hall_sensor_voltage">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>100</width>
-          <height>30</height>
-         </size>
-        </property>
-        <property name="autoFillBackground">
-         <bool>false</bool>
-        </property>
-        <property name="smallDecimalPoint">
-         <bool>true</bool>
-        </property>
-        <property name="digitCount">
-         <number>14</number>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="0">
-       <widget class="QLabel" name="label_5">
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-          <weight>50</weight>
-          <bold>false</bold>
-         </font>
-        </property>
-        <property name="text">
-         <string>Stage Position</string>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="2" colspan="2">
+      <item row="13" column="1" colspan="2">
        <widget class="QLCDNumber" name="lcd_linear_encoder_position">
         <property name="enabled">
          <bool>true</bool>
@@ -1370,38 +1356,8 @@
         </property>
        </widget>
       </item>
-      <item row="13" column="1">
-       <widget class="QCheckBox" name="chb_encoder_update_enable">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="font">
-         <font>
-          <pointsize>10</pointsize>
-         </font>
-        </property>
-        <property name="text">
-         <string>Enable Update</string>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>12</width>
-          <height>12</height>
-         </size>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="0">
-       <widget class="QLabel" name="label_19">
+      <item row="13" column="0">
+       <widget class="QLabel" name="label_5">
         <property name="font">
          <font>
           <pointsize>10</pointsize>
@@ -1410,7 +1366,21 @@
          </font>
         </property>
         <property name="text">
-         <string>X Position</string>
+         <string>Posicao do Estagio</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Leitura sensor Hall</string>
         </property>
        </widget>
       </item>
@@ -1426,7 +1396,7 @@
       </font>
      </property>
      <property name="title">
-      <string>Gauge Calibration</string>
+      <string>Calibracao</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_9">
       <item row="0" column="0">
@@ -1469,7 +1439,17 @@
            </font>
           </property>
           <property name="text">
-           <string>Take Length Gauge Reference</string>
+           <string>Obter Referencia dos Apalpadores</string>
+          </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>../../resources/img/gauge.svg</normaloff>../../resources/img/gauge.svg</iconset>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>24</width>
+            <height>24</height>
+           </size>
           </property>
          </widget>
         </item>

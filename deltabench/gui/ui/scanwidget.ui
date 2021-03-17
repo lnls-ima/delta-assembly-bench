@@ -84,7 +84,7 @@
              <string>Show error in plots</string>
             </property>
             <property name="text">
-             <string>Show Error</string>
+             <string>Mostrar erro</string>
             </property>
             <property name="checked">
              <bool>true</bool>
@@ -109,7 +109,7 @@
              <string>Show error in plots</string>
             </property>
             <property name="text">
-             <string>Show Samples</string>
+             <string>Mostrar amostras</string>
             </property>
             <property name="checked">
              <bool>true</bool>
@@ -146,7 +146,7 @@
              <string>Clear graphs and results</string>
             </property>
             <property name="text">
-             <string>Clear</string>
+             <string>Limpar</string>
             </property>
             <property name="icon">
              <iconset>
@@ -165,7 +165,7 @@
         <item row="4" column="0" colspan="2">
          <widget class="QLabel" name="label_3">
           <property name="text">
-           <string>Z Probe</string>
+           <string>Apalpador Z</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -250,7 +250,7 @@
                   </font>
                  </property>
                  <property name="text">
-                  <string>Configuration ID:</string>
+                  <string>ID da Configuracao:</string>
                  </property>
                 </widget>
                </item>
@@ -301,7 +301,7 @@
                 </size>
                </property>
                <property name="text">
-                <string>Load from Database</string>
+                <string>Carregar Configuracao</string>
                </property>
               </widget>
              </item>
@@ -341,7 +341,7 @@
                </font>
               </property>
               <property name="text">
-               <string>Results Summary</string>
+               <string>Resumo dos Resultados</string>
               </property>
              </widget>
             </item>
@@ -403,7 +403,7 @@
                <string>Load position and Hall sensor data fom DB to graph</string>
               </property>
               <property name="text">
-               <string>Load Data from DB</string>
+               <string>Carregar medidas</string>
               </property>
               <property name="icon">
                <iconset>
@@ -450,7 +450,7 @@
                <string>Save position and Hall sensor data to DB</string>
               </property>
               <property name="text">
-               <string>Save Data to DB</string>
+               <string>Salvar medidas</string>
               </property>
               <property name="icon">
                <iconset>
@@ -515,7 +515,7 @@
         <item row="2" column="0" colspan="2">
          <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>X Probe</string>
+           <string>Apalpador X</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
@@ -580,7 +580,7 @@
             <item row="2" column="0">
              <widget class="QLabel" name="label_6">
               <property name="text">
-               <string>First Block Position:</string>
+               <string>Posicao 1º bloco:</string>
               </property>
              </widget>
             </item>
@@ -596,7 +596,7 @@
                <string notr="true">color: rgb(0, 0, 127);</string>
               </property>
               <property name="text">
-               <string>Cassette Name:</string>
+               <string>Cassete:</string>
               </property>
              </widget>
             </item>
@@ -622,7 +622,7 @@
             <item row="2" column="2">
              <widget class="QLabel" name="label_10">
               <property name="text">
-               <string>Start block:</string>
+               <string>Bloco inicial:</string>
               </property>
              </widget>
             </item>
@@ -656,7 +656,7 @@
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>Hall Scan</string>
+               <string>Varrer Hall</string>
               </property>
               <property name="icon">
                <iconset>
@@ -695,7 +695,7 @@
                <string notr="true">color: rgb(0, 0, 127);</string>
               </property>
               <property name="text">
-               <string>Measurement Name:</string>
+               <string>Nome da medida:</string>
               </property>
              </widget>
             </item>
@@ -736,7 +736,7 @@
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>Position Scan</string>
+               <string>Varrer Posicao</string>
               </property>
               <property name="icon">
                <iconset>
@@ -772,7 +772,7 @@
             <item row="2" column="6">
              <widget class="QLabel" name="label_8">
               <property name="text">
-               <string>Step Size [mm]:</string>
+               <string>Passo [mm]:</string>
               </property>
              </widget>
             </item>
@@ -802,7 +802,7 @@
             <item row="2" column="4">
              <widget class="QLabel" name="label_7">
               <property name="text">
-               <string>Number of blocks:</string>
+               <string>Numero de blocos:</string>
               </property>
              </widget>
             </item>
@@ -847,14 +847,14 @@
                <string notr="true">color: rgb(0, 0, 127);</string>
               </property>
               <property name="text">
-               <string>Undulator Name:</string>
+               <string>Ondulador:</string>
               </property>
              </widget>
             </item>
             <item row="2" column="8">
              <widget class="QLabel" name="label_9">
               <property name="text">
-               <string>Hall samples/block:</string>
+               <string>Amostras Hall/bloco:</string>
               </property>
              </widget>
             </item>
@@ -891,7 +891,7 @@
                <string notr="true"/>
               </property>
               <property name="text">
-               <string>Stop Scan</string>
+               <string>Parar Varredura</string>
               </property>
               <property name="icon">
                <iconset>

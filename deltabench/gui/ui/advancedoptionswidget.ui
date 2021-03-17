@@ -51,7 +51,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Save</string>
+        <string>Salvar</string>
        </property>
       </widget>
      </item>
@@ -76,7 +76,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Cancel</string>
+        <string>Cancelar</string>
        </property>
       </widget>
      </item>
@@ -97,7 +97,7 @@
       </font>
      </property>
      <property name="title">
-      <string>Advanced Options</string>
+      <string>Opcoes Avancadas</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_10">
       <item row="2" column="0">
@@ -130,7 +130,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Database ID:</string>
+           <string>ID da Configuracao:</string>
           </property>
          </widget>
         </item>
@@ -214,7 +214,7 @@
       </font>
      </property>
      <property name="title">
-      <string>Motor Configuration</string>
+      <string>Motor Eixo Horizontal</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_5">
       <property name="verticalSpacing">
@@ -229,7 +229,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Driver Address</string>
+         <string>Endereco Driver</string>
         </property>
        </widget>
       </item>
@@ -264,7 +264,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Motor Resolution [steps/rev]:</string>
+         <string>Resolucao do Motor [steps/rev]:</string>
         </property>
        </widget>
       </item>
@@ -299,7 +299,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Move Timeout [sec]:</string>
+         <string>Timeout de Movimentacao [seg]:</string>
         </property>
        </widget>
       </item>
@@ -312,7 +312,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Position Tolerance [mm]:</string>
+         <string>Tolerancia Posicionamento [mm]:</string>
         </property>
        </widget>
       </item>
@@ -325,7 +325,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Maximum velocity [revs/sec]:</string>
+         <string>Maxima velocidade [revs/seg]:</string>
         </property>
        </widget>
       </item>
@@ -338,7 +338,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Acceleration [revs/sec²]:</string>
+         <string>Aceleracao [revs/seg²]:</string>
         </property>
        </widget>
       </item>
@@ -354,7 +354,7 @@
          </font>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <item>
          <property name="text">
@@ -377,7 +377,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Linear Conversion [mm/rev]:</string>
+         <string>Conversao Linear [mm/rev]:</string>
         </property>
        </widget>
       </item>
@@ -390,7 +390,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Hall scan velocity [revs/sec]:</string>
+         <string>Velocidade varredura Hall [revs/seg]:</string>
         </property>
        </widget>
       </item>
@@ -434,7 +434,7 @@
          <double>1000000.000000000000000</double>
         </property>
         <property name="value">
-         <double>1.000000000000000</double>
+         <double>25000.000000000000000</double>
         </property>
        </widget>
       </item>
@@ -447,7 +447,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Motor Rotation Direction:</string>
+         <string>Direcao de Rotacao do Motor:</string>
         </property>
        </widget>
       </item>
@@ -516,7 +516,7 @@
          <double>999.000000000000000</double>
         </property>
         <property name="value">
-         <double>1.000000000000000</double>
+         <double>0.010000000000000</double>
         </property>
        </widget>
       </item>
@@ -554,7 +554,7 @@
       </font>
      </property>
      <property name="title">
-      <string>Display Configuration</string>
+      <string>Display</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_8">
       <item row="0" column="1">
@@ -584,7 +584,204 @@
          </font>
         </property>
         <property name="text">
-         <string>Display Model</string>
+         <string>Modelo do Display</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QGroupBox" name="gb_display_3">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="title">
+      <string>Motor Eixo Vertical</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_11">
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_12">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Endereco Driver</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QSpinBox" name="sb_vertical_motor_driver_address">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>8</number>
+        </property>
+        <property name="value">
+         <number>2</number>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_13">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Direcao de Rotacao do Motor</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="cmb_vertical_motor_rotation_direction">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="currentIndex">
+         <number>0</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>+</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>-</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_14">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Resolucao do Motor [steps/rev]:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QDoubleSpinBox" name="sbd_vertical_motor_resolution">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="decimals">
+         <number>3</number>
+        </property>
+        <property name="minimum">
+         <double>0.001000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1000000.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>25000.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QGroupBox" name="gb_display_2">
+     <property name="font">
+      <font>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="title">
+      <string>Atuador Pneumatico</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_9">
+      <item row="0" column="1">
+       <widget class="QDoubleSpinBox" name="sbd_pneumatic_advance_wait">
+        <property name="decimals">
+         <number>1</number>
+        </property>
+        <property name="minimum">
+         <double>0.500000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_19">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Tempo de Espera apos Avanco [seg]:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_20">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <bold>false</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Tempo de Espera apos Recuo [seg]:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QDoubleSpinBox" name="sbd_pneumatic_retreat_wait">
+        <property name="decimals">
+         <number>1</number>
+        </property>
+        <property name="minimum">
+         <double>0.500000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>10.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
         </property>
        </widget>
       </item>

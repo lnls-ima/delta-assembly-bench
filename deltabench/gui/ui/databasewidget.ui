@@ -42,7 +42,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Database Tables:</string>
+        <string>Tabelas do Banco de Dados:</string>
        </property>
       </widget>
      </item>
@@ -158,7 +158,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Save To File</string>
+          <string>Salvar em arquivo</string>
          </property>
          <property name="icon">
           <iconset>
@@ -187,7 +187,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Read From File</string>
+          <string>Ler arquivo</string>
          </property>
          <property name="icon">
           <iconset>
@@ -216,7 +216,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Delete</string>
+          <string>Apagar</string>
          </property>
          <property name="icon">
           <iconset>
@@ -280,7 +280,7 @@
             </font>
            </property>
            <property name="text">
-            <string>Save  Summary</string>
+            <string>Salvar Resumo</string>
            </property>
            <property name="icon">
             <iconset>

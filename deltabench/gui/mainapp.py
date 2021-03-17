@@ -31,7 +31,11 @@ class MainApp(_QApplication):
         self.scan_config = _configuration.ScanConfig()
         self.advanced_options_dialog = None
 
-        # emergency variable that all tabs can access
+        # variables for periodic readings that all tabs can acess
+        self.encoder_update_enabled = True
+        self.linear_encoder_position = 0.0
+
+        # emergency variable that all tabs can access (still not used)
         self.emergency_stop = False
 
     def create_dialogs(self):
@@ -61,6 +65,9 @@ class MainApp(_QApplication):
         block_data = _measurement.BlockData(
             database_name=self.database_name,
             mongo=self.mongo, server=self.server)
+        assembly_data = _measurement.AssemblyData(
+            database_name=self.database_name,
+            mongo=self.mongo, server=self.server)
 
         status = []
         status.append(connection_config.db_create_collection())
@@ -70,6 +77,7 @@ class MainApp(_QApplication):
 #        status.append(measurement_data.db_create_collection())
         status.append(hall_data.db_create_collection())
         status.append(block_data.db_create_collection())
+        status.append(assembly_data.db_create_collection())
         if not all(status):
             raise Exception("Failed to create database.")
 

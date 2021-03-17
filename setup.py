@@ -17,7 +17,7 @@ setup(
     license='MIT License',
     packages=['deltabench'],
     install_requires=[
-        'pyvisa',
+        'matplotlib',
         'numpy',
         'scipy',
         'pandas',
@@ -25,6 +25,8 @@ setup(
         'pyserial',
         'qtpy',
         'natsort',
+        'openpyxl',
+        'odfpy',
     ],
     test_suite='nose.collector',
     tests_require=['nose'],

@@ -31,6 +31,7 @@ import deltabench.data as _data
 
 _ConnectionConfig = _data.configuration.ConnectionConfig
 _AdvancedOptions = _data.configuration.AdvancedOptions
+_AssemblyData = _data.measurement.AssemblyData
 _ControlConfig = _data.configuration.ControlConfig
 _ScanConfig = _data.configuration.ScanConfig
 #_MeasurementData = _data.measurement.MeasurementData
@@ -43,6 +44,7 @@ class DatabaseWidget(_QWidget):
 
     _connection_table_name = _ConnectionConfig.collection_name
     _advanced_options_table_name = _AdvancedOptions.collection_name
+    _assembly_table_name = _AssemblyData.collection_name
     _control_configuration_table_name = _ControlConfig.collection_name
     _scan_configuration_table_name = _ScanConfig.collection_name
 #    _measurement_table_name = _MeasurementData.collection_name
@@ -62,6 +64,7 @@ class DatabaseWidget(_QWidget):
         self._table_object_dict = {
             self._connection_table_name: _ConnectionConfig,
             self._advanced_options_table_name: _AdvancedOptions,
+            self._assembly_table_name: _AssemblyData,
             self._control_configuration_table_name: _ControlConfig,
             self._scan_configuration_table_name: _ScanConfig,
 #            self._measurement_table_name: _MeasurementData,
@@ -262,13 +265,13 @@ class DatabaseWidget(_QWidget):
                 obj.read_file(filename)
                 idn = obj.db_save()
                 idns.append(idn)
-            msg = 'Added to database table.\nIDs: ' + str(idns)
+            msg = 'Adicionado a tabela do banco de dados.\nIDs: ' + str(idns)
             self.update_database_tables()
-            _QMessageBox.information(self, 'Information', msg, _QMessageBox.Ok)
+            _QMessageBox.information(self, 'Informacao', msg, _QMessageBox.Ok)
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
-            msg = 'Failed to read files and save values in database.'
-            _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+            msg = 'Falha ao tentar ler arquivos e salvar valores no banco de dados.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return
 
     def save_files(self):
@@ -300,8 +303,8 @@ class DatabaseWidget(_QWidget):
 
             except Exception:
                 _traceback.print_exc(file=_sys.stdout)
-                msg = 'Failed to read database entries.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Falha ao tentar ler entradas no banco de dados.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
                 return
 
             if nr_idns == 1:
@@ -341,8 +344,8 @@ class DatabaseWidget(_QWidget):
                     obj.save_file(filename)
             except Exception:
                 _traceback.print_exc(file=_sys.stdout)
-                msg = 'Failed to save files.'
-                _QMessageBox.critical(self, 'Failure', msg, _QMessageBox.Ok)
+                msg = 'Falha ao tentar salvar arquivos.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
 

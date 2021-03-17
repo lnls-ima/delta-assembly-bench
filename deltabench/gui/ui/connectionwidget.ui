@@ -34,7 +34,7 @@
       </font>
      </property>
      <property name="title">
-      <string>Devices connection</string>
+      <string>Conexao de Dispositivos</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -51,7 +51,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Configuration ID:</string>
+           <string>ID da Configuracao:</string>
           </property>
          </widget>
         </item>
@@ -128,7 +128,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Disconnect Devices</string>
+         <string>Desconectar Dispositivos</string>
         </property>
        </widget>
       </item>
@@ -164,7 +164,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Connect Devices</string>
+         <string>Conectar aos Dispositivos</string>
         </property>
        </widget>
       </item>
@@ -183,7 +183,7 @@
          </size>
         </property>
         <property name="text">
-         <string>Load from Database</string>
+         <string>Carregar Configuracao</string>
         </property>
        </widget>
       </item>
@@ -226,7 +226,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Heidenhain Display</string>
+         <string>Display Heidenhain</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -243,8 +243,11 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="currentText">
+           <string>115200</string>
+          </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>9</number>
           </property>
           <item>
            <property name="text">
@@ -307,7 +310,7 @@
            <number>8</number>
           </property>
           <property name="value">
-           <number>7</number>
+           <number>8</number>
           </property>
          </widget>
         </item>
@@ -448,7 +451,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Enable</string>
+           <string>Habilitar</string>
           </property>
          </widget>
         </item>
@@ -526,7 +529,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Parker Driver</string>
+         <string>Driver Parker</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -714,7 +717,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Enable</string>
+           <string>Habilitar</string>
           </property>
          </widget>
         </item>
@@ -805,7 +808,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Multimeter</string>
+         <string>Multimetro</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -823,7 +826,7 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Enable</string>
+           <string>Habilitar</string>
           </property>
          </widget>
         </item>
@@ -932,6 +935,12 @@
         </item>
         <item row="4" column="1">
          <widget class="QComboBox" name="cmb_multimeter_stopbits">
+          <property name="currentText">
+           <string>2</string>
+          </property>
+          <property name="currentIndex">
+           <number>2</number>
+          </property>
           <item>
            <property name="text">
             <string>1</string>

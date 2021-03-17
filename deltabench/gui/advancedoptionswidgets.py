@@ -49,6 +49,7 @@ class AdvancedOptionsWidget(_ConfigurationWidget):
 
         self.sb_names = [
             'motor_driver_address',
+            'vertical_motor_driver_address',
         ]
 
         self.sbd_names = [
@@ -59,10 +60,14 @@ class AdvancedOptionsWidget(_ConfigurationWidget):
             'position_tolerance',
             'linear_conversion_factor',
             'move_timeout',
+            'pneumatic_advance_wait',
+            'pneumatic_retreat_wait',
+            'vertical_motor_resolution',
         ]
 
         self.cmb_names = [
             'motor_rotation_direction',
+            'vertical_motor_rotation_direction',
             'display_model',
         ]
 
