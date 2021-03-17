@@ -468,7 +468,7 @@
            </font>
           </property>
           <property name="text">
-           <string>ID de Configuracao:</string>
+           <string>ID da Configuracao:</string>
           </property>
          </widget>
         </item>
