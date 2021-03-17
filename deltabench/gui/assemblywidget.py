@@ -637,10 +637,8 @@ class AssemblyWidget(_QWidget):
             rotation_direction = (
                 self.advanced_options.motor_rotation_direction
             )
-            velocity = self.advanced_options.motor_velocity
-            acceleration = (
-                self.advanced_options.motor_acceleration
-            )
+            velocity = self.ui.sbd_horizontal_velocity.value()
+            acceleration = self.ui.sbd_horizontal_acceleration.value()
 
             # dummy value (ignored in continuous mode)
             steps = 1
@@ -704,10 +702,8 @@ class AssemblyWidget(_QWidget):
             rotation_direction = (
                 self.advanced_options.motor_rotation_direction
             )
-            velocity = self.advanced_options.motor_velocity
-            acceleration = (
-                self.advanced_options.motor_acceleration
-            )
+            velocity = self.ui.sbd_horizontal_velocity.value()
+            acceleration = self.ui.sbd_horizontal_acceleration.value()
 
             # dummy value (ignored in continuous mode)
             steps = 1

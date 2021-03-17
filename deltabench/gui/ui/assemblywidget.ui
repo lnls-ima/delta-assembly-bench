@@ -179,8 +179,21 @@
           <string>Controle Manual</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="1" column="0" colspan="3">
-           <layout class="QGridLayout" name="gridLayout_6">
+          <item row="0" column="1">
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="0">
+           <layout class="QGridLayout" name="gridLayout_7">
             <property name="leftMargin">
              <number>6</number>
             </property>
@@ -193,8 +206,22 @@
             <property name="bottomMargin">
              <number>6</number>
             </property>
-            <item row="0" column="3">
-             <widget class="QDoubleSpinBox" name="sbd_vertical_acceleration"/>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string>Acel Vert:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="2" column="1">
+             <widget class="QDoubleSpinBox" name="sbd_horizontal_velocity"/>
+            </item>
+            <item row="2" column="0">
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>Vel Hor:</string>
+              </property>
+             </widget>
             </item>
             <item row="0" column="0">
              <widget class="QLabel" name="label">
@@ -204,18 +231,28 @@
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QDoubleSpinBox" name="sbd_vertical_velocity"/>
-            </item>
-            <item row="0" column="2">
-             <widget class="QLabel" name="label_2">
-              <property name="text">
-               <string>Acc Vert:</string>
+             <widget class="QDoubleSpinBox" name="sbd_vertical_velocity">
+              <property name="singleStep">
+               <double>0.200000000000000</double>
               </property>
              </widget>
             </item>
+            <item row="1" column="1">
+             <widget class="QDoubleSpinBox" name="sbd_vertical_acceleration"/>
+            </item>
+            <item row="3" column="0">
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>Acel Hor:</string>
+              </property>
+             </widget>
+            </item>
+            <item row="3" column="1">
+             <widget class="QDoubleSpinBox" name="sbd_horizontal_acceleration"/>
+            </item>
            </layout>
           </item>
-          <item row="0" column="1">
+          <item row="0" column="2">
            <layout class="QGridLayout" name="gridLayout_2">
             <property name="leftMargin">
              <number>6</number>
@@ -229,43 +266,6 @@
             <property name="bottomMargin">
              <number>6</number>
             </property>
-            <item row="0" column="1">
-             <widget class="QPushButton" name="pbt_up">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>100</width>
-                <height>60</height>
-               </size>
-              </property>
-              <property name="font">
-               <font>
-                <pointsize>12</pointsize>
-               </font>
-              </property>
-              <property name="styleSheet">
-               <string notr="true">background-color: rgb(232, 232, 232);</string>
-              </property>
-              <property name="text">
-               <string>CIMA</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../resources/img/arrow-up-circle-outline.svg</normaloff>../../resources/img/arrow-up-circle-outline.svg</iconset>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>24</width>
-                <height>24</height>
-               </size>
-              </property>
-             </widget>
-            </item>
             <item row="1" column="2">
              <widget class="QPushButton" name="pbt_fwd">
               <property name="sizePolicy">
@@ -300,8 +300,8 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0">
-             <widget class="QPushButton" name="pbt_rev">
+            <item row="0" column="1">
+             <widget class="QPushButton" name="pbt_up">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -319,12 +319,15 @@
                 <pointsize>12</pointsize>
                </font>
               </property>
+              <property name="styleSheet">
+               <string notr="true">background-color: rgb(232, 232, 232);</string>
+              </property>
               <property name="text">
-               <string>RECUAR</string>
+               <string>CIMA</string>
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../../resources/img/arrow-left-circle-outline.svg</normaloff>../../resources/img/arrow-left-circle-outline.svg</iconset>
+                <normaloff>../../resources/img/arrow-up-circle-outline.svg</normaloff>../../resources/img/arrow-up-circle-outline.svg</iconset>
               </property>
               <property name="iconSize">
                <size>
@@ -368,23 +371,44 @@
               </property>
              </widget>
             </item>
+            <item row="1" column="0">
+             <widget class="QPushButton" name="pbt_rev">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>60</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>RECUAR</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../resources/img/arrow-left-circle-outline.svg</normaloff>../../resources/img/arrow-left-circle-outline.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
-          <item row="0" column="2">
+          <item row="0" column="3">
            <spacer name="horizontalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="0" column="0">
-           <spacer name="horizontalSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>
