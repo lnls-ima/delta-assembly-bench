@@ -90,17 +90,29 @@ class AssemblyWidget(_QWidget):
 
         # create dictionary of images for magnet orientations
         self.block_types = {}
-        self.block_types[_utils.PREFIX_BLOCK_FIELD_UP] = _QPixmap(
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_1] = _QPixmap(
             _os.path.join('deltabench','resources', 'img',
-                         'arrow-up-bold-outline.png')
+                         'Block-BA.png')
         )
-        self.block_types[_utils.PREFIX_BLOCK_FIELD_DOWN] = _QPixmap(
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_2] = _QPixmap(
             _os.path.join('deltabench','resources', 'img',
-                         'arrow-down-bold-outline.png')
+                         'Block-BB.png')
         )
-        self.block_types[_utils.PREFIX_BLOCK_FIELD_SIDE] = _QPixmap(
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_3] = _QPixmap(
             _os.path.join('deltabench','resources', 'img',
-                         'arrow-left-bold-outline.png')
+                         'Block-BC.png')
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_4] = _QPixmap(
+            _os.path.join('deltabench','resources', 'img',
+                         'Block-TA.png')
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_5] = _QPixmap(
+            _os.path.join('deltabench','resources', 'img',
+                         'Block-TB.png')
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_6] = _QPixmap(
+            _os.path.join('deltabench','resources', 'img',
+                         'Block-TC.png')
         )
         self.block_types['end'] = _QPixmap(
             _os.path.join('deltabench','resources', 'img',
@@ -351,13 +363,16 @@ class AssemblyWidget(_QWidget):
                 block[_utils.SUBCASSETTE_COLUMN_TITLE] = subcass
                 # store block type
                 block_type = name[:2]
-                if ( block_type != _utils.PREFIX_BLOCK_FIELD_UP
-                     and block_type != _utils.PREFIX_BLOCK_FIELD_DOWN
-                     and block_type != _utils.PREFIX_BLOCK_FIELD_SIDE):
+                if ( block_type != _utils.PREFIX_BLOCK_TYPE_1
+                     and block_type != _utils.PREFIX_BLOCK_TYPE_2
+                     and block_type != _utils.PREFIX_BLOCK_TYPE_3
+                     and block_type != _utils.PREFIX_BLOCK_TYPE_4
+                     and block_type != _utils.PREFIX_BLOCK_TYPE_5
+                     and block_type != _utils.PREFIX_BLOCK_TYPE_6):
                     raise ValueError(
                         'Invalid block type prefix at row {0}'.format(n)
                     )
-                block['type'] = block_type
+                block['tipo'] = block_type
                 # append block to list
                 self.block_list.append(block)
             # update block list size
@@ -454,7 +469,7 @@ class AssemblyWidget(_QWidget):
             block = self.block_list[position]
 
             # update image
-            block_type = block['type']
+            block_type = block['tipo']
             pixmap = self.block_types[block_type]
             self.ui.la_block_image.setPixmap(pixmap)
 

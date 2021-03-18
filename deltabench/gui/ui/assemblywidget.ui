@@ -214,7 +214,11 @@
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QDoubleSpinBox" name="sbd_horizontal_velocity"/>
+             <widget class="QDoubleSpinBox" name="sbd_horizontal_velocity">
+              <property name="singleStep">
+               <double>0.200000000000000</double>
+              </property>
+             </widget>
             </item>
             <item row="2" column="0">
              <widget class="QLabel" name="label_3">
@@ -238,7 +242,11 @@
              </widget>
             </item>
             <item row="1" column="1">
-             <widget class="QDoubleSpinBox" name="sbd_vertical_acceleration"/>
+             <widget class="QDoubleSpinBox" name="sbd_vertical_acceleration">
+              <property name="singleStep">
+               <double>0.200000000000000</double>
+              </property>
+             </widget>
             </item>
             <item row="3" column="0">
              <widget class="QLabel" name="label_5">
@@ -248,7 +256,11 @@
              </widget>
             </item>
             <item row="3" column="1">
-             <widget class="QDoubleSpinBox" name="sbd_horizontal_acceleration"/>
+             <widget class="QDoubleSpinBox" name="sbd_horizontal_acceleration">
+              <property name="singleStep">
+               <double>0.200000000000000</double>
+              </property>
+             </widget>
             </item>
            </layout>
           </item>
@@ -537,8 +549,8 @@
            </property>
            <property name="maximumSize">
             <size>
-             <width>16777215</width>
-             <height>16777215</height>
+             <width>240</width>
+             <height>240</height>
             </size>
            </property>
            <property name="baseSize">
