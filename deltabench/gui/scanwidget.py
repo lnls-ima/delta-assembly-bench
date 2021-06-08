@@ -271,9 +271,16 @@ class ScanWidget(_ConfigurationWidget):
             block_center = hall_step_count / 2
             hall_step = float(block_step / hall_step_count)
             block_count = self.ui.sb_scan_nr_blocks.value()
-            total_hall_count = hall_step_count * block_count
-            block_list = range(
-                start_block_idx, start_block_idx + block_count
+
+            hall_margin_before = _math.floor(
+                self.ui.sbd_margin_hall_before.value() / hall_step
+            )
+            hall_margin_after = _math.floor(
+                self.ui.sbd_margin_hall_after.value() / hall_step
+            )
+            # sum all hall samples per block plus left and right margins
+            total_hall_count = (
+                hall_step_count * block_count + hall_margin_before + hall_margin_after
             )
 
             if total_hall_count > 512:
@@ -295,7 +302,7 @@ class ScanWidget(_ConfigurationWidget):
                 0.5 * acceleration * t_acc * t_acc * linear_conversion
             )
             # add a constant to account for driver reaction time
-            t_acc_total = t_acc
+            t_acc_total = t_acc + 0
 
             # time between hall points
             t_hall = hall_step / (hall_scan_velocity * linear_conversion)
@@ -346,6 +353,7 @@ class ScanWidget(_ConfigurationWidget):
             scan_beginning = (
                 first_block_position
                 + (start_block_idx - 1) * block_step
+                - hall_margin_before * hall_step
                 - acc_distance
             )
 
@@ -364,6 +372,7 @@ class ScanWidget(_ConfigurationWidget):
                 target_position = (
                     scan_beginning
                     + block_count*block_step
+                    + (hall_margin_before + hall_margin_after)*hall_step
                     + 2 * acc_distance
                 )
 
@@ -478,7 +487,7 @@ class ScanWidget(_ConfigurationWidget):
                 )
                 # store data to save (encoder data is already stored)
                 self.hall_sample_list = self.hall_sample_list + readings
-                first_hall = (start_block_idx - 1) * hall_step_count + 1
+                first_hall = (start_block_idx - 1) * hall_step_count + 1 - hall_margin_before
                 self.hall_sample_index_list = (
                     self.hall_sample_index_list
                     + list(
