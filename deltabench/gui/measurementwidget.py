@@ -401,7 +401,8 @@ class MeasurementWidget(_ConfigurationWidget):
                 # update counter
                 retry_count = retry_count - 1
                 # wait until motor is idle
-                while ((not _driver.ready(driver_address)
+
+                while ((not _driver.ready(driver_address, wait)
                         or previous_encoder_index ==
                            self.encoder_measurement_index
                         or self.encoder_measurement_index == -1)
@@ -450,7 +451,8 @@ class MeasurementWidget(_ConfigurationWidget):
                     _QApplication.processEvents()
 
             # wait until motor is idle
-            while (not _driver.ready(driver_address)
+
+            while (not _driver.ready(driver_address, wait)
                   and (_time.time() - t_start) < move_timeout):
                 _time.sleep(wait)
                 _QApplication.processEvents()
@@ -618,6 +620,8 @@ class MeasurementWidget(_ConfigurationWidget):
                 _display.write_display_value(
                     axis, value, wait=_utils.WAIT_DISPLAY
                 )
+            # wait display command to finish
+            _time.sleep(_utils.WAIT_DISPLAY_CONFIG)
 
             # retreat gauges
             status = self.pneumatic_off()
