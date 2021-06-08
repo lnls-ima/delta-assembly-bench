@@ -317,7 +317,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Posicao Z</string>
+         <string>Posicao Y</string>
         </property>
        </widget>
       </item>
@@ -359,7 +359,7 @@
          </font>
         </property>
         <property name="text">
-         <string>Erro em Z</string>
+         <string>Erro em Y</string>
         </property>
        </widget>
       </item>
@@ -1322,7 +1322,7 @@
            </font>
           </property>
           <property name="text">
-           <string>Ler X-Z</string>
+           <string>Ler X-Y</string>
           </property>
          </widget>
         </item>
