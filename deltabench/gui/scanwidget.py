@@ -499,6 +499,12 @@ class ScanWidget(_ConfigurationWidget):
                     self.encoder_sample_list_for_hall,
                     self.hall_sample_list
                 )
+                # ask user if want to save right now
+                msg = 'Deseja salvar varredura?'
+                reply = _QMessageBox.question(
+                    self, 'Confirmacao', msg)
+                if reply == _QMessageBox.Yes:
+                    self.save_data_to_db()
 
             # re-enable start scan buttons
             self.ui.pbt_start_hall_scan.setEnabled(True)
@@ -714,6 +720,13 @@ class ScanWidget(_ConfigurationWidget):
                     self.z_probe_sample_list,
                     self.z_probe_sample_error_list
                 )
+
+                # ask user if want to save right now
+                msg = 'Deseja salvar varredura?'
+                reply = _QMessageBox.question(
+                    self, 'Confirmacao', msg)
+                if reply == _QMessageBox.Yes:
+                    self.save_data_to_db()
 
             # re-enable start scan buttons
             self.ui.pbt_start_hall_scan.setEnabled(True)
