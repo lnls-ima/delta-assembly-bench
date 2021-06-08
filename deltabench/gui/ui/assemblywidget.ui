@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>931</width>
-    <height>831</height>
+    <height>832</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -157,6 +157,8 @@
             <property name="font">
              <font>
               <family>Courier 10 Pitch</family>
+              <weight>75</weight>
+              <bold>true</bold>
              </font>
             </property>
             <property name="readOnly">
@@ -208,57 +210,125 @@
             </property>
             <item row="1" column="0">
              <widget class="QLabel" name="label_2">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="text">
-               <string>Acel Vert:</string>
+               <string>Acel Vert [rev/s^2]:</string>
               </property>
              </widget>
             </item>
             <item row="2" column="1">
              <widget class="QDoubleSpinBox" name="sbd_horizontal_velocity">
+              <property name="font">
+               <font>
+                <pointsize>9</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="singleStep">
                <double>0.200000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
               </property>
              </widget>
             </item>
             <item row="2" column="0">
              <widget class="QLabel" name="label_3">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="text">
-               <string>Vel Hor:</string>
+               <string>Vel Hor [rev/s]:</string>
               </property>
              </widget>
             </item>
             <item row="0" column="0">
              <widget class="QLabel" name="label">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="text">
-               <string>Vel Vert:</string>
+               <string>Vel Vert [rev/s]:</string>
               </property>
              </widget>
             </item>
             <item row="0" column="1">
              <widget class="QDoubleSpinBox" name="sbd_vertical_velocity">
+              <property name="font">
+               <font>
+                <pointsize>9</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="singleStep">
                <double>0.200000000000000</double>
+              </property>
+              <property name="value">
+               <double>2.000000000000000</double>
               </property>
              </widget>
             </item>
             <item row="1" column="1">
              <widget class="QDoubleSpinBox" name="sbd_vertical_acceleration">
+              <property name="font">
+               <font>
+                <pointsize>9</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="singleStep">
                <double>0.200000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
               </property>
              </widget>
             </item>
             <item row="3" column="0">
              <widget class="QLabel" name="label_5">
+              <property name="font">
+               <font>
+                <pointsize>8</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="text">
-               <string>Acel Hor:</string>
+               <string>Acel Hor [rev/s^2]:</string>
               </property>
              </widget>
             </item>
             <item row="3" column="1">
              <widget class="QDoubleSpinBox" name="sbd_horizontal_acceleration">
+              <property name="font">
+               <font>
+                <pointsize>9</pointsize>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
               <property name="singleStep">
                <double>0.200000000000000</double>
+              </property>
+              <property name="value">
+               <double>1.000000000000000</double>
               </property>
              </widget>
             </item>
@@ -278,8 +348,8 @@
             <property name="bottomMargin">
              <number>6</number>
             </property>
-            <item row="1" column="2">
-             <widget class="QPushButton" name="pbt_fwd">
+            <item row="2" column="3">
+             <widget class="QPushButton" name="pbt_down">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -298,11 +368,11 @@
                </font>
               </property>
               <property name="text">
-               <string>AVANCAR</string>
+               <string>BAIXO</string>
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../../resources/img/arrow-right-circle-outline.svg</normaloff>../../resources/img/arrow-right-circle-outline.svg</iconset>
+                <normaloff>../../resources/img/arrow-down-circle-outline.svg</normaloff>../../resources/img/arrow-down-circle-outline.svg</iconset>
               </property>
               <property name="iconSize">
                <size>
@@ -312,7 +382,7 @@
               </property>
              </widget>
             </item>
-            <item row="0" column="1">
+            <item row="0" column="3">
              <widget class="QPushButton" name="pbt_up">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -349,41 +419,7 @@
               </property>
              </widget>
             </item>
-            <item row="2" column="1">
-             <widget class="QPushButton" name="pbt_down">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>100</width>
-                <height>60</height>
-               </size>
-              </property>
-              <property name="font">
-               <font>
-                <pointsize>12</pointsize>
-               </font>
-              </property>
-              <property name="text">
-               <string>BAIXO</string>
-              </property>
-              <property name="icon">
-               <iconset>
-                <normaloff>../../resources/img/arrow-down-circle-outline.svg</normaloff>../../resources/img/arrow-down-circle-outline.svg</iconset>
-              </property>
-              <property name="iconSize">
-               <size>
-                <width>24</width>
-                <height>24</height>
-               </size>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
+            <item row="1" column="4">
              <widget class="QPushButton" name="pbt_rev">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -404,6 +440,40 @@
               </property>
               <property name="text">
                <string>RECUAR</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../resources/img/arrow-right-circle-outline.svg</normaloff>../../resources/img/arrow-right-circle-outline.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QPushButton" name="pbt_fwd">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>100</width>
+                <height>60</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>12</pointsize>
+               </font>
+              </property>
+              <property name="text">
+               <string>AVANCAR</string>
               </property>
               <property name="icon">
                <iconset>
