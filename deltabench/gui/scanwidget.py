@@ -1534,7 +1534,8 @@ class ScanWidget(_ConfigurationWidget):
                         # process gui events
                         _QApplication.processEvents()
                 # wait motion to finish
-                while (not _driver.ready(driver_address)
+
+                while (not _driver.ready(driver_address, wait)
                        and not self.stop_sent
                        and (_time.time() - t_start) < timeout):
                     _time.sleep(wait)
