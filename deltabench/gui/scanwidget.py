@@ -1595,6 +1595,7 @@ class ScanWidget(_ConfigurationWidget):
         self.ui.pbt_stop_scan.clicked.connect(self.stop_scan)
         self.ui.pbt_load_data_db.clicked.connect(self.load_data_from_db)
         self.ui.pbt_save_data_db.clicked.connect(self.save_data_to_db)
+        self.ui.pbt_delete_data_db.clicked.connect(self.delete_data_from_db)
         self.ui.sb_hall_samples_per_block.valueChanged.connect(self.hall_samples_even_only)
         self.ui.pbt_clear_all.clicked.connect(self.clear)
         self.ui.chb_show_error.stateChanged.connect(self.update_graphs_lines_visibility)
@@ -1700,6 +1701,7 @@ class ScanWidget(_ConfigurationWidget):
         return True
 
     def save_data_to_db(self):
+        """ Save data gathered by graphs """
         try:
             if self.database_name is None:
                 msg = 'Nome do arquivo de banco de dados invalido.'
@@ -1806,6 +1808,81 @@ class ScanWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
+    def delete_data_from_db(self):
+        """ Delete all data related to specified measurement, undulator and cassete """
+        try:
+            if self.database_name is None:
+                msg = 'Nome do arquivo de banco de dados invalido.'
+                _QMessageBox.critical(
+                    self, 'Falha', msg, _QMessageBox.Ok)
+                return False
+
+            # get element info to filter
+            measurement = self.ui.le_measurement_name.text()
+            undulator = self.ui.le_undulator_name.text()
+            cassette = self.ui.le_cassette_name.text()
+
+            # clean strings from unnecessary white spaces
+            measurement = self.clean_str(measurement)
+            undulator = self.clean_str(undulator)
+            cassette = self.clean_str(cassette)
+
+            msg = (
+                "Deseja realmente apagar todas os dados referentes a: "
+                + "nome da medida= "+str(measurement)
+                + ", ondulador= "+str(undulator)
+                + ", cassete= "+str(cassette)
+                + "?"
+            )
+            reply = _QMessageBox.question(
+                self, 'Confirmacao', msg)
+            if reply == _QMessageBox.No:
+                return False
+
+            # get scan id from DB
+            scan_list = self.access_scan_data.db_search_collection(
+                fields=['measurement_name', 'undulator_name', 'cassette_name', 'id'
+                ],
+                filters=[measurement, undulator, cassette, ''
+                ]
+            )
+            if len(scan_list) == 0:
+                msg = 'Dados da varredura nao encontrados.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+                return False
+            scan_data = scan_list[0]
+            scan_id = scan_data['id']
+
+            # find and delete related hall data in DB
+            elem_list = self.access_hall_data.db_search_collection(
+                fields=['scan_id', 'id'],
+                filters=[scan_id, '']
+            )
+            if len(elem_list) > 0:
+                hall_id_list = [e['id'] for e in elem_list]
+                self.access_hall_data.db_delete(hall_id_list)
+
+            # find and delete related block data in DB
+            elem_list = self.access_block_data.db_search_collection(
+                fields=['scan_id', 'id'],
+                filters=[scan_id, '']
+            )
+            if len(elem_list) > 0:
+                block_id_list = [e['id'] for e in elem_list]
+                self.access_block_data.db_delete(block_id_list)
+
+            # delete main scan data
+            scan_id_list = [e['id'] for e in scan_list]
+            self.access_scan_data.db_delete(scan_id_list)
+
+            return True
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Falha tentar apagar dados.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+            return False
+
     def hall_samples_even_only(self):
         """ Allow only even hall sample counts """
         value = self.ui.sb_hall_samples_per_block.value()
@@ -1901,7 +1978,8 @@ class ScanWidget(_ConfigurationWidget):
             if move_started:
                 _time.sleep(wait_motion)
                 t_curr = _time.time()
-                while (not _driver.ready(driver_address)
+
+                while (not _driver.ready(driver_address, wait_motion)
                        and not self.stop_sent
                        and not (t_curr - t_start) > move_timeout):
                     t_curr = _time.time()
