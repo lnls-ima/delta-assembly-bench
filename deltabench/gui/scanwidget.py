@@ -35,7 +35,7 @@ from deltabench.devices import (
 from imautils.db import database as _database
 import collections as _collections
 import natsort as _natsort
-import re
+import re as _re
 
 class ScanWidget(_ConfigurationWidget):
     """Scan widget class for the control application."""
@@ -1890,7 +1890,7 @@ class ScanWidget(_ConfigurationWidget):
         """ Remove leading and trailing white spaces from
             input string and remove more than 1 sequential
             spaces between words and numbers """
-        return re.sub(' +', ' ', text.strip())
+        return _re.sub(' +', ' ', text.strip())
 
     def configure_scan(self):
         self.clear()
@@ -2045,16 +2045,16 @@ class ScanWidget(_ConfigurationWidget):
                         symbolPen=self.colors[1],
                         symbolSize=4,
                         symbolBrush=self.colors[1],
-                        name='error')
+                        name='erro')
                 )
                 self.graph_x_probe_plots[-1].setData(
                     self.x_axis_x_probe, self.y_axis_x_probe_error
                 )
                 self.legend_x_probe.addItem(
-                    self.graph_x_probe_plots[-1], 'error'
+                    self.graph_x_probe_plots[-1], 'erro'
                 )
-            self.ui.pw_x_probe.setLabel('bottom', 'Block index')
-            self.ui.pw_x_probe.setLabel('left', 'Probe x [mm]')
+            self.ui.pw_x_probe.setLabel('bottom', 'Indice do bloco')
+            self.ui.pw_x_probe.setLabel('left', 'Posicao x [mm]')
             self.ui.pw_x_probe.showGrid(x=True, y=True)
             return True
 
@@ -2122,7 +2122,7 @@ class ScanWidget(_ConfigurationWidget):
                         symbolPen=self.colors[1],
                         symbolSize=4,
                         symbolBrush=self.colors[1],
-                        name='error')
+                        name='erro')
                 )
                 self.graph_y_probe_plots[-1].setData(
                     self.x_axis_y_probe, self.y_axis_y_probe_error
@@ -2130,8 +2130,8 @@ class ScanWidget(_ConfigurationWidget):
                 self.legend_y_probe.addItem(
                     self.graph_y_probe_plots[-1], 'erro'
                 )
-            self.ui.pw_y_probe.setLabel('bottom', 'Block index')
-            self.ui.pw_y_probe.setLabel('left', 'Probe z [mm]')
+            self.ui.pw_y_probe.setLabel('bottom', 'Indice do bloco')
+            self.ui.pw_y_probe.setLabel('left', 'Posicao y [mm]')
             self.ui.pw_y_probe.showGrid(x=True, y=True)
             return True
 
@@ -2185,8 +2185,8 @@ class ScanWidget(_ConfigurationWidget):
                 self.legend_hall.addItem(
                     self.graph_hall_plots[-1], 'hall'
                 )
-            self.ui.pw_hall.setLabel('bottom', 'Encoder Position')
-            self.ui.pw_hall.setLabel('left', 'Hall reading [V]')
+            self.ui.pw_hall.setLabel('bottom', 'Posicao Encoder')
+            self.ui.pw_hall.setLabel('left', 'Leitura Hall [V]')
             self.ui.pw_hall.showGrid(x=True, y=True)
             return True
 

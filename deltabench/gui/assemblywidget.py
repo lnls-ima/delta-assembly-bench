@@ -682,8 +682,6 @@ class AssemblyWidget(_QWidget):
             _traceback.print_exc(file=_sys.stdout)
             # stop motor
             self.stop_all_motors()
-#            # light button down
-#            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
             msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(
@@ -747,8 +745,6 @@ class AssemblyWidget(_QWidget):
             _traceback.print_exc(file=_sys.stdout)
             # stop motor
             self.stop_all_motors()
-#            # light button down
-#            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
             msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(
@@ -812,8 +808,6 @@ class AssemblyWidget(_QWidget):
             _traceback.print_exc(file=_sys.stdout)
             # stop motor
             self.stop_all_motors()
-#            # light button down
-#            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
             msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(
@@ -880,8 +874,6 @@ class AssemblyWidget(_QWidget):
             _traceback.print_exc(file=_sys.stdout)
             # stop motor
             self.stop_all_motors()
-#            # light button down
-#            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
             msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(
