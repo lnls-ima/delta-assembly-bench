@@ -2,6 +2,7 @@
 
 """Scan Measurement widget for the control application."""
 
+import os as _os
 import sys as _sys
 import numpy as _np
 import time as _time
@@ -14,6 +15,7 @@ from qtpy.QtWidgets import (
     QWidget as _QWidget,
     QMessageBox as _QMessageBox,
     QApplication as _QApplication,
+    QFileDialog as _QFileDialog,
     )
 from qtpy.QtCore import (
     Qt as _Qt,
@@ -36,6 +38,7 @@ from imautils.db import database as _database
 import collections as _collections
 import natsort as _natsort
 import re as _re
+import pandas as _pd
 
 class ScanWidget(_ConfigurationWidget):
     """Scan widget class for the control application."""
@@ -164,6 +167,11 @@ class ScanWidget(_ConfigurationWidget):
     @global_config.setter
     def global_config(self, value):
         _QApplication.instance().scan_config = value
+
+    @property
+    def directory(self):
+        """Return the default directory."""
+        return _QApplication.instance().directory
 
     @property
     def encoder_update_enabled(self):
@@ -2554,7 +2562,15 @@ class ScanWidget(_ConfigurationWidget):
                     # update progress bar
                     dlg.setValue(pgb_step * i)
 
-                return True
+            # ask user if data should be saved to excel file as well
+            msg = 'Salvar dados tambem em formato excel?'
+            reply = _QMessageBox.question(
+                self, 'Confirmacao', msg)
+            if reply == _QMessageBox.Yes:
+                # save ALL data related to scan_id to file
+                self.save_to_file(self.global_config.idn)
+
+            return True
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
@@ -2805,3 +2821,79 @@ class ScanWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             self.config.clear()
             return False
+
+
+    def save_to_file(self, scan_id):
+        try:
+
+            # lists of hall and block data columns
+            scan_cols = self.access_scan_data.db_get_field_names()
+            hall_cols = self.access_hall_data.db_get_field_names()
+            block_cols = self.access_block_data.db_get_field_names()
+
+            # create data frames for hall and block data
+            df_scan = _pd.DataFrame(columns=scan_cols)
+            df_hall = _pd.DataFrame(columns=hall_cols)
+            df_block = _pd.DataFrame(columns=block_cols)
+
+            # read data related to scan id from DB
+            scan_entries = self.access_scan_data.db_search_field('id', scan_id)
+            hall_entries = self.access_hall_data.db_search_field('scan_id', scan_id)
+            block_entries = self.access_block_data.db_search_field('scan_id', scan_id)
+
+            # store scan data into dataframe
+            for entry in scan_entries:
+                id = entry['id']
+                for key, value in entry.items():
+                    df_scan.at[id, key] = value
+
+            # store hall data into dataframe
+            for entry in hall_entries:
+                id = entry['id']
+                for key, value in entry.items():
+                    df_hall.at[id, key] = value
+
+            # store block data into dataframe
+            for entry in block_entries:
+                id = entry['id']
+                for key, value in entry.items():
+                    df_block.at[id, key] = value
+
+            # timestamp to use in filename
+            timestamp = _time.strftime(
+                '%Y-%m-%d_%H-%M-%S', _time.localtime()
+            )
+
+            # get scan description
+            measurement = scan_entries[0]['measurement_name']
+            undulator = scan_entries[0]['undulator_name']
+            cassette = scan_entries[0]['cassette_name']
+
+            default_filename = '{0}_{1}_{2}_{3}.xlsx'.format(
+                timestamp, measurement, undulator, cassette
+            )
+
+            filename = _QFileDialog.getSaveFileName(
+                self, caption='Save file',
+                directory=_os.path.join(self.directory, default_filename),
+                filter=" Microsoft Excel Open XML Spreadsheet (*.xlsx)")
+
+            if isinstance(filename, tuple):
+                filename = filename[0]
+
+            if len(filename) == 0:
+                return False
+
+            # write 3 data sheets in thee same file
+            with _pd.ExcelWriter(filename) as writer:  
+                df_scan.to_excel(writer, sheet_name='config', index=False)
+                df_hall.to_excel(writer, sheet_name='hall', index=False)
+                df_block.to_excel(writer, sheet_name='posicao', index=False)
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Falha ao tentar escrever arquivo Excel.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+            return False
+
+
