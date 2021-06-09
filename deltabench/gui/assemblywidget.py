@@ -90,29 +90,79 @@ class AssemblyWidget(_QWidget):
 
         # create dictionary of images for magnet orientations
         self.block_types = {}
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_1] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-BA.png')
+        # suffix indicating image of block reversed
+        self.PREFIX_REV = '-Rev'
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_1] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BA.png'
+                )
+            )
         )
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_2] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-BB.png')
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_2] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BB.png'
+                )
+            )
         )
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_3] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-BC.png')
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_3] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BC.png'
+                )
+            )
         )
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_4] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-TA.png')
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_4] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TA.png'
+                )
+            )
         )
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_5] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-TB.png')
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_5] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TB.png'
+                )
+            )
         )
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_6] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-TC.png')
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_6] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TC.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_1 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BA-Rev.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_2 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BB-Rev.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_3 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BC-Rev.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_4 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TA-Rev.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_5 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TB-Rev.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_6 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TC-Rev.png'
+                )
+            )
         )
         self.block_types['end'] = _QPixmap(
             _os.path.join('deltabench','resources', 'img',
@@ -468,11 +518,6 @@ class AssemblyWidget(_QWidget):
             # get block dictionary
             block = self.block_list[position]
 
-            # update image
-            block_type = block['tipo']
-            pixmap = self.block_types[block_type]
-            self.ui.la_block_image.setPixmap(pixmap)
-
             # update flip status text and LED
             flip = block[_utils.BLOCK_FLIP_BOOL_COLUMN_TITLE]
             if flip == '0':
@@ -483,6 +528,14 @@ class AssemblyWidget(_QWidget):
                 self.ui.la_flip_block_msg.setText('Direcao Invertida!')
                 self.ui.la_flip_block_img.setPixmap(self.led_images['red'])
                 self.ui.la_flip_block_img.setEnabled(True)
+
+            # update image
+            block_type = block['tipo']
+            if flip == '1':
+                pixmap = self.block_types[block_type + self.PREFIX_REV]
+            else:
+                pixmap = self.block_types[block_type]
+            self.ui.la_block_image.setPixmap(pixmap)
 
             # update name
             name = block[_utils.BLOCK_NAME_COLUMN_TITLE]
