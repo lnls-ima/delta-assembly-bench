@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>wg_scan</class>
  <widget class="QWidget" name="wg_scan">
@@ -161,7 +161,7 @@
          </widget>
         </item>
         <item row="5" column="0" colspan="2">
-         <widget class="PlotWidget" name="pw_z_probe">
+         <widget class="PlotWidget" name="pw_y_probe">
           <property name="backgroundBrush">
            <brush brushstyle="SolidPattern">
             <color alpha="255">
@@ -350,7 +350,7 @@
              </widget>
             </item>
             <item>
-             <widget class="QLabel" name="la_z_probe_summary">
+             <widget class="QLabel" name="la_y_probe_summary">
               <property name="text">
                <string>-</string>
               </property>

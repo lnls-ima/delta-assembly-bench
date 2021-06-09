@@ -682,7 +682,7 @@ class MeasurementWidget(_ConfigurationWidget):
             if _math.isnan(readings[0]):
                 # clear probe data on gui
                 self.ui.lcd_x_position.display('')
-                self.ui.lcd_z_position.display('')
+                self.ui.lcd_y_position.display('')
                 self.ui.lcd_linear_encoder_position.display('')
                 # show error
                 msg = 'Falha ao tentar ler display.'
@@ -692,7 +692,7 @@ class MeasurementWidget(_ConfigurationWidget):
                 return False
             # update probe data on gui
             self.ui.lcd_x_position.display(readings[0])
-            self.ui.lcd_z_position.display(readings[1])
+            self.ui.lcd_y_position.display(readings[1])
             self.ui.lcd_linear_encoder_position.display(readings[2])
             return True
         except Exception:
@@ -898,8 +898,8 @@ class MeasurementWidget(_ConfigurationWidget):
             # search block data
             block_data = self.access_block_data.db_search_collection(
                 fields=['scan_id', 'block_number', 'x_position',
-                        'x_position_error', 'z_position',
-                        'z_position_error', 'encoder_position'
+                        'x_position_error', 'y_position',
+                        'y_position_error', 'encoder_position'
                 ],
                 filters=[scan_id, block, '', '', '', '', ''
                 ]
@@ -908,8 +908,8 @@ class MeasurementWidget(_ConfigurationWidget):
             # update displays
             self.ui.lcd_stored_x_position.display(block_data['x_position'])
             self.ui.lcd_stored_x_position_error.display(block_data['x_position_error'])
-            self.ui.lcd_stored_z_position.display(block_data['z_position'])
-            self.ui.lcd_stored_z_position_error.display(block_data['z_position_error'])
+            self.ui.lcd_stored_y_position.display(block_data['y_position'])
+            self.ui.lcd_stored_y_position_error.display(block_data['y_position_error'])
             self.ui.lcd_stored_encoder_position.display(block_data['encoder_position'])
 #            # update block direction image
 #            block_direction = block_data['block_direction']
@@ -937,8 +937,8 @@ class MeasurementWidget(_ConfigurationWidget):
             # clear displays
             self.ui.lcd_stored_x_position.display('')
             self.ui.lcd_stored_x_position_error.display('')
-            self.ui.lcd_stored_z_position.display('')
-            self.ui.lcd_stored_z_position_error.display('')
+            self.ui.lcd_stored_y_position.display('')
+            self.ui.lcd_stored_y_position_error.display('')
             self.ui.lcd_stored_encoder_position.display('')
 #            self.ui.la_magnet_direction.setPixmap(
 #                self.direction_images['none']

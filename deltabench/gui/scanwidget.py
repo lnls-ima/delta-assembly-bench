@@ -96,16 +96,16 @@ class ScanWidget(_ConfigurationWidget):
 
         # lists of plots
         self.graph_x_probe_plots = []
-        self.graph_z_probe_plots = []
+        self.graph_y_probe_plots = []
         self.graph_hall_plots = []
 
         # lists of data for plots
         self.x_axis_x_probe = []
         self.y_axis_x_probe = []
         self.y_axis_x_probe_error = []
-        self.x_axis_z_probe = []
-        self.y_axis_z_probe = []
-        self.y_axis_z_probe_error = []
+        self.x_axis_y_probe = []
+        self.y_axis_y_probe = []
+        self.y_axis_y_probe_error = []
         self.x_axis_hall = []
         self.y_axis_hall = []
 
@@ -115,8 +115,8 @@ class ScanWidget(_ConfigurationWidget):
         self.encoder_sample_list_for_hall = []
         self.x_probe_sample_list = []
         self.x_probe_sample_error_list = []
-        self.z_probe_sample_list = []
-        self.z_probe_sample_error_list = []
+        self.y_probe_sample_list = []
+        self.y_probe_sample_error_list = []
         self.block_number_list = []
         self.encoder_sample_list_for_probes = []
 #        self.block_direction_list = []
@@ -132,11 +132,11 @@ class ScanWidget(_ConfigurationWidget):
         )
         self.legend_x_probe.setAutoFillBackground(1)
 
-        self.legend_z_probe = _pyqtgraph.LegendItem(offset=(70, 30))
-        self.legend_z_probe.setParentItem(
-            self.ui.pw_z_probe.graphicsItem()
+        self.legend_y_probe = _pyqtgraph.LegendItem(offset=(70, 30))
+        self.legend_y_probe.setParentItem(
+            self.ui.pw_y_probe.graphicsItem()
         )
-        self.legend_z_probe.setAutoFillBackground(1)
+        self.legend_y_probe.setAutoFillBackground(1)
 
         self.legend_hall = _pyqtgraph.LegendItem(offset=(70, 30))
         self.legend_hall.setParentItem(
@@ -684,7 +684,7 @@ class ScanWidget(_ConfigurationWidget):
                         break
                 # store probe measurements
                 self.x_probe_sample_list.append(readings[0])
-                self.z_probe_sample_list.append(readings[1])
+                self.y_probe_sample_list.append(readings[1])
                 self.encoder_sample_list_for_probes.append(last_enc_pos)
                 # deactivate pneumatic actuator
                 _driver.set_output_1_low(driver_address)
@@ -704,21 +704,21 @@ class ScanWidget(_ConfigurationWidget):
 
                 # calculate error for each sample
                 x_ref = 0
-                z_ref = 0
+                y_ref = 0
                 for x_sample in self.x_probe_sample_list:
                     self.x_probe_sample_error_list.append(x_sample - x_ref)
-                for z_sample in self.z_probe_sample_list:
-                    self.z_probe_sample_error_list.append(z_sample - z_ref)
+                for y_sample in self.y_probe_sample_list:
+                    self.y_probe_sample_error_list.append(y_sample - y_ref)
 
                 status &= self.update_graph_x_probe(
                     self.block_number_list,
                     self.x_probe_sample_list,
                     self.x_probe_sample_error_list
                 )
-                status &= self.update_graph_z_probe(
+                status &= self.update_graph_y_probe(
                     self.block_number_list,
-                    self.z_probe_sample_list,
-                    self.z_probe_sample_error_list
+                    self.y_probe_sample_list,
+                    self.y_probe_sample_error_list
                 )
 
                 # ask user if want to save right now
@@ -929,7 +929,7 @@ class ScanWidget(_ConfigurationWidget):
 #                            break
 #                    # store probe measurements
 #                    self.x_probe_sample_list.append(readings[0])
-#                    self.z_probe_sample_list.append(readings[1])
+#                    self.y_probe_sample_list.append(readings[1])
 #                    self.encoder_sample_list_for_probes.append(last_enc_pos)
 #                    # deactivate pneumatic actuator
 #                    _driver.set_output_1_low(driver_address)
@@ -949,21 +949,21 @@ class ScanWidget(_ConfigurationWidget):
 #
 #            # calculate error for each sample
 #            x_ref = 0
-#            z_ref = 0
+#            y_ref = 0
 #            for x_sample in self.x_probe_sample_list:
 #                self.x_probe_sample_error_list.append(x_sample - x_ref)
-#            for z_sample in self.z_probe_sample_list:
-#                self.z_probe_sample_error_list.append(z_sample - z_ref)
+#            for y_sample in self.y_probe_sample_list:
+#                self.y_probe_sample_error_list.append(y_sample - y_ref)
 #
 #            self.update_graph_x_probe(
 #                self.block_number_list,
 #                self.x_probe_sample_list,
 #                self.x_probe_sample_error_list
 #            )
-#            self.update_graph_z_probe(
+#            self.update_graph_y_probe(
 #                self.block_number_list,
-#                self.z_probe_sample_list,
-#                self.z_probe_sample_error_list
+#                self.y_probe_sample_list,
+#                self.y_probe_sample_error_list
 #            )
 #            self.update_graph_hall(
 #                self.encoder_sample_list_for_hall,
@@ -1323,7 +1323,7 @@ class ScanWidget(_ConfigurationWidget):
                     )
             # store probe measurements
             self.x_probe_sample_list.append(readings[0])
-            self.z_probe_sample_list.append(readings[1])
+            self.y_probe_sample_list.append(readings[1])
             self.encoder_sample_list_for_probes.append(last_enc_pos)
             # deactivate pneumatic actuator
             _driver.set_output_1_low(driver_address)
@@ -1497,7 +1497,7 @@ class ScanWidget(_ConfigurationWidget):
                         break
                 # store probe measurements
                 self.x_probe_sample_list.append(readings[0])
-                self.z_probe_sample_list.append(readings[1])
+                self.y_probe_sample_list.append(readings[1])
                 self.encoder_sample_list_for_probes.append(last_enc_pos)
                 # deactivate pneumatic actuator
                 _driver.set_output_1_low(driver_address)
@@ -1651,21 +1651,21 @@ class ScanWidget(_ConfigurationWidget):
 
                 # calculate error for each sample
                 x_ref = 0
-                z_ref = 0
+                y_ref = 0
                 for x_sample in self.x_probe_sample_list:
                     self.x_probe_sample_error_list.append(x_sample - x_ref)
-                for z_sample in self.z_probe_sample_list:
-                    self.z_probe_sample_error_list.append(z_sample - z_ref)
+                for y_sample in self.y_probe_sample_list:
+                    self.y_probe_sample_error_list.append(y_sample - y_ref)
 
                 status &= self.update_graph_x_probe(
                     self.block_number_list,
                     self.x_probe_sample_list,
                     self.x_probe_sample_error_list
                 )
-                status &= self.update_graph_z_probe(
+                status &= self.update_graph_y_probe(
                     self.block_number_list,
-                    self.z_probe_sample_list,
-                    self.z_probe_sample_error_list
+                    self.y_probe_sample_list,
+                    self.y_probe_sample_error_list
                 )
 
                 # fetch readings from multimeter
@@ -1820,24 +1820,24 @@ class ScanWidget(_ConfigurationWidget):
         self.y_axis_x_probe_error = []
         return True
 
-    def clear_z_probe_graph_only(self):
+    def clear_y_probe_graph_only(self):
         """ Clear data from ui probe z graph """
-        self.ui.pw_z_probe.plotItem.curves.clear()
-        self.legend_z_probe.clear()
-        self.ui.pw_z_probe.clear()
+        self.ui.pw_y_probe.plotItem.curves.clear()
+        self.legend_y_probe.clear()
+        self.ui.pw_y_probe.clear()
 
         # list of plots
-        self.graph_z_probe_plots = []
+        self.graph_y_probe_plots = []
         return True
 
-    def clear_z_probe_graph_and_data(self):
+    def clear_y_probe_graph_and_data(self):
         """ Clear data from ui probe z graph and global data """
-        self.clear_z_probe_graph_only()
+        self.clear_y_probe_graph_only()
 
         # lists of data for plots
-        self.x_axis_z_probe = []
-        self.y_axis_z_probe = []
-        self.y_axis_z_probe_error = []
+        self.x_axis_y_probe = []
+        self.y_axis_y_probe = []
+        self.y_axis_y_probe_error = []
         return True
 
 
@@ -1864,7 +1864,7 @@ class ScanWidget(_ConfigurationWidget):
         """ Clear data from ui graphs and their global data """
         # clear data
         self.clear_x_probe_graph_and_data()
-        self.clear_z_probe_graph_and_data()
+        self.clear_y_probe_graph_and_data()
         self.clear_hall_graph_and_data()
         return True
 
@@ -1877,8 +1877,8 @@ class ScanWidget(_ConfigurationWidget):
         self.encoder_sample_list_for_hall = []
         self.x_probe_sample_list = []
         self.x_probe_sample_error_list = []
-        self.z_probe_sample_list = []
-        self.z_probe_sample_error_list = []
+        self.y_probe_sample_list = []
+        self.y_probe_sample_error_list = []
         self.block_number_list = []
 #        self.block_direction_list = []
         self.encoder_sample_list_for_probes = []
@@ -1983,7 +1983,7 @@ class ScanWidget(_ConfigurationWidget):
     def update_graphs_lines_visibility(self):
         """ Update graphs without changing data """
         self.update_graph_x_probe([],[],[])
-        self.update_graph_z_probe([],[],[])
+        self.update_graph_y_probe([],[],[])
         self.update_graph_hall([],[])
         return True
 
@@ -2064,38 +2064,38 @@ class ScanWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
-    def update_graph_z_probe(self, x_axis_z_probe, y_axis_z_probe,
-                              y_axis_z_probe_error):
+    def update_graph_y_probe(self, x_axis_y_probe, y_axis_y_probe,
+                              y_axis_y_probe_error):
         """ Update plots with the data provided. If y axis data, besides
             error data, is empty, keep the associated plot as is """
         try:
             # update global plot data
-            if len(y_axis_z_probe) > 0:
+            if len(y_axis_y_probe) > 0:
                 # clear graph and data
-                self.clear_z_probe_graph_and_data()
-                self.x_axis_z_probe = x_axis_z_probe
-                self.y_axis_z_probe = y_axis_z_probe
-                self.y_axis_z_probe_error = y_axis_z_probe_error
+                self.clear_y_probe_graph_and_data()
+                self.x_axis_y_probe = x_axis_y_probe
+                self.y_axis_y_probe = y_axis_y_probe
+                self.y_axis_y_probe_error = y_axis_y_probe_error
                 # update summary
-                avg = _statistics.mean(y_axis_z_probe)
-                if len(y_axis_z_probe) > 1:
-                    std = _statistics.stdev(y_axis_z_probe)
+                avg = _statistics.mean(y_axis_y_probe)
+                if len(y_axis_y_probe) > 1:
+                    std = _statistics.stdev(y_axis_y_probe)
                 else:
                     std = 0
-                minx = min(y_axis_z_probe)
-                maxx = max(y_axis_z_probe)
+                minx = min(y_axis_y_probe)
+                maxx = max(y_axis_y_probe)
                 summary = (
-                    "Z Pos: "
+                    "Y Pos: "
                     "avg={0:.3f} std={1:.3f} min={2:.3f} max={3:.3f}"
                 )
                 summary = summary.format(avg, std, minx, maxx)
-                self.ui.la_z_probe_summary.setText(summary)
+                self.ui.la_y_probe_summary.setText(summary)
             else:
-                self.clear_z_probe_graph_only()
+                self.clear_y_probe_graph_only()
             # check if should plot data
             if self.ui.chb_show_samples.isChecked():
-                self.graph_z_probe_plots.append(
-                    self.ui.pw_z_probe.plotItem.plot(
+                self.graph_y_probe_plots.append(
+                    self.ui.pw_y_probe.plotItem.plot(
                         _np.array([]),
                         _np.array([]),
                         pen=self.colors[0],
@@ -2103,18 +2103,18 @@ class ScanWidget(_ConfigurationWidget):
                         symbolPen=self.colors[0],
                         symbolSize=4,
                         symbolBrush=self.colors[0],
-                        name='z')
+                        name='y')
                 )
-                self.graph_z_probe_plots[-1].setData(
-                    self.x_axis_z_probe, self.y_axis_z_probe
+                self.graph_y_probe_plots[-1].setData(
+                    self.x_axis_y_probe, self.y_axis_y_probe
                 )
-                self.legend_z_probe.addItem(
-                    self.graph_z_probe_plots[-1], 'z'
+                self.legend_y_probe.addItem(
+                    self.graph_y_probe_plots[-1], 'y'
                 )
             # check if should plot error
             if self.ui.chb_show_error.isChecked():
-                self.graph_z_probe_plots.append(
-                    self.ui.pw_z_probe.plotItem.plot(
+                self.graph_y_probe_plots.append(
+                    self.ui.pw_y_probe.plotItem.plot(
                         _np.array([]),
                         _np.array([]),
                         pen=self.colors[1],
@@ -2124,15 +2124,15 @@ class ScanWidget(_ConfigurationWidget):
                         symbolBrush=self.colors[1],
                         name='error')
                 )
-                self.graph_z_probe_plots[-1].setData(
-                    self.x_axis_z_probe, self.y_axis_z_probe_error
+                self.graph_y_probe_plots[-1].setData(
+                    self.x_axis_y_probe, self.y_axis_y_probe_error
                 )
-                self.legend_z_probe.addItem(
-                    self.graph_z_probe_plots[-1], 'error'
+                self.legend_y_probe.addItem(
+                    self.graph_y_probe_plots[-1], 'erro'
                 )
-            self.ui.pw_z_probe.setLabel('bottom', 'Block index')
-            self.ui.pw_z_probe.setLabel('left', 'Probe z [mm]')
-            self.ui.pw_z_probe.showGrid(x=True, y=True)
+            self.ui.pw_y_probe.setLabel('bottom', 'Block index')
+            self.ui.pw_y_probe.setLabel('left', 'Probe z [mm]')
+            self.ui.pw_y_probe.showGrid(x=True, y=True)
             return True
 
         except Exception:
@@ -2370,8 +2370,8 @@ class ScanWidget(_ConfigurationWidget):
         encoder_data_probe = []
         x_probe_data = []
         x_probe_error_data = []
-        z_probe_data = []
-        z_probe_error_data = []
+        y_probe_data = []
+        y_probe_error_data = []
         encoder_data_hall = []
         hall_data = []
         hall_data_index = []
@@ -2424,7 +2424,7 @@ class ScanWidget(_ConfigurationWidget):
         # read position probe data from DB
         elem_list = self.access_block_data.db_search_collection(
             fields=['scan_id', 'block_number', 'x_position',
-                    'x_position_error', 'z_position', 'z_position_error',
+                    'x_position_error', 'y_position', 'y_position_error',
                     'encoder_position'
             ],
             filters=[scan_id, '', '', '', '', '', ''
@@ -2439,18 +2439,18 @@ class ScanWidget(_ConfigurationWidget):
                 encoder_data_probe.append(elem['encoder_position'])
                 x_probe_data.append(elem['x_position'])
                 x_probe_error_data.append(elem['x_position_error'])
-                z_probe_data.append(elem['z_position'])
-                z_probe_error_data.append(elem['z_position_error'])
+                y_probe_data.append(elem['y_position'])
+                y_probe_error_data.append(elem['y_position_error'])
             # plot position probe data
             self.update_graph_x_probe(
                                block_numbers,
                                x_probe_data,
                                x_probe_error_data
             )
-            self.update_graph_z_probe(
+            self.update_graph_y_probe(
                                block_numbers,
-                               z_probe_data,
-                               z_probe_error_data
+                               y_probe_data,
+                               y_probe_error_data
             )
         return True
 
@@ -2541,8 +2541,8 @@ class ScanWidget(_ConfigurationWidget):
 #                    self.block_data.block_direction = self.block_direction_list[i]
                     self.block_data.x_position = self.x_probe_sample_list[i]
                     self.block_data.x_position_error = self.x_probe_sample_error_list[i]
-                    self.block_data.z_position = self.z_probe_sample_list[i]
-                    self.block_data.z_position_error = self.z_probe_sample_error_list[i]
+                    self.block_data.y_position = self.y_probe_sample_list[i]
+                    self.block_data.y_position_error = self.y_probe_sample_error_list[i]
                     self.block_data.encoder_position = self.encoder_sample_list_for_probes[i]
                     self.block_data.db_update_database(
                         self.database_name, mongo=self.mongo,

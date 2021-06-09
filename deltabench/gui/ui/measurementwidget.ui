@@ -135,7 +135,7 @@
        </widget>
       </item>
       <item row="11" column="2" colspan="2">
-       <widget class="QLCDNumber" name="lcd_stored_z_position_error">
+       <widget class="QLCDNumber" name="lcd_stored_y_position_error">
         <property name="maximumSize">
          <size>
           <width>16777215</width>
@@ -284,7 +284,7 @@
        </widget>
       </item>
       <item row="10" column="2" colspan="2">
-       <widget class="QLCDNumber" name="lcd_stored_z_position">
+       <widget class="QLCDNumber" name="lcd_stored_y_position">
         <property name="maximumSize">
          <size>
           <width>16777215</width>
@@ -1029,7 +1029,7 @@
        </widget>
       </item>
       <item row="9" column="1" colspan="2">
-       <widget class="QLCDNumber" name="lcd_z_position">
+       <widget class="QLCDNumber" name="lcd_y_position">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
