@@ -90,29 +90,79 @@ class AssemblyWidget(_QWidget):
 
         # create dictionary of images for magnet orientations
         self.block_types = {}
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_1] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-BA.png')
+        # suffix indicating image of block reversed
+        self.PREFIX_REV = '-Rev'
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_1] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BA.png'
+                )
+            )
         )
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_2] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-BB.png')
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_2] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BB.png'
+                )
+            )
         )
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_3] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-BC.png')
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_3] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BC.png'
+                )
+            )
         )
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_4] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-TA.png')
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_4] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TA.png'
+                )
+            )
         )
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_5] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-TB.png')
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_5] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TB.png'
+                )
+            )
         )
-        self.block_types[_utils.PREFIX_BLOCK_TYPE_6] = _QPixmap(
-            _os.path.join('deltabench','resources', 'img',
-                         'Block-TC.png')
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_6] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TC.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_1 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BA-Rev.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_2 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BB-Rev.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_3 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-BC-Rev.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_4 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TA-Rev.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_5 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TB-Rev.png'
+                )
+            )
+        )
+        self.block_types[_utils.PREFIX_BLOCK_TYPE_6 + self.PREFIX_REV] = (
+            _QPixmap(_os.path.join(
+                'deltabench','resources', 'img', 'Block-TC-Rev.png'
+                )
+            )
         )
         self.block_types['end'] = _QPixmap(
             _os.path.join('deltabench','resources', 'img',
@@ -262,6 +312,8 @@ class AssemblyWidget(_QWidget):
                 # assign filename and cassette to DB entry object
                 self.assembly_data.filename = filename
                 self.assembly_data.cassette = cassette
+                # assign dummy last position to DB entry object
+                self.assembly_data.last_position = -1
                 # make sure we are pointing to the right DB
                 self.assembly_data.db_update_database(
                     database_name=self.database_name,
@@ -273,15 +325,18 @@ class AssemblyWidget(_QWidget):
                 # store entry id
                 self.assembly_id = entry_list[0]['id']
                 # set position to last position + 1
-                if entry_list[0]['last_position'] is None:
-                    self.list_position = 0
-                else:
-                    self.list_position = (
-                        entry_list[0]['last_position'] + 1
-                    )
+                self.list_position = (
+                    entry_list[0]['last_position'] + 1
+                )
 
             # read file and store block list
             self.read_file(filename, cassette)
+
+            # check if list is empty
+            if self.block_count == 0:
+                raise RuntimeError(
+                    'File has zero valid lines.'
+                )
 
             # check if initial position in within list
             if self.list_position > self.block_count:
@@ -389,13 +444,13 @@ class AssemblyWidget(_QWidget):
             and disable/enable navigation push buttons
             as necessary. """
         # check lower limit
-        if self.list_position == 0:
+        if self.list_position <= 0:
             self.ui.pbt_previous.setEnabled(False)
         else:
             self.ui.pbt_previous.setEnabled(True)
 
         # check upper limit
-        if self.list_position == self.block_count:
+        if self.list_position >= self.block_count:
             self.ui.pbt_next.setEnabled(False)
         else:
             self.ui.pbt_next.setEnabled(True)
@@ -408,16 +463,21 @@ class AssemblyWidget(_QWidget):
 
     def show_previous(self):
         """ Show previous block in list on GUI """
-        # first decrement to display the previous block
-        self.list_position -= 1
-        # update display
-        self.display_block_data(self.list_position)
-        # then decrement again since displayed block should
-        # still be assembled
-        self.list_position -= 1
-        # then save
-        self.update_db_with_curr_state()
-        return True
+
+        if (self.block_count > 0 and self.list_position > 0):
+            # first decrement 2 positions and update 'last position'
+            # in DB
+            self.list_position -= 2
+            # save to DB as last assembled position
+            self.update_db_with_curr_state()
+            # increment position and update display
+            self.list_position += 1
+            self.display_block_data(self.list_position)
+            return True
+        else:
+            msg = 'Posicao anterior invalida.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+            return False
 
     def show_next(self):
         """ Show next block in list on GUI """
@@ -459,7 +519,7 @@ class AssemblyWidget(_QWidget):
                 # update navigation buttons
                 self.update_navigation_buttons_state()
                 # show end of assembly message
-                msg = 'Montagem do Cassete finalizada.'
+                msg = 'Montagem do Subcassete finalizada.'
                 _QMessageBox.information(
                     self, 'Finalizado', msg, _QMessageBox.Ok
                 )
@@ -467,11 +527,6 @@ class AssemblyWidget(_QWidget):
 
             # get block dictionary
             block = self.block_list[position]
-
-            # update image
-            block_type = block['tipo']
-            pixmap = self.block_types[block_type]
-            self.ui.la_block_image.setPixmap(pixmap)
 
             # update flip status text and LED
             flip = block[_utils.BLOCK_FLIP_BOOL_COLUMN_TITLE]
@@ -483,6 +538,14 @@ class AssemblyWidget(_QWidget):
                 self.ui.la_flip_block_msg.setText('Direcao Invertida!')
                 self.ui.la_flip_block_img.setPixmap(self.led_images['red'])
                 self.ui.la_flip_block_img.setEnabled(True)
+
+            # update image
+            block_type = block['tipo']
+            if flip == '1':
+                pixmap = self.block_types[block_type + self.PREFIX_REV]
+            else:
+                pixmap = self.block_types[block_type]
+            self.ui.la_block_image.setPixmap(pixmap)
 
             # update name
             name = block[_utils.BLOCK_NAME_COLUMN_TITLE]
@@ -619,8 +682,6 @@ class AssemblyWidget(_QWidget):
             _traceback.print_exc(file=_sys.stdout)
             # stop motor
             self.stop_all_motors()
-#            # light button down
-#            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
             msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(
@@ -684,8 +745,6 @@ class AssemblyWidget(_QWidget):
             _traceback.print_exc(file=_sys.stdout)
             # stop motor
             self.stop_all_motors()
-#            # light button down
-#            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
             msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(
@@ -749,8 +808,6 @@ class AssemblyWidget(_QWidget):
             _traceback.print_exc(file=_sys.stdout)
             # stop motor
             self.stop_all_motors()
-#            # light button down
-#            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
             msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(
@@ -817,8 +874,6 @@ class AssemblyWidget(_QWidget):
             _traceback.print_exc(file=_sys.stdout)
             # stop motor
             self.stop_all_motors()
-#            # light button down
-#            self.set_all_motion_pbt_stylesheet(self.button_off_stylesheet)
             # show error message dialog
             msg = 'Falha ao enviar configuracao para motor.'
             _QMessageBox.critical(

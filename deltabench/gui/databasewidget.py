@@ -147,7 +147,7 @@ class DatabaseWidget(_QWidget):
 #                attrs = [
 #                    'date', 'hour', 'measurement_name', 'undulator_name',
 #                    'cassette_name', 'block_number', 'x_position',
-#                    'x_position_error', 'z_position', 'z_position_error',
+#                    'x_position_error', 'y_position', 'y_position_error',
 #                    'encoder_position'
 #                    ]
 #                df = _pd.DataFrame(columns=attrs)

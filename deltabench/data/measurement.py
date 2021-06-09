@@ -35,8 +35,8 @@ class BlockData(_database.DatabaseAndFileDocument):
         ('block_number', {'dtype': int, 'not_null': True}),
         ('x_position', {'dtype': float, 'not_null': True}),
         ('x_position_error', {'dtype': float, 'not_null': True}),
-        ('z_position', {'dtype': float, 'not_null': True}),
-        ('z_position_error', {'dtype': float, 'not_null': True}),
+        ('y_position', {'dtype': float, 'not_null': True}),
+        ('y_position_error', {'dtype': float, 'not_null': True}),
         ('encoder_position', {'dtype': float, 'not_null': True}),
     ])
 

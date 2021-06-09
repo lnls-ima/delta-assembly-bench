@@ -2,6 +2,7 @@
 
 """Scan Measurement widget for the control application."""
 
+import os as _os
 import sys as _sys
 import numpy as _np
 import time as _time
@@ -14,6 +15,7 @@ from qtpy.QtWidgets import (
     QWidget as _QWidget,
     QMessageBox as _QMessageBox,
     QApplication as _QApplication,
+    QFileDialog as _QFileDialog,
     )
 from qtpy.QtCore import (
     Qt as _Qt,
@@ -35,7 +37,8 @@ from deltabench.devices import (
 from imautils.db import database as _database
 import collections as _collections
 import natsort as _natsort
-import re
+import re as _re
+import pandas as _pd
 
 class ScanWidget(_ConfigurationWidget):
     """Scan widget class for the control application."""
@@ -96,16 +99,16 @@ class ScanWidget(_ConfigurationWidget):
 
         # lists of plots
         self.graph_x_probe_plots = []
-        self.graph_z_probe_plots = []
+        self.graph_y_probe_plots = []
         self.graph_hall_plots = []
 
         # lists of data for plots
         self.x_axis_x_probe = []
         self.y_axis_x_probe = []
         self.y_axis_x_probe_error = []
-        self.x_axis_z_probe = []
-        self.y_axis_z_probe = []
-        self.y_axis_z_probe_error = []
+        self.x_axis_y_probe = []
+        self.y_axis_y_probe = []
+        self.y_axis_y_probe_error = []
         self.x_axis_hall = []
         self.y_axis_hall = []
 
@@ -115,8 +118,8 @@ class ScanWidget(_ConfigurationWidget):
         self.encoder_sample_list_for_hall = []
         self.x_probe_sample_list = []
         self.x_probe_sample_error_list = []
-        self.z_probe_sample_list = []
-        self.z_probe_sample_error_list = []
+        self.y_probe_sample_list = []
+        self.y_probe_sample_error_list = []
         self.block_number_list = []
         self.encoder_sample_list_for_probes = []
 #        self.block_direction_list = []
@@ -132,11 +135,11 @@ class ScanWidget(_ConfigurationWidget):
         )
         self.legend_x_probe.setAutoFillBackground(1)
 
-        self.legend_z_probe = _pyqtgraph.LegendItem(offset=(70, 30))
-        self.legend_z_probe.setParentItem(
-            self.ui.pw_z_probe.graphicsItem()
+        self.legend_y_probe = _pyqtgraph.LegendItem(offset=(70, 30))
+        self.legend_y_probe.setParentItem(
+            self.ui.pw_y_probe.graphicsItem()
         )
-        self.legend_z_probe.setAutoFillBackground(1)
+        self.legend_y_probe.setAutoFillBackground(1)
 
         self.legend_hall = _pyqtgraph.LegendItem(offset=(70, 30))
         self.legend_hall.setParentItem(
@@ -164,6 +167,11 @@ class ScanWidget(_ConfigurationWidget):
     @global_config.setter
     def global_config(self, value):
         _QApplication.instance().scan_config = value
+
+    @property
+    def directory(self):
+        """Return the default directory."""
+        return _QApplication.instance().directory
 
     @property
     def encoder_update_enabled(self):
@@ -271,9 +279,16 @@ class ScanWidget(_ConfigurationWidget):
             block_center = hall_step_count / 2
             hall_step = float(block_step / hall_step_count)
             block_count = self.ui.sb_scan_nr_blocks.value()
-            total_hall_count = hall_step_count * block_count
-            block_list = range(
-                start_block_idx, start_block_idx + block_count
+
+            hall_margin_before = _math.floor(
+                self.ui.sbd_margin_hall_before.value() / hall_step
+            )
+            hall_margin_after = _math.floor(
+                self.ui.sbd_margin_hall_after.value() / hall_step
+            )
+            # sum all hall samples per block plus left and right margins
+            total_hall_count = (
+                hall_step_count * block_count + hall_margin_before + hall_margin_after
             )
 
             if total_hall_count > 512:
@@ -295,7 +310,7 @@ class ScanWidget(_ConfigurationWidget):
                 0.5 * acceleration * t_acc * t_acc * linear_conversion
             )
             # add a constant to account for driver reaction time
-            t_acc_total = t_acc
+            t_acc_total = t_acc + 0
 
             # time between hall points
             t_hall = hall_step / (hall_scan_velocity * linear_conversion)
@@ -346,6 +361,7 @@ class ScanWidget(_ConfigurationWidget):
             scan_beginning = (
                 first_block_position
                 + (start_block_idx - 1) * block_step
+                - hall_margin_before * hall_step
                 - acc_distance
             )
 
@@ -364,6 +380,7 @@ class ScanWidget(_ConfigurationWidget):
                 target_position = (
                     scan_beginning
                     + block_count*block_step
+                    + (hall_margin_before + hall_margin_after)*hall_step
                     + 2 * acc_distance
                 )
 
@@ -478,7 +495,7 @@ class ScanWidget(_ConfigurationWidget):
                 )
                 # store data to save (encoder data is already stored)
                 self.hall_sample_list = self.hall_sample_list + readings
-                first_hall = (start_block_idx - 1) * hall_step_count + 1
+                first_hall = (start_block_idx - 1) * hall_step_count + 1 - hall_margin_before
                 self.hall_sample_index_list = (
                     self.hall_sample_index_list
                     + list(
@@ -490,6 +507,12 @@ class ScanWidget(_ConfigurationWidget):
                     self.encoder_sample_list_for_hall,
                     self.hall_sample_list
                 )
+                # ask user if want to save right now
+                msg = 'Deseja salvar varredura?'
+                reply = _QMessageBox.question(
+                    self, 'Confirmacao', msg)
+                if reply == _QMessageBox.Yes:
+                    self.save_data_to_db()
 
             # re-enable start scan buttons
             self.ui.pbt_start_hall_scan.setEnabled(True)
@@ -669,7 +692,7 @@ class ScanWidget(_ConfigurationWidget):
                         break
                 # store probe measurements
                 self.x_probe_sample_list.append(readings[0])
-                self.z_probe_sample_list.append(readings[1])
+                self.y_probe_sample_list.append(readings[1])
                 self.encoder_sample_list_for_probes.append(last_enc_pos)
                 # deactivate pneumatic actuator
                 _driver.set_output_1_low(driver_address)
@@ -689,22 +712,29 @@ class ScanWidget(_ConfigurationWidget):
 
                 # calculate error for each sample
                 x_ref = 0
-                z_ref = 0
+                y_ref = 0
                 for x_sample in self.x_probe_sample_list:
                     self.x_probe_sample_error_list.append(x_sample - x_ref)
-                for z_sample in self.z_probe_sample_list:
-                    self.z_probe_sample_error_list.append(z_sample - z_ref)
+                for y_sample in self.y_probe_sample_list:
+                    self.y_probe_sample_error_list.append(y_sample - y_ref)
 
                 status &= self.update_graph_x_probe(
                     self.block_number_list,
                     self.x_probe_sample_list,
                     self.x_probe_sample_error_list
                 )
-                status &= self.update_graph_z_probe(
+                status &= self.update_graph_y_probe(
                     self.block_number_list,
-                    self.z_probe_sample_list,
-                    self.z_probe_sample_error_list
+                    self.y_probe_sample_list,
+                    self.y_probe_sample_error_list
                 )
+
+                # ask user if want to save right now
+                msg = 'Deseja salvar varredura?'
+                reply = _QMessageBox.question(
+                    self, 'Confirmacao', msg)
+                if reply == _QMessageBox.Yes:
+                    self.save_data_to_db()
 
             # re-enable start scan buttons
             self.ui.pbt_start_hall_scan.setEnabled(True)
@@ -738,9 +768,238 @@ class ScanWidget(_ConfigurationWidget):
             self.encoder_update_enabled = True
             return False
 
+#    def start_complete_scan(self):
+#        """ Start scan along undulator magnets. Motion is done in small
+#            steps and data is acquired at each temporary stop.
+#
+#            Return value: True if success, False otherwise. """
+#        # clear stop flag
+#        self.stop_sent = False
+#
+#        # success status
+#        status = False
+#
+#        # check motor connection
+#        if not _driver.connected:
+#            msg = 'Driver nao conectado.'
+#            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+#            return status
+#
+#        # check encoder connection
+#        if not _display.connected:
+#            msg = 'Display nao conectado.'
+#            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+#            return status
+#
+#        # check multimeter connection
+#        if not _multimeter.connected:
+#            msg = 'Multimetro nao conectado.'
+#            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+#            return status
+#
+#        # clear previous data and update scan config
+#        if not self.configure_scan():
+#            msg = 'Falha ao configurar varredura.'
+#            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+#            return status
+#
+#        # block other tabs from communicating with display
+#        self.encoder_update_enabled = False
+#
+#        # interval to wait after a display read command
+#        wait_display = _utils.WAIT_DISPLAY
+#        # interval to wait after pneumatic motion start
+#        wait_pneumatic_advance = (
+#            self.advanced_options.pneumatic_advance_wait
+#        )
+#        wait_pneumatic_retreat = (
+#            self.advanced_options.pneumatic_retreat_wait
+#        )
+#
+#        # disable start scan button
+#        self.ui.pbt_start_complete_scan.setEnabled(False)
+#        # process gui events
+#        _QApplication.processEvents()
+#
+#        # get display info
+#        display_model = self.advanced_options.display_model
+#
+#        # get motor info
+#        driver_address = self.advanced_options.motor_driver_address
+#        motor_resolution = (
+#            self.advanced_options.motor_resolution
+#        )
+#        rotation_direction = (
+#            self.advanced_options.motor_rotation_direction
+#        )
+#        velocity = self.advanced_options.motor_velocity
+#        acceleration = self.advanced_options.motor_acceleration
+#        linear_conversion = self.advanced_options.linear_conversion_factor
+#        tolerance = self.advanced_options.position_tolerance
+#        move_timeout = self.advanced_options.move_timeout
+#
+#        # read configuration parameters
+#        first_block_position = self.ui.sbd_start_reference_position.value()
+#        start_block_idx = self.ui.sb_scan_start_block.value()
+#        block_step = self.ui.sbd_scan_step_size.value()
+#        hall_step_count = self.ui.sb_hall_samples_per_block.value()
+#        block_center = hall_step_count / 2
+#        hall_step = float(block_step / hall_step_count)
+#        block_count = self.ui.sb_scan_nr_blocks.value()
+#        block_list = range(
+#            start_block_idx, start_block_idx + block_count
+#        )
+#
+#        # make sure pneumatic actuator is off
+#        _driver.set_output_1_low(driver_address)
+#        # wait pneumatic motion to finish
+#        _time.sleep(wait_pneumatic_retreat)
+#
+#        # start position
+#        scan_beginning = first_block_position
+#
+#        # calculate progress bar step
+#        pgb_max = self.ui.pgb_status.maximum()
+#        pgb_min = self.ui.pgb_status.minimum()
+#        pgb_step = _math.floor((pgb_max - pgb_min) / block_count)
+#
+#        # clear progress bar
+#        self.ui.pgb_status.setValue(pgb_min)
+#
+#        for block_idx in block_list:
+#            # update block interval being measured
+#            target_interval = scan_beginning + (block_idx - 1)*block_step
+#
+#            # stop to get each hall sample and measure position
+#            # with probes when at the block center
+#            for pos in range(0, hall_step_count):
+#                # if stop sent
+#                if self.stop_sent:
+#                    # update status
+#                    status = False
+#                    # show msg
+#                    msg = 'Comando de Pare recebido.'
+#                    _QMessageBox.critical(
+#                        self, 'Falha', msg, _QMessageBox.Ok
+#                    )
+#                    break
+#                # move
+#                target_position = target_interval + pos*hall_step
+#                status_tuple = self.move_and_retry(
+#                                   target_position, tolerance,
+#                                   driver_address, rotation_direction,
+#                                   motor_resolution, velocity,
+#                                   acceleration, linear_conversion,
+#                                   move_timeout
+#                )
+#                status = status_tuple[0]
+#                last_enc_pos = status_tuple[1]
+#                if status is False:
+#                    break
+#                # read hall sensor
+#                hall_volt = _multimeter.single_dc_read(wait=_utils.WAIT_MULTIMETER)
+#                # store hall and encoder measurements
+#                self.hall_sample_list.append(hall_volt)
+#                hall_cnt = 1 + pos + hall_step_count * (block_idx - 1)
+#                self.hall_sample_index_list.append(hall_cnt)
+#                self.encoder_sample_list_for_hall.append(last_enc_pos)
+##                # when all hall samples were taken for a block
+##                # calculate direction of block
+##                if pos == hall_step_count - 1:
+##                    self.block_direction_list.append(
+##                        self.calculate_block_direction(
+##                            self.hall_sample_list[
+##                                (hall_cnt - hall_step_count):hall_cnt
+##                            ]
+##                        )
+##                    )
+#                # measure position at block center
+#                if pos == block_center:
+#                    # trigger pneumatic actuator
+#                    _driver.set_output_1_high(driver_address)
+#                    # wait pneumatic motion to finish
+#                    _time.sleep(wait_pneumatic_advance)
+#                    # read position probes
+#                    readings = _display.read_display(display_model, wait=wait_display)
+#                    # if error in reading, wait and try again
+#                    if _math.isnan(readings[0]):
+#                        _time.sleep(wait_display * 5)
+#                        readings = _display.read_display(
+#                            display_model, wait=wait_display
+#                        )
+#                        # if failed again, stop scan
+#                        if _math.isnan(readings[0]):
+#                            status = False
+#                            msg = 'Falha ao tentar ler display.'
+#                            _QMessageBox.critical(
+#                                self, 'Falha', msg, _QMessageBox.Ok
+#                            )
+#                            break
+#                    # store probe measurements
+#                    self.x_probe_sample_list.append(readings[0])
+#                    self.y_probe_sample_list.append(readings[1])
+#                    self.encoder_sample_list_for_probes.append(last_enc_pos)
+#                    # deactivate pneumatic actuator
+#                    _driver.set_output_1_low(driver_address)
+#                    # wait pneumatic motion to finish
+#                    _time.sleep(wait_pneumatic_retreat)
+#                
+#            if status is False:
+#                break
+#
+#            # update progress bar
+#            pgb_value = self.ui.pgb_status.value()
+#            self.ui.pgb_status.setValue(pgb_value + pgb_step)
+#
+#        if status is True:
+#            # store block number list
+#            self.block_number_list = block_list
+#
+#            # calculate error for each sample
+#            x_ref = 0
+#            y_ref = 0
+#            for x_sample in self.x_probe_sample_list:
+#                self.x_probe_sample_error_list.append(x_sample - x_ref)
+#            for y_sample in self.y_probe_sample_list:
+#                self.y_probe_sample_error_list.append(y_sample - y_ref)
+#
+#            self.update_graph_x_probe(
+#                self.block_number_list,
+#                self.x_probe_sample_list,
+#                self.x_probe_sample_error_list
+#            )
+#            self.update_graph_y_probe(
+#                self.block_number_list,
+#                self.y_probe_sample_list,
+#                self.y_probe_sample_error_list
+#            )
+#            self.update_graph_hall(
+#                self.encoder_sample_list_for_hall,
+#                self.hall_sample_list
+#            )
+#
+#        # re-enable start scan button
+#        self.ui.pbt_start_complete_scan.setEnabled(True)
+#
+#        if status is False:
+#            self.ui.pgb_status.setValue(pgb_min)
+#            msg = 'Varredura falhou.'
+#            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+#        else:
+#            self.ui.pgb_status.setValue(pgb_max)
+#            msg = 'Varredura finalizada com sucesso.'
+#            _QMessageBox.information(self, 'Sucesso', msg, _QMessageBox.Ok)
+#
+#        # unlock other tabs communication with display
+#        self.encoder_update_enabled = True
+#
+#        return status
+
     def start_complete_scan(self):
-        """ Start scan along undulator magnets. Motion is done in small
-            steps and data is acquired at each temporary stop.
+        """ Start position and hall scan along undulator magnets.
+            Motion is done in steps between magnet blocks, while
+            hall readings are taken during motion from one block
+            to another.
 
             Return value: True if success, False otherwise. """
         # clear stop flag
@@ -761,12 +1020,6 @@ class ScanWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return status
 
-        # check multimeter connection
-        if not _multimeter.connected:
-            msg = 'Multimetro nao conectado.'
-            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
-            return status
-
         # clear previous data and update scan config
         if not self.configure_scan():
             msg = 'Falha ao configurar varredura.'
@@ -776,73 +1029,318 @@ class ScanWidget(_ConfigurationWidget):
         # block other tabs from communicating with display
         self.encoder_update_enabled = False
 
-        # interval to wait after a display read command
-        wait_display = _utils.WAIT_DISPLAY
-        # interval to wait after pneumatic motion start
-        wait_pneumatic_advance = (
-            self.advanced_options.pneumatic_advance_wait
-        )
-        wait_pneumatic_retreat = (
-            self.advanced_options.pneumatic_retreat_wait
-        )
+        try:
+            # interval to wait after a display read command
+            wait_display = _utils.WAIT_DISPLAY
+            # interval to wait after pneumatic motion start
+            wait_pneumatic_advance = (
+                self.advanced_options.pneumatic_advance_wait
+            )
+            wait_pneumatic_retreat = (
+                self.advanced_options.pneumatic_retreat_wait
+            )
+            # interval to wait after a multimeter command
+            wait_multimeter = _utils.WAIT_MULTIMETER
+            # interval to wait after a multimeter command
+            wait_multimeter_fetch = _utils.WAIT_MULTIMETER_FETCH_READINGS
+            # wait period before checking motion status
+            wait_motion = _utils.WAIT_MOTION
 
-        # disable start scan button
-        self.ui.pbt_start_scan.setEnabled(False)
-        # process gui events
-        _QApplication.processEvents()
+            # disable start scan buttons
+            self.ui.pbt_start_complete_scan.setEnabled(False)
+            self.ui.pbt_start_hall_scan.setEnabled(False)
+            self.ui.pbt_start_position_scan.setEnabled(False)
+            # process gui events
+            _QApplication.processEvents()
 
-        # get display info
-        display_model = self.advanced_options.display_model
+            # get display info
+            display_model = self.advanced_options.display_model
 
-        # get motor info
-        driver_address = self.advanced_options.motor_driver_address
-        motor_resolution = (
-            self.advanced_options.motor_resolution
-        )
-        rotation_direction = (
-            self.advanced_options.motor_rotation_direction
-        )
-        velocity = self.advanced_options.motor_velocity
-        acceleration = self.advanced_options.motor_acceleration
-        linear_conversion = self.advanced_options.linear_conversion_factor
-        tolerance = self.advanced_options.position_tolerance
-        move_timeout = self.advanced_options.move_timeout
+            # get motor info
+            driver_address = self.advanced_options.motor_driver_address
+            motor_resolution = (
+                self.advanced_options.motor_resolution
+            )
+            rotation_direction = (
+                self.advanced_options.motor_rotation_direction
+            )
+            max_velocity = self.advanced_options.motor_velocity
+            hall_scan_velocity = (
+                self.advanced_options.motor_velocity_hall_scan
+            )
+            acceleration = self.advanced_options.motor_acceleration
+            linear_conversion = self.advanced_options.linear_conversion_factor
+            tolerance = self.advanced_options.position_tolerance
+            move_timeout = self.advanced_options.move_timeout
 
-        # read configuration parameters
-        first_block_position = self.ui.sbd_start_reference_position.value()
-        start_block_idx = self.ui.sb_scan_start_block.value()
-        block_step = self.ui.sbd_scan_step_size.value()
-        hall_step_count = self.ui.sb_hall_samples_per_block.value()
-        block_center = hall_step_count / 2
-        hall_step = float(block_step / hall_step_count)
-        block_count = self.ui.sb_scan_nr_blocks.value()
-        block_list = range(
-            start_block_idx, start_block_idx + block_count
-        )
+            # read configuration parameters
+            first_block_position = self.ui.sbd_start_reference_position.value()
+            start_block_idx = self.ui.sb_scan_start_block.value()
+            block_step = self.ui.sbd_scan_step_size.value()
+            block_count = self.ui.sb_scan_nr_blocks.value()
+            block_list = range(
+                start_block_idx, start_block_idx + block_count
+            )
+            hall_step_count = self.ui.sb_hall_samples_per_block.value()
+            block_center = hall_step_count / 2
+            hall_step = float(block_step / hall_step_count)
 
-        # make sure pneumatic actuator is off
-        _driver.set_output_1_low(driver_address)
-        # wait pneumatic motion to finish
-        _time.sleep(wait_pneumatic_retreat)
+            hall_margin_before = _math.floor(
+                self.ui.sbd_margin_hall_before.value() / hall_step
+            )
+            hall_margin_after = _math.floor(
+                self.ui.sbd_margin_hall_after.value() / hall_step
+            )
+            # sum all hall samples per block plus left and right margins
+            total_hall_count = (
+                hall_step_count * block_count + hall_margin_before + hall_margin_after
+            )
 
-        # start position
-        scan_beginning = first_block_position
+            if total_hall_count > 512:
+                msg = (
+                       "Multimetro nao pode armazenar mais de 512 "
+                       "pontos. Por favor, realize multiplas "
+                       "vareduras or reduza o numero de pontos."
+                )
+                _QMessageBox.critical(
+                    self, 'Falha', msg, _QMessageBox.Ok)
+                raise ValueError(
+                    'Multimetro nao pode armazenar mais de 512 pontos'
+                )
 
-        # calculate progress bar step
-        pgb_max = self.ui.pgb_status.maximum()
-        pgb_min = self.ui.pgb_status.minimum()
-        pgb_step = _math.floor((pgb_max - pgb_min) / block_count)
+            # time between hall points
+            t_hall = hall_step / (hall_scan_velocity * linear_conversion)
 
-        # clear progress bar
-        self.ui.pgb_status.setValue(pgb_min)
+            if t_hall < _utils.MULTIMETER_MIN_TRIGGER_TIME:
+                msg = (
+                       "Intervalos de Trigger menores do que "
+                       + str(_utils.MULTIMETER_MIN_TRIGGER_TIME)
+                       + " segudos podem tornar a aquisicao instavel."
+                       + " Por favor, reduza a velocidade do motor ou"
+                       + " reduza o numero de pontos por bloco."
+                )
+                _QMessageBox.critical(
+                    self, 'Falha', msg, _QMessageBox.Ok)
+                raise ValueError(
+                    'Too small Multimetro trigger interval'
+                )
 
-        for block_idx in block_list:
-            # update block interval being measured
-            target_interval = scan_beginning + (block_idx - 1)*block_step
+            # make sure pneumatic actuator is off
+            _driver.set_output_1_low(driver_address)
+            # wait pneumatic motion to finish
+            _time.sleep(wait_pneumatic_retreat)
 
-            # stop to get each hall sample and measure position
-            # with probes when at the block center
-            for pos in range(0, hall_step_count):
+            # calculate progress bar step
+            pgb_max = self.ui.pgb_status.maximum()
+            pgb_min = self.ui.pgb_status.minimum()
+            pgb_step = (pgb_max - pgb_min) / total_hall_count
+
+            # clear progress bar
+            self.ui.pgb_status.setValue(pgb_min)
+
+            # configure multimeter for triggered measurements
+            _multimeter.configure_fast_dc_volt()
+            _time.sleep(wait_multimeter)
+            _multimeter.configure_triggered_read(
+                sample_count=1, trigger_count=total_hall_count
+            )
+            _time.sleep(wait_multimeter)
+
+            # start position
+            scan_beginning = (
+                first_block_position
+                + (start_block_idx - 1) * block_step
+                - hall_margin_before * hall_step
+            )
+
+            # move to start position
+            status_tuple = self.move_and_retry(
+                           scan_beginning, tolerance,
+                           driver_address, rotation_direction,
+                           motor_resolution, max_velocity,
+                           acceleration, linear_conversion,
+                           timeout=move_timeout)
+            status = status_tuple[0]
+            last_enc_pos = status_tuple[1]
+            if status == False:
+                raise RuntimeError(
+                    'Falha ao tentar mover para posicao inicial.'
+                )
+
+            # calculate first target position
+            target_position = (
+                first_block_position
+                + (start_block_idx - 1) * block_step
+                + block_step / 2.0
+            )
+
+            # calculate number of steps
+            diff = target_position - last_enc_pos
+            steps = _math.floor(
+                diff / (linear_conversion / motor_resolution)
+            )
+
+            # define direction to move
+            curr_dir = rotation_direction
+            if steps < 0:
+                if rotation_direction == '-':
+                    curr_dir = '+'
+                else:
+                    curr_dir = '-'
+
+            # command motor to rougly move to next point
+            # so that hall samples are taken
+
+            # normal mode (not continuous)
+            mode = 0
+
+            # register move start
+            t_start = _time.time()
+
+            if not _driver.config_motor(
+                    driver_address,
+                    mode,
+                    curr_dir,
+                    motor_resolution,
+                    hall_scan_velocity,
+                    acceleration,
+                    steps):
+                msg = ('Falha ao tentar enviar configuracao'
+                       ' para o driver.'
+                )
+                _QMessageBox.critical(
+                    self, 'Falha', msg, _QMessageBox.Ok)
+                status = False
+            else:
+                # start motor motion if commanded to
+                _driver.move_motor(driver_address)
+
+            # take readings while motor moves
+            starting_scan_section = int(hall_step_count / 2 + hall_margin_before)
+            for i in range(0, starting_scan_section):
+                # reset ref time
+                t_old = _time.time()
+
+                # update progress bar
+                pgb_value = self.ui.pgb_status.value()
+                self.ui.pgb_status.setValue(
+                    pgb_value + pgb_step
+                )
+
+                # stop if command received
+                if self.stop_sent:
+                    status = False
+                    msg = 'Comando de Pare recebido.'
+                    _QMessageBox.critical(
+                        self, 'Falha', msg, _QMessageBox.Ok
+                    )
+                    break
+
+                # check for timeout
+                if _time.time() - t_start >= move_timeout:
+                    status = False
+                    _driver.stop_motor(driver_address)
+                    msg = ('Timeout de movimento esgotado'
+                           ' - parando motor.'
+                    )
+                    _QMessageBox.critical(
+                        self, 'Falha', msg, _QMessageBox.Ok
+                    )
+                    break
+
+                readings = _display.read_display(
+                    display_model, wait=wait_display
+                )
+                if _math.isnan(readings[0]):
+                    readings = _display.read_display(
+                        display_model, wait=wait_display
+                    )
+                    # if failed again, stop scan
+                    if _math.isnan(readings[0]):
+                        status = False
+                        msg = 'Falha ao tentar ler display.'
+                        _QMessageBox.critical(
+                            self, 'Falha', msg, _QMessageBox.Ok
+                        )
+                        break
+                self.encoder_sample_list_for_hall.append(readings[2])
+                # trigger a hall reading
+                _multimeter.send_soft_trigger()
+                # wait next sample time
+                while _time.time() - t_old < t_hall:
+                    _time.sleep(0.001)
+                    _QApplication.processEvents()
+            if status is False:
+                raise RuntimeError(
+                    'Falha ao tentar mover para primeiro bloco.'
+                )
+
+            # wait motion to finish
+            while not _driver.ready(driver_address, wait_motion):
+                if self.stop_sent:
+                    msg = 'Comando de Pare recebido.'
+                    _QMessageBox.critical(
+                        self, 'Falha', msg, _QMessageBox.Ok
+                    )                   
+                    raise(msg)
+                if (_time.time() - t_start) > move_timeout:
+                    msg = 'Timeout de movimento esgotado.'
+                    _QMessageBox.critical(
+                        self, 'Falha', msg, _QMessageBox.Ok
+                    )                   
+                    raise(msg)
+                _time.sleep(wait_motion)
+                _QApplication.processEvents()
+
+            # correct position before measuring it
+            status_tuple = self.move_and_retry(
+                           target_position, tolerance,
+                           driver_address, rotation_direction,
+                           motor_resolution, max_velocity,
+                           acceleration, linear_conversion,
+                           timeout=move_timeout)
+            status = status_tuple[0]
+            last_enc_pos = status_tuple[1]
+            if status == False:
+                raise RuntimeError(
+                    'Falha ao tentar mover para posicao inicial.'
+                )
+
+            # measure block x and y positions
+            # trigger pneumatic actuator
+            _driver.set_output_1_high(driver_address)
+            # wait pneumatic motion to finish
+            _time.sleep(wait_pneumatic_advance)
+            # read position probes
+            readings = _display.read_display(display_model, wait=wait_display)
+            # if error in reading, wait and try again
+            if _math.isnan(readings[0]):
+                _time.sleep(wait_display * 5)
+                readings = _display.read_display(
+                    display_model, wait=wait_display
+                )
+                # if failed again, stop scan
+                if _math.isnan(readings[0]):
+                    status = False
+                    msg = 'Falha ao tentar ler display.'
+                    _QMessageBox.critical(
+                        self, 'Falha', msg, _QMessageBox.Ok
+                    )
+                    raise(
+                        'Falha na leitura do display.'
+                    )
+            # store probe measurements
+            self.x_probe_sample_list.append(readings[0])
+            self.y_probe_sample_list.append(readings[1])
+            self.encoder_sample_list_for_probes.append(last_enc_pos)
+            # deactivate pneumatic actuator
+            _driver.set_output_1_low(driver_address)
+            # wait pneumatic motion to finish
+            _time.sleep(wait_pneumatic_retreat)
+
+            for block_idx in block_list[1:]:
+                if status is False:
+                    break
                 # if stop sent
                 if self.stop_sent:
                     # update status
@@ -853,47 +1351,87 @@ class ScanWidget(_ConfigurationWidget):
                         self, 'Falha', msg, _QMessageBox.Ok
                     )
                     break
-                # move
-                target_position = target_interval + pos*hall_step
-                status_tuple = self.move_and_retry(
-                                   target_position, tolerance,
-                                   driver_address, rotation_direction,
-                                   motor_resolution, velocity,
-                                   acceleration, linear_conversion,
-                                   move_timeout
+                # update target position
+                target_position = (
+                    first_block_position
+                    + (block_idx - 1) * block_step
+                    + block_step / 2.0
                 )
-                status = status_tuple[0]
-                last_enc_pos = status_tuple[1]
-                if status is False:
-                    break
-                # read hall sensor
-                hall_volt = _multimeter.single_dc_read(wait=_utils.WAIT_MULTIMETER)
-                # store hall and encoder measurements
-                self.hall_sample_list.append(hall_volt)
-                hall_cnt = 1 + pos + hall_step_count * (block_idx - 1)
-                self.hall_sample_index_list.append(hall_cnt)
-                self.encoder_sample_list_for_hall.append(last_enc_pos)
-                # when all hall samples were taken for a block
-#                # calculate direction of block
-#                if pos == hall_step_count - 1:
-#                    self.block_direction_list.append(
-#                        self.calculate_block_direction(
-#                            self.hall_sample_list[
-#                                (hall_cnt - hall_step_count):hall_cnt
-#                            ]
-#                        )
-#                    )
-                # measure position at block center
-                if pos == block_center:
-                    # trigger pneumatic actuator
-                    _driver.set_output_1_high(driver_address)
-                    # wait pneumatic motion to finish
-                    _time.sleep(wait_pneumatic_advance)
-                    # read position probes
-                    readings = _display.read_display(display_model, wait=wait_display)
-                    # if error in reading, wait and try again
+
+                # calculate number of steps
+                diff = target_position - last_enc_pos
+                steps = _math.floor(
+                    diff / (linear_conversion / motor_resolution)
+                )
+
+                # define direction to move
+                curr_dir = rotation_direction
+                if steps < 0:
+                    if rotation_direction == '-':
+                        curr_dir = '+'
+                    else:
+                        curr_dir = '-'
+
+                # command motor to rougly move to next point
+                # so that hall samples are taken
+
+                # register move start
+                t_start = _time.time()
+
+                if not _driver.config_motor(
+                        driver_address,
+                        mode,
+                        curr_dir,
+                        motor_resolution,
+                        hall_scan_velocity,
+                        acceleration,
+                        steps):
+                    msg = ('Falha ao tentar enviar configuracao'
+                           ' para o driver.'
+                    )
+                    _QMessageBox.critical(
+                        self, 'Falha', msg, _QMessageBox.Ok)
+                    status = False
+                else:
+                    # start motor motion if commanded to
+                    _driver.move_motor(driver_address)
+
+                # take readings while motor moves
+                for i in range(0, hall_step_count):
+                    # reset ref time
+                    t_old = _time.time()
+
+                    # update progress bar
+                    pgb_value = self.ui.pgb_status.value()
+                    self.ui.pgb_status.setValue(
+                        pgb_value + pgb_step
+                    )
+
+                    # stop if command received
+                    if self.stop_sent:
+                        status = False
+                        msg = 'Comando de Pare recebido.'
+                        _QMessageBox.critical(
+                            self, 'Falha', msg, _QMessageBox.Ok
+                        )
+                        break
+
+                    # check for timeout
+                    if _time.time() - t_start >= move_timeout:
+                        status = False
+                        _driver.stop_motor(driver_address)
+                        msg = ('Timeout de movimento esgotado'
+                               ' - parando motor.'
+                        )
+                        _QMessageBox.critical(
+                            self, 'Falha', msg, _QMessageBox.Ok
+                        )
+                        break
+
+                    readings = _display.read_display(
+                        display_model, wait=wait_display
+                    )
                     if _math.isnan(readings[0]):
-                        _time.sleep(wait_display * 5)
                         readings = _display.read_display(
                             display_model, wait=wait_display
                         )
@@ -905,65 +1443,297 @@ class ScanWidget(_ConfigurationWidget):
                                 self, 'Falha', msg, _QMessageBox.Ok
                             )
                             break
-                    # store probe measurements
-                    self.x_probe_sample_list.append(readings[0])
-                    self.z_probe_sample_list.append(readings[1])
-                    self.encoder_sample_list_for_probes.append(last_enc_pos)
-                    # deactivate pneumatic actuator
-                    _driver.set_output_1_low(driver_address)
-                    # wait pneumatic motion to finish
-                    _time.sleep(wait_pneumatic_retreat)
+                    self.encoder_sample_list_for_hall.append(readings[2])
+                    # trigger a hall reading
+                    _multimeter.send_soft_trigger()
+                    # wait next sample time
+                    while _time.time() - t_old < t_hall:
+                        _time.sleep(0.001)
+                        _QApplication.processEvents()
+                if status is False:
+                    break
+
+                # wait motion to finish
+                while not _driver.ready(driver_address, wait_motion):
+                    if self.stop_sent:
+                        msg = 'Comando de Pare recebido.'
+                        _QMessageBox.critical(
+                            self, 'Falha', msg, _QMessageBox.Ok
+                        )
+                        raise(msg)
+                    if (_time.time() - t_start) > move_timeout:
+                        msg = 'Timeout de movimento esgotado.'
+                        _QMessageBox.critical(
+                            self, 'Falha', msg, _QMessageBox.Ok
+                        )                   
+                        raise(msg)
+                    _time.sleep(wait_motion)
+                    _QApplication.processEvents()
+
+                # correct position before measuring it
+                status_tuple = self.move_and_retry(
+                    target_position, tolerance,
+                    driver_address, rotation_direction,
+                    motor_resolution, max_velocity,
+                    acceleration, linear_conversion,
+                    move_timeout
+                )
+                status = status_tuple[0]
+                last_enc_pos = status_tuple[1]
+                if status is False:
+                    break
+                # measure block x and y positions
+                # trigger pneumatic actuator
+                _driver.set_output_1_high(driver_address)
+                # wait pneumatic motion to finish
+                _time.sleep(wait_pneumatic_advance)
+                # read position probes
+                readings = _display.read_display(display_model, wait=wait_display)
+                # if error in reading, wait and try again
+                if _math.isnan(readings[0]):
+                    _time.sleep(wait_display * 5)
+                    readings = _display.read_display(
+                        display_model, wait=wait_display
+                    )
+                    # if failed again, stop scan
+                    if _math.isnan(readings[0]):
+                        status = False
+                        msg = 'Falha ao tentar ler display.'
+                        _QMessageBox.critical(
+                            self, 'Falha', msg, _QMessageBox.Ok
+                        )
+                        break
+                # store probe measurements
+                self.x_probe_sample_list.append(readings[0])
+                self.y_probe_sample_list.append(readings[1])
+                self.encoder_sample_list_for_probes.append(last_enc_pos)
+                # deactivate pneumatic actuator
+                _driver.set_output_1_low(driver_address)
+                # wait pneumatic motion to finish
+                _time.sleep(wait_pneumatic_retreat)
                 
+
+
+            # Scan last section from the middle of last block
+            # until the "after margin" end
+            # if stop sent
+            if self.stop_sent:
+                # update status
+                status = False
+                # show msg
+                msg = 'Comando de Pare recebido.'
+                _QMessageBox.critical(
+                    self, 'Falha', msg, _QMessageBox.Ok
+                )
+                raise(
+                    'Stop command received.'
+                )
+            # set target position including other half
+            # of last block plus "after margin"
+            target_position = (
+                first_block_position
+                + block_list[-1] * block_step
+                + hall_margin_after
+            )
+
+            # calculate number of steps
+            diff = target_position - last_enc_pos
+            steps = _math.floor(
+                diff / (linear_conversion / motor_resolution)
+            )
+
+            # define direction to move
+            curr_dir = rotation_direction
+            if steps < 0:
+                if rotation_direction == '-':
+                    curr_dir = '+'
+                else:
+                    curr_dir = '-'
+
+            # command motor to rougly move to next point
+            # so that hall samples are taken
+
+            # register move start
+            t_start = _time.time()
+
+            if not _driver.config_motor(
+                    driver_address,
+                    mode,
+                    curr_dir,
+                    motor_resolution,
+                    hall_scan_velocity,
+                    acceleration,
+                    steps):
+                msg = ('Falha ao tentar enviar configuracao'
+                       ' para o driver.'
+                )
+                _QMessageBox.critical(
+                    self, 'Falha', msg, _QMessageBox.Ok)
+                status = False
+            else:
+                # start motor motion if commanded to
+                _driver.move_motor(driver_address)
+
+            # take readings while motor moves
+            last_sample_cnt = int((hall_step_count / 2) + hall_margin_after)
+            for i in range(0, last_sample_cnt):
+                # reset ref time
+                t_old = _time.time()
+
+                # update progress bar
+                pgb_value = self.ui.pgb_status.value()
+                self.ui.pgb_status.setValue(
+                    pgb_value + pgb_step
+                )
+
+                # stop if command received
+                if self.stop_sent:
+                    status = False
+                    msg = 'Comando de Pare recebido.'
+                    _QMessageBox.critical(
+                        self, 'Falha', msg, _QMessageBox.Ok
+                    )
+                    break
+
+                # check for timeout
+                if _time.time() - t_start >= move_timeout:
+                    status = False
+                    _driver.stop_motor(driver_address)
+                    msg = ('Timeout de movimento esgotado'
+                           ' - parando motor.'
+                    )
+                    _QMessageBox.critical(
+                        self, 'Falha', msg, _QMessageBox.Ok
+                    )
+                    break
+
+                readings = _display.read_display(
+                    display_model, wait=wait_display
+                )
+                if _math.isnan(readings[0]):
+                    readings = _display.read_display(
+                        display_model, wait=wait_display
+                    )
+                    # if failed again, stop scan
+                    if _math.isnan(readings[0]):
+                        status = False
+                        msg = 'Falha ao tentar ler display.'
+                        _QMessageBox.critical(
+                            self, 'Falha', msg, _QMessageBox.Ok
+                        )
+                        break
+
+                self.encoder_sample_list_for_hall.append(readings[2])
+                # trigger a hall reading
+                _multimeter.send_soft_trigger()
+                # wait next sample time
+                while _time.time() - t_old < t_hall:
+                    _time.sleep(0.001)
+                    _QApplication.processEvents()
+
             if status is False:
-                break
+                raise(
+                    'Falha ao tentar varrer trecho apos ultimo bloco.'
+                )
 
-            # update progress bar
-            pgb_value = self.ui.pgb_status.value()
-            self.ui.pgb_status.setValue(pgb_value + pgb_step)
+            # wait motion to finish
+            while not _driver.ready(driver_address, wait_motion):
+                if self.stop_sent:
+                    msg = 'Comando de Pare recebido.'
+                    _QMessageBox.critical(
+                        self, 'Falha', msg, _QMessageBox.Ok
+                    )
+                    raise(msg)
+                if (_time.time() - t_start) > move_timeout:
+                    msg = 'Timeout de movimento esgotado.'
+                    _QMessageBox.critical(
+                        self, 'Falha', msg, _QMessageBox.Ok
+                    )                   
+                    raise(msg)
+                _time.sleep(wait_motion)
+                _QApplication.processEvents()
 
-        if status is True:
-            # store block number list
-            self.block_number_list = block_list
+            if status is True:
+                # store block number list
+                self.block_number_list = block_list
 
-            # calculate error for each sample
-            x_ref = 0
-            z_ref = 0
-            for x_sample in self.x_probe_sample_list:
-                self.x_probe_sample_error_list.append(x_sample - x_ref)
-            for z_sample in self.z_probe_sample_list:
-                self.z_probe_sample_error_list.append(z_sample - z_ref)
+                # calculate error for each sample
+                x_ref = 0
+                y_ref = 0
+                for x_sample in self.x_probe_sample_list:
+                    self.x_probe_sample_error_list.append(x_sample - x_ref)
+                for y_sample in self.y_probe_sample_list:
+                    self.y_probe_sample_error_list.append(y_sample - y_ref)
 
-            self.update_graph_x_probe(
-                self.block_number_list,
-                self.x_probe_sample_list,
-                self.x_probe_sample_error_list
-            )
-            self.update_graph_z_probe(
-                self.block_number_list,
-                self.z_probe_sample_list,
-                self.z_probe_sample_error_list
-            )
-            self.update_graph_hall(
-                self.encoder_sample_list_for_hall,
-                self.hall_sample_list
-            )
+                status &= self.update_graph_x_probe(
+                    self.block_number_list,
+                    self.x_probe_sample_list,
+                    self.x_probe_sample_error_list
+                )
+                status &= self.update_graph_y_probe(
+                    self.block_number_list,
+                    self.y_probe_sample_list,
+                    self.y_probe_sample_error_list
+                )
 
-        # re-enable start scan button
-        self.ui.pbt_start_scan.setEnabled(True)
+                # fetch readings from multimeter
+                readings = _multimeter.fetch_readings(
+                    wait_multimeter_fetch
+                )
+                # store data to save (encoder data for hall is already stored)
+                self.hall_sample_list = self.hall_sample_list + readings
+                first_hall = (start_block_idx - 1) * hall_step_count + 1 - hall_margin_before
+                self.hall_sample_index_list = (
+                    self.hall_sample_index_list
+                    + list(
+                        range(first_hall, first_hall + total_hall_count)
+                    )
+                )
+                # update plot
+                status &= self.update_graph_hall(
+                    self.encoder_sample_list_for_hall,
+                    self.hall_sample_list
+                )
+                # ask user if want to save right now
+                msg = 'Deseja salvar varredura?'
+                reply = _QMessageBox.question(
+                    self, 'Confirmacao', msg)
+                if reply == _QMessageBox.Yes:
+                    self.save_data_to_db()
 
-        if status is False:
-            self.ui.pgb_status.setValue(pgb_min)
+            # re-enable start scan buttons
+            self.ui.pbt_start_hall_scan.setEnabled(True)
+            self.ui.pbt_start_position_scan.setEnabled(True)
+            self.ui.pbt_start_complete_scan.setEnabled(True)
+
+            if status is False:
+                self.ui.pgb_status.setValue(pgb_min)
+                msg = 'Varredura falhou.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+            else:
+                self.ui.pgb_status.setValue(pgb_max)
+                msg = 'Varredura finalizada com sucesso.'
+                _QMessageBox.information(self, 'Sucesso', msg, _QMessageBox.Ok)
+
+            # unlock other tabs communication with display
+            self.encoder_update_enabled = True
+
+            return status
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
             msg = 'Varredura falhou.'
             _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
-        else:
-            self.ui.pgb_status.setValue(pgb_max)
-            msg = 'Varredura finalizada com sucesso.'
-            _QMessageBox.information(self, 'Sucesso', msg, _QMessageBox.Ok)
-
-        # unlock other tabs communication with display
-        self.encoder_update_enabled = True
-
-        return status
+            self.ui.pgb_status.setValue(
+                self.ui.pgb_status.minimum()
+            )
+            # re-enable start scan buttons
+            self.ui.pbt_start_hall_scan.setEnabled(True)
+            self.ui.pbt_start_position_scan.setEnabled(True)
+            self.ui.pbt_start_complete_scan.setEnabled(True)
+            # unlock other tabs communication with display
+            self.encoder_update_enabled = True
+            return False
 
     def stop_scan(self):
         """ Stop scan measurement immediately  """
@@ -1058,24 +1828,24 @@ class ScanWidget(_ConfigurationWidget):
         self.y_axis_x_probe_error = []
         return True
 
-    def clear_z_probe_graph_only(self):
+    def clear_y_probe_graph_only(self):
         """ Clear data from ui probe z graph """
-        self.ui.pw_z_probe.plotItem.curves.clear()
-        self.legend_z_probe.clear()
-        self.ui.pw_z_probe.clear()
+        self.ui.pw_y_probe.plotItem.curves.clear()
+        self.legend_y_probe.clear()
+        self.ui.pw_y_probe.clear()
 
         # list of plots
-        self.graph_z_probe_plots = []
+        self.graph_y_probe_plots = []
         return True
 
-    def clear_z_probe_graph_and_data(self):
+    def clear_y_probe_graph_and_data(self):
         """ Clear data from ui probe z graph and global data """
-        self.clear_z_probe_graph_only()
+        self.clear_y_probe_graph_only()
 
         # lists of data for plots
-        self.x_axis_z_probe = []
-        self.y_axis_z_probe = []
-        self.y_axis_z_probe_error = []
+        self.x_axis_y_probe = []
+        self.y_axis_y_probe = []
+        self.y_axis_y_probe_error = []
         return True
 
 
@@ -1102,7 +1872,7 @@ class ScanWidget(_ConfigurationWidget):
         """ Clear data from ui graphs and their global data """
         # clear data
         self.clear_x_probe_graph_and_data()
-        self.clear_z_probe_graph_and_data()
+        self.clear_y_probe_graph_and_data()
         self.clear_hall_graph_and_data()
         return True
 
@@ -1115,8 +1885,8 @@ class ScanWidget(_ConfigurationWidget):
         self.encoder_sample_list_for_hall = []
         self.x_probe_sample_list = []
         self.x_probe_sample_error_list = []
-        self.z_probe_sample_list = []
-        self.z_probe_sample_error_list = []
+        self.y_probe_sample_list = []
+        self.y_probe_sample_error_list = []
         self.block_number_list = []
 #        self.block_direction_list = []
         self.encoder_sample_list_for_probes = []
@@ -1128,7 +1898,7 @@ class ScanWidget(_ConfigurationWidget):
         """ Remove leading and trailing white spaces from
             input string and remove more than 1 sequential
             spaces between words and numbers """
-        return re.sub(' +', ' ', text.strip())
+        return _re.sub(' +', ' ', text.strip())
 
     def configure_scan(self):
         self.clear()
@@ -1221,7 +1991,7 @@ class ScanWidget(_ConfigurationWidget):
     def update_graphs_lines_visibility(self):
         """ Update graphs without changing data """
         self.update_graph_x_probe([],[],[])
-        self.update_graph_z_probe([],[],[])
+        self.update_graph_y_probe([],[],[])
         self.update_graph_hall([],[])
         return True
 
@@ -1283,16 +2053,16 @@ class ScanWidget(_ConfigurationWidget):
                         symbolPen=self.colors[1],
                         symbolSize=4,
                         symbolBrush=self.colors[1],
-                        name='error')
+                        name='erro')
                 )
                 self.graph_x_probe_plots[-1].setData(
                     self.x_axis_x_probe, self.y_axis_x_probe_error
                 )
                 self.legend_x_probe.addItem(
-                    self.graph_x_probe_plots[-1], 'error'
+                    self.graph_x_probe_plots[-1], 'erro'
                 )
-            self.ui.pw_x_probe.setLabel('bottom', 'Block index')
-            self.ui.pw_x_probe.setLabel('left', 'Probe x [mm]')
+            self.ui.pw_x_probe.setLabel('bottom', 'Indice do bloco')
+            self.ui.pw_x_probe.setLabel('left', 'Posicao x [mm]')
             self.ui.pw_x_probe.showGrid(x=True, y=True)
             return True
 
@@ -1302,38 +2072,38 @@ class ScanWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
-    def update_graph_z_probe(self, x_axis_z_probe, y_axis_z_probe,
-                              y_axis_z_probe_error):
+    def update_graph_y_probe(self, x_axis_y_probe, y_axis_y_probe,
+                              y_axis_y_probe_error):
         """ Update plots with the data provided. If y axis data, besides
             error data, is empty, keep the associated plot as is """
         try:
             # update global plot data
-            if len(y_axis_z_probe) > 0:
+            if len(y_axis_y_probe) > 0:
                 # clear graph and data
-                self.clear_z_probe_graph_and_data()
-                self.x_axis_z_probe = x_axis_z_probe
-                self.y_axis_z_probe = y_axis_z_probe
-                self.y_axis_z_probe_error = y_axis_z_probe_error
+                self.clear_y_probe_graph_and_data()
+                self.x_axis_y_probe = x_axis_y_probe
+                self.y_axis_y_probe = y_axis_y_probe
+                self.y_axis_y_probe_error = y_axis_y_probe_error
                 # update summary
-                avg = _statistics.mean(y_axis_z_probe)
-                if len(y_axis_z_probe) > 1:
-                    std = _statistics.stdev(y_axis_z_probe)
+                avg = _statistics.mean(y_axis_y_probe)
+                if len(y_axis_y_probe) > 1:
+                    std = _statistics.stdev(y_axis_y_probe)
                 else:
                     std = 0
-                minx = min(y_axis_z_probe)
-                maxx = max(y_axis_z_probe)
+                minx = min(y_axis_y_probe)
+                maxx = max(y_axis_y_probe)
                 summary = (
-                    "Z Pos: "
+                    "Y Pos: "
                     "avg={0:.3f} std={1:.3f} min={2:.3f} max={3:.3f}"
                 )
                 summary = summary.format(avg, std, minx, maxx)
-                self.ui.la_z_probe_summary.setText(summary)
+                self.ui.la_y_probe_summary.setText(summary)
             else:
-                self.clear_z_probe_graph_only()
+                self.clear_y_probe_graph_only()
             # check if should plot data
             if self.ui.chb_show_samples.isChecked():
-                self.graph_z_probe_plots.append(
-                    self.ui.pw_z_probe.plotItem.plot(
+                self.graph_y_probe_plots.append(
+                    self.ui.pw_y_probe.plotItem.plot(
                         _np.array([]),
                         _np.array([]),
                         pen=self.colors[0],
@@ -1341,18 +2111,18 @@ class ScanWidget(_ConfigurationWidget):
                         symbolPen=self.colors[0],
                         symbolSize=4,
                         symbolBrush=self.colors[0],
-                        name='z')
+                        name='y')
                 )
-                self.graph_z_probe_plots[-1].setData(
-                    self.x_axis_z_probe, self.y_axis_z_probe
+                self.graph_y_probe_plots[-1].setData(
+                    self.x_axis_y_probe, self.y_axis_y_probe
                 )
-                self.legend_z_probe.addItem(
-                    self.graph_z_probe_plots[-1], 'z'
+                self.legend_y_probe.addItem(
+                    self.graph_y_probe_plots[-1], 'y'
                 )
             # check if should plot error
             if self.ui.chb_show_error.isChecked():
-                self.graph_z_probe_plots.append(
-                    self.ui.pw_z_probe.plotItem.plot(
+                self.graph_y_probe_plots.append(
+                    self.ui.pw_y_probe.plotItem.plot(
                         _np.array([]),
                         _np.array([]),
                         pen=self.colors[1],
@@ -1360,17 +2130,17 @@ class ScanWidget(_ConfigurationWidget):
                         symbolPen=self.colors[1],
                         symbolSize=4,
                         symbolBrush=self.colors[1],
-                        name='error')
+                        name='erro')
                 )
-                self.graph_z_probe_plots[-1].setData(
-                    self.x_axis_z_probe, self.y_axis_z_probe_error
+                self.graph_y_probe_plots[-1].setData(
+                    self.x_axis_y_probe, self.y_axis_y_probe_error
                 )
-                self.legend_z_probe.addItem(
-                    self.graph_z_probe_plots[-1], 'error'
+                self.legend_y_probe.addItem(
+                    self.graph_y_probe_plots[-1], 'erro'
                 )
-            self.ui.pw_z_probe.setLabel('bottom', 'Block index')
-            self.ui.pw_z_probe.setLabel('left', 'Probe z [mm]')
-            self.ui.pw_z_probe.showGrid(x=True, y=True)
+            self.ui.pw_y_probe.setLabel('bottom', 'Indice do bloco')
+            self.ui.pw_y_probe.setLabel('left', 'Posicao y [mm]')
+            self.ui.pw_y_probe.showGrid(x=True, y=True)
             return True
 
         except Exception:
@@ -1423,8 +2193,8 @@ class ScanWidget(_ConfigurationWidget):
                 self.legend_hall.addItem(
                     self.graph_hall_plots[-1], 'hall'
                 )
-            self.ui.pw_hall.setLabel('bottom', 'Encoder Position')
-            self.ui.pw_hall.setLabel('left', 'Hall reading [V]')
+            self.ui.pw_hall.setLabel('bottom', 'Posicao Encoder')
+            self.ui.pw_hall.setLabel('left', 'Leitura Hall [V]')
             self.ui.pw_hall.showGrid(x=True, y=True)
             return True
 
@@ -1525,7 +2295,8 @@ class ScanWidget(_ConfigurationWidget):
                         # process gui events
                         _QApplication.processEvents()
                 # wait motion to finish
-                while (not _driver.ready(driver_address)
+
+                while (not _driver.ready(driver_address, wait)
                        and not self.stop_sent
                        and (_time.time() - t_start) < timeout):
                     _time.sleep(wait)
@@ -1582,9 +2353,11 @@ class ScanWidget(_ConfigurationWidget):
         super().connect_signal_slots()
         self.ui.pbt_start_hall_scan.clicked.connect(self.start_hall_scan)
         self.ui.pbt_start_position_scan.clicked.connect(self.start_position_scan)
+        self.ui.pbt_start_complete_scan.clicked.connect(self.start_complete_scan)
         self.ui.pbt_stop_scan.clicked.connect(self.stop_scan)
         self.ui.pbt_load_data_db.clicked.connect(self.load_data_from_db)
         self.ui.pbt_save_data_db.clicked.connect(self.save_data_to_db)
+        self.ui.pbt_delete_data_db.clicked.connect(self.delete_data_from_db)
         self.ui.sb_hall_samples_per_block.valueChanged.connect(self.hall_samples_even_only)
         self.ui.pbt_clear_all.clicked.connect(self.clear)
         self.ui.chb_show_error.stateChanged.connect(self.update_graphs_lines_visibility)
@@ -1605,8 +2378,8 @@ class ScanWidget(_ConfigurationWidget):
         encoder_data_probe = []
         x_probe_data = []
         x_probe_error_data = []
-        z_probe_data = []
-        z_probe_error_data = []
+        y_probe_data = []
+        y_probe_error_data = []
         encoder_data_hall = []
         hall_data = []
         hall_data_index = []
@@ -1659,7 +2432,7 @@ class ScanWidget(_ConfigurationWidget):
         # read position probe data from DB
         elem_list = self.access_block_data.db_search_collection(
             fields=['scan_id', 'block_number', 'x_position',
-                    'x_position_error', 'z_position', 'z_position_error',
+                    'x_position_error', 'y_position', 'y_position_error',
                     'encoder_position'
             ],
             filters=[scan_id, '', '', '', '', '', ''
@@ -1674,22 +2447,23 @@ class ScanWidget(_ConfigurationWidget):
                 encoder_data_probe.append(elem['encoder_position'])
                 x_probe_data.append(elem['x_position'])
                 x_probe_error_data.append(elem['x_position_error'])
-                z_probe_data.append(elem['z_position'])
-                z_probe_error_data.append(elem['z_position_error'])
+                y_probe_data.append(elem['y_position'])
+                y_probe_error_data.append(elem['y_position_error'])
             # plot position probe data
             self.update_graph_x_probe(
                                block_numbers,
                                x_probe_data,
                                x_probe_error_data
             )
-            self.update_graph_z_probe(
+            self.update_graph_y_probe(
                                block_numbers,
-                               z_probe_data,
-                               z_probe_error_data
+                               y_probe_data,
+                               y_probe_error_data
             )
         return True
 
     def save_data_to_db(self):
+        """ Save data gathered by graphs """
         try:
             if self.database_name is None:
                 msg = 'Nome do arquivo de banco de dados invalido.'
@@ -1775,8 +2549,8 @@ class ScanWidget(_ConfigurationWidget):
 #                    self.block_data.block_direction = self.block_direction_list[i]
                     self.block_data.x_position = self.x_probe_sample_list[i]
                     self.block_data.x_position_error = self.x_probe_sample_error_list[i]
-                    self.block_data.z_position = self.z_probe_sample_list[i]
-                    self.block_data.z_position_error = self.z_probe_sample_error_list[i]
+                    self.block_data.y_position = self.y_probe_sample_list[i]
+                    self.block_data.y_position_error = self.y_probe_sample_error_list[i]
                     self.block_data.encoder_position = self.encoder_sample_list_for_probes[i]
                     self.block_data.db_update_database(
                         self.database_name, mongo=self.mongo,
@@ -1788,11 +2562,94 @@ class ScanWidget(_ConfigurationWidget):
                     # update progress bar
                     dlg.setValue(pgb_step * i)
 
-                return True
+            # ask user if data should be saved to excel file as well
+            msg = 'Salvar dados tambem em formato excel?'
+            reply = _QMessageBox.question(
+                self, 'Confirmacao', msg)
+            if reply == _QMessageBox.Yes:
+                # save ALL data related to scan_id to file
+                self.save_to_file(self.global_config.idn)
+
+            return True
 
         except Exception:
             _traceback.print_exc(file=_sys.stdout)
             msg = 'Falha ao salvar dados.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+            return False
+
+    def delete_data_from_db(self):
+        """ Delete all data related to specified measurement, undulator and cassete """
+        try:
+            if self.database_name is None:
+                msg = 'Nome do arquivo de banco de dados invalido.'
+                _QMessageBox.critical(
+                    self, 'Falha', msg, _QMessageBox.Ok)
+                return False
+
+            # get element info to filter
+            measurement = self.ui.le_measurement_name.text()
+            undulator = self.ui.le_undulator_name.text()
+            cassette = self.ui.le_cassette_name.text()
+
+            # clean strings from unnecessary white spaces
+            measurement = self.clean_str(measurement)
+            undulator = self.clean_str(undulator)
+            cassette = self.clean_str(cassette)
+
+            msg = (
+                "Deseja realmente apagar todas os dados referentes a: "
+                + "nome da medida= "+str(measurement)
+                + ", ondulador= "+str(undulator)
+                + ", cassete= "+str(cassette)
+                + "?"
+            )
+            reply = _QMessageBox.question(
+                self, 'Confirmacao', msg)
+            if reply == _QMessageBox.No:
+                return False
+
+            # get scan id from DB
+            scan_list = self.access_scan_data.db_search_collection(
+                fields=['measurement_name', 'undulator_name', 'cassette_name', 'id'
+                ],
+                filters=[measurement, undulator, cassette, ''
+                ]
+            )
+            if len(scan_list) == 0:
+                msg = 'Dados da varredura nao encontrados.'
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+                return False
+            scan_data = scan_list[0]
+            scan_id = scan_data['id']
+
+            # find and delete related hall data in DB
+            elem_list = self.access_hall_data.db_search_collection(
+                fields=['scan_id', 'id'],
+                filters=[scan_id, '']
+            )
+            if len(elem_list) > 0:
+                hall_id_list = [e['id'] for e in elem_list]
+                self.access_hall_data.db_delete(hall_id_list)
+
+            # find and delete related block data in DB
+            elem_list = self.access_block_data.db_search_collection(
+                fields=['scan_id', 'id'],
+                filters=[scan_id, '']
+            )
+            if len(elem_list) > 0:
+                block_id_list = [e['id'] for e in elem_list]
+                self.access_block_data.db_delete(block_id_list)
+
+            # delete main scan data
+            scan_id_list = [e['id'] for e in scan_list]
+            self.access_scan_data.db_delete(scan_id_list)
+
+            return True
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Falha tentar apagar dados.'
             _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
@@ -1891,7 +2748,8 @@ class ScanWidget(_ConfigurationWidget):
             if move_started:
                 _time.sleep(wait_motion)
                 t_curr = _time.time()
-                while (not _driver.ready(driver_address)
+
+                while (not _driver.ready(driver_address, wait_motion)
                        and not self.stop_sent
                        and not (t_curr - t_start) > move_timeout):
                     t_curr = _time.time()
@@ -1963,3 +2821,79 @@ class ScanWidget(_ConfigurationWidget):
             _traceback.print_exc(file=_sys.stdout)
             self.config.clear()
             return False
+
+
+    def save_to_file(self, scan_id):
+        try:
+
+            # lists of hall and block data columns
+            scan_cols = self.access_scan_data.db_get_field_names()
+            hall_cols = self.access_hall_data.db_get_field_names()
+            block_cols = self.access_block_data.db_get_field_names()
+
+            # create data frames for hall and block data
+            df_scan = _pd.DataFrame(columns=scan_cols)
+            df_hall = _pd.DataFrame(columns=hall_cols)
+            df_block = _pd.DataFrame(columns=block_cols)
+
+            # read data related to scan id from DB
+            scan_entries = self.access_scan_data.db_search_field('id', scan_id)
+            hall_entries = self.access_hall_data.db_search_field('scan_id', scan_id)
+            block_entries = self.access_block_data.db_search_field('scan_id', scan_id)
+
+            # store scan data into dataframe
+            for entry in scan_entries:
+                id = entry['id']
+                for key, value in entry.items():
+                    df_scan.at[id, key] = value
+
+            # store hall data into dataframe
+            for entry in hall_entries:
+                id = entry['id']
+                for key, value in entry.items():
+                    df_hall.at[id, key] = value
+
+            # store block data into dataframe
+            for entry in block_entries:
+                id = entry['id']
+                for key, value in entry.items():
+                    df_block.at[id, key] = value
+
+            # timestamp to use in filename
+            timestamp = _time.strftime(
+                '%Y-%m-%d_%H-%M-%S', _time.localtime()
+            )
+
+            # get scan description
+            measurement = scan_entries[0]['measurement_name']
+            undulator = scan_entries[0]['undulator_name']
+            cassette = scan_entries[0]['cassette_name']
+
+            default_filename = '{0}_{1}_{2}_{3}.xlsx'.format(
+                timestamp, measurement, undulator, cassette
+            )
+
+            filename = _QFileDialog.getSaveFileName(
+                self, caption='Save file',
+                directory=_os.path.join(self.directory, default_filename),
+                filter=" Microsoft Excel Open XML Spreadsheet (*.xlsx)")
+
+            if isinstance(filename, tuple):
+                filename = filename[0]
+
+            if len(filename) == 0:
+                return False
+
+            # write 3 data sheets in thee same file
+            with _pd.ExcelWriter(filename) as writer:  
+                df_scan.to_excel(writer, sheet_name='config', index=False)
+                df_hall.to_excel(writer, sheet_name='hall', index=False)
+                df_block.to_excel(writer, sheet_name='posicao', index=False)
+
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Falha ao tentar escrever arquivo Excel.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+            return False
+
+
