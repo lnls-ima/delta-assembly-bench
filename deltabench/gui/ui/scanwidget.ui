@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>wg_scan</class>
  <widget class="QWidget" name="wg_scan">
@@ -367,6 +367,53 @@
           </item>
           <item>
            <layout class="QGridLayout" name="gridLayout_2">
+            <item row="0" column="2">
+             <widget class="QPushButton" name="pbt_delete_data_db">
+              <property name="enabled">
+               <bool>true</bool>
+              </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777215</height>
+               </size>
+              </property>
+              <property name="font">
+               <font>
+                <weight>75</weight>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="toolTip">
+               <string>Delete all position and Hall sensor data for the specified scan</string>
+              </property>
+              <property name="text">
+               <string>Apagar dados</string>
+              </property>
+              <property name="icon">
+               <iconset>
+                <normaloff>../../resources/img/close.svg</normaloff>../../resources/img/close.svg</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>24</width>
+                <height>24</height>
+               </size>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="0">
              <widget class="QPushButton" name="pbt_load_data_db">
               <property name="enabled">
@@ -400,7 +447,7 @@
                <string>Load position and Hall sensor data fom DB to graph</string>
               </property>
               <property name="text">
-               <string>Carregar medidas</string>
+               <string>Carregar</string>
               </property>
               <property name="icon">
                <iconset>
@@ -415,7 +462,7 @@
              </widget>
             </item>
             <item row="0" column="1">
-             <widget class="QPushButton" name="pbt_delete_data_db">
+             <widget class="QPushButton" name="pbt_write_excel">
               <property name="enabled">
                <bool>true</bool>
               </property>
@@ -444,14 +491,14 @@
                </font>
               </property>
               <property name="toolTip">
-               <string>Save position and Hall sensor data to DB</string>
+               <string>Write db data from specified scan to an excel file</string>
               </property>
               <property name="text">
-               <string>Apagar medidas</string>
+               <string>Gerar excel</string>
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>../../resources/img/close.svg</normaloff>../../resources/img/close.svg</iconset>
+                <normaloff>../../resources/img/table.svg</normaloff>../../resources/img/table.svg</iconset>
               </property>
               <property name="iconSize">
                <size>
@@ -461,7 +508,7 @@
               </property>
              </widget>
             </item>
-            <item row="1" column="0" colspan="2">
+            <item row="1" column="0" colspan="3">
              <widget class="QPushButton" name="pbt_save_data_db">
               <property name="enabled">
                <bool>true</bool>
@@ -494,7 +541,7 @@
                <string>Save position and Hall sensor data to DB</string>
               </property>
               <property name="text">
-               <string>Salvar medidas</string>
+               <string>Salvar dados</string>
               </property>
               <property name="icon">
                <iconset>

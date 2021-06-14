@@ -2357,6 +2357,7 @@ class ScanWidget(_ConfigurationWidget):
         self.ui.pbt_stop_scan.clicked.connect(self.stop_scan)
         self.ui.pbt_load_data_db.clicked.connect(self.load_data_from_db)
         self.ui.pbt_save_data_db.clicked.connect(self.save_data_to_db)
+        self.ui.pbt_write_excel.clicked.connect(self.write_excel_clicked)
         self.ui.pbt_delete_data_db.clicked.connect(self.delete_data_from_db)
         self.ui.sb_hall_samples_per_block.valueChanged.connect(self.hall_samples_even_only)
         self.ui.pbt_clear_all.clicked.connect(self.clear)
@@ -2822,7 +2823,6 @@ class ScanWidget(_ConfigurationWidget):
             self.config.clear()
             return False
 
-
     def save_to_file(self, scan_id):
         try:
 
@@ -2896,4 +2896,40 @@ class ScanWidget(_ConfigurationWidget):
             _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
             return False
 
+    def write_excel_clicked(self):
+        """ Read scan definition from measurement, undulator and cassette names
+            and write corresponding DB data to an excel workbook """
 
+        try:
+            # get measurement names that define ID
+            meas = self.ui.le_measurement_name.text()
+            und = self.ui.le_undulator_name.text()
+            cass = self.ui.le_cassette_name.text()
+            # clean strings from unnecessary white spaces
+            meas = self.clean_str(meas)
+            und = self.clean_str(und)
+            cass = self.clean_str(cass)
+            # correct names on GUI after removing extra spaces
+            self.ui.le_measurement_name.setText(meas)
+            self.ui.le_undulator_name.setText(und)
+            self.ui.le_cassette_name.setText(cass)
+            # check that no name field is empty
+            if meas == '' or und == '' or cass == '':
+                msg = ("Campos nome da medida, ondulador e cassete"
+                       " nao podem ser vazios"
+                )
+                _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+                return False
+
+            # get scan id
+            scan_id = self.get_scan_id(meas, und, cass)
+
+            # save data to excel
+            self.save_to_file(scan_id)
+
+            return True
+        except Exception:
+            _traceback.print_exc(file=_sys.stdout)
+            msg = 'Falha ao tentar escrever arquivo Excel.'
+            _QMessageBox.critical(self, 'Falha', msg, _QMessageBox.Ok)
+            return False
